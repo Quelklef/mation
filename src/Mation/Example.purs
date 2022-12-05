@@ -77,6 +77,6 @@ main = do
     , render
     , kickoff: mempty
     , toEffect: identity
-    , root: M.getBody
+    , root: M.useBody
     }
 

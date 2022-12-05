@@ -14,12 +14,14 @@ foreign import data DOMNode :: Type
 data Html m s
 
     -- | Embed an existing DOMNode directly into the virtual dom
+    -- FIXME: rename this?
   = HEmbed DOMNode
 
     -- | Text node
   | HText String
 
     -- | Virtual node
+    -- FIXME: rename this
   | HVirtual
       { tag :: String
       , attrs :: Assoc String String
@@ -75,10 +77,52 @@ to_f toEff html = Html_f \hembed htext hvirtual ->
         , children: to_f toEff <$> children
         }
 
-foreign import renderHtml_f :: Html_f -> Effect DOMNode
 
-render :: forall m s. (Mation m s -> Effect Unit) -> Html m s -> Effect DOMNode
-render toEff = to_f toEff >>> renderHtml_f
+-- |
+--
+-- Instead of patching onto a DOM Node directly, we diff the old and new state
+-- to generate a patch function which is then applied to a DOM node.
+--
+-- This is so that the patching algorithm does not react to changes made to
+-- the DOM by external javascript. If, for instance, external javascript adds
+-- some "_secretInfo" attribute to a DOM node, we will not remove it during
+-- patching.
+--
+-- (There is a discussion to be had about whether the programmer making use of
+-- a "_secretInfo" attribute is a good idea or not. However, that's up to
+-- the programmer, not this library, and it's nicer for this library to play
+-- nicely.)
+--
+-- The downside to this design is that it means the patching is less robust:
+-- if some DOM node attribute is accidentally deleted by external javascript,
+-- for instance, re-rendering the model will not replace it.
+patchOnto :: forall m s.
+  { toEff :: Mation m s -> Effect Unit
+  , old :: Maybe (Html m s)
+  , new :: Html m s
+  }
+  -> DOMNode -> Effect Unit
+patchOnto { toEff, old, new } =
+  patch_f
+    caseMaybe
+    { mOldHtml: to_f toEff <$> old
+    , newHtml: to_f toEff new
+    }
+
+  where
+
+  caseMaybe :: forall a r. Maybe a -> r -> (a -> r) -> r
+  caseMaybe maybe nothing just =
+    case maybe of
+      Nothing -> nothing
+      Just a -> just a
+
+foreign import patch_f ::
+     (forall a r. Maybe a -> r -> (a -> r) -> r)
+  -> { mOldHtml :: Maybe Html_f
+     , newHtml :: Html_f
+     }
+  -> DOMNode -> Effect Unit
 
 
 

@@ -1,12 +1,8 @@
 
-export const getBody =
+export const useBody =
 () => {
-  return document.body;
+  const body = document.body;
+  if (body.childNodes.length < 1)
+    body.append('');
+  return body.childNodes[0];
 };
-
-export const mountUnder =
-({ container, mountMe }) => () => {
-  container.innerHTML = '';
-  container.append(mountMe);
-};
-

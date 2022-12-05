@@ -2,6 +2,7 @@ module Mation.Run where
 
 import Mation.Prelude
 
+import Effect.Ref (Ref)
 import Effect.Ref as Ref
 
 import Mation.Mation (Mation)
@@ -10,8 +11,8 @@ import Mation.Html (Html, DOMNode)
 import Mation.Html as Html
 
 
-foreign import getBody :: Effect DOMNode
-foreign import mountUnder :: { container :: DOMNode, mountMe :: DOMNode } -> Effect Unit
+foreign import useBody :: Effect DOMNode
+
 
 -- FIXME: parameterize over DOMNode type, because I don't want to have to choose
 --        a dom FFI library
@@ -25,23 +26,47 @@ runApp :: forall m s. MonadEffect m =>
 
 runApp args = do
 
-  modelRef <- Ref.new args.initial
+  -- This will eventually hold the real step function, but is
+  -- initialized with a dummy
+  --
+  -- This works because no Mation should ever be executed until
+  -- after the first render is complete (which is when this Ref
+  -- will be populated)
+  --
+  -- This is an ugly setup but is necessary to bootstrap the
+  -- application
+  stepRef :: Ref ((s -> s) -> Effect Unit)
+    <- Ref.new (\_ -> pure unit)
 
   let
+    -- Turn a Mation into an Effect
+    -- Required by patchOnto
     toEff :: Mation m s -> Effect Unit
-    toEff mat =
-      args.toEffect $
-        Mation.runMation mat
-          \endo -> do
-            Ref.modify_ endo modelRef
-            doRender
+    toEff mat = do
+      step <- Ref.read stepRef
+      args.toEffect $ Mation.runMation mat step
 
-    doRender :: Effect Unit
-    doRender = do
-      model <- Ref.read modelRef
-      node <- Html.render toEff (args.render model)
-      root <- args.root
-      mountUnder { container: root, mountMe: node }
+  -- Render for the first time
+  model /\ html <- do
+    let model = args.initial
+    let html = args.render model
+    let patch = Html.patchOnto { toEff, old: Nothing, new: html }
+    args.root >>= patch
+    pure $ model /\ html
 
-  doRender
+  -- Holds current model & rendered HTML
+  ref <- Ref.new (model /\ html)
+
+  let
+    -- This is the actual step function
+    step :: (s -> s) -> Effect Unit
+    step endo = do
+      oldModel /\ oldHtml <- Ref.read ref
+      let newModel = endo oldModel
+      let newHtml = args.render newModel
+      Ref.write (newModel /\ newHtml) ref
+      let patch = Html.patchOnto { toEff, old: Just oldHtml, new: newHtml }
+      args.root >>= patch
+
+  Ref.write step stepRef
 

@@ -8,8 +8,8 @@ import Type.Proxy (Proxy (..)) as X
 import Data.Foldable (class Foldable, foldMap) as X
 import Data.Unit (Unit, unit) as X
 import Data.Tuple.Nested ((/\), type (/\)) as X
-import Data.Either (Either) as X
-import Data.Maybe (Maybe, fromMaybe) as X
+import Data.Either (Either (..)) as X
+import Data.Maybe (Maybe (..), fromMaybe) as X
 import Data.Map (Map) as X
 import Data.Lens.Lens (Lens') as X
 import Data.Lens.Record (prop) as X
