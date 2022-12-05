@@ -91,11 +91,11 @@ render model =
   E.div
   []
   [ E.hr []
-  , M.embed _counter1 (renderCounter model.counter1)
+  , M.enroot _counter1 (renderCounter model.counter1)
   , E.br []
-  , M.embed _counter2 (renderCounter model.counter2)
+  , M.enroot _counter2 (renderCounter model.counter2)
   , E.hr []
-  , M.embed _textbox (renderTextbox model.textbox)
+  , M.enroot _textbox (renderTextbox model.textbox)
   , E.hr []
   , E.div
     [ P.style' [ S.fontSize "0.35em" ] ]

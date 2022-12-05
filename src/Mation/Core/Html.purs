@@ -27,7 +27,7 @@ data Html1 m s
       , attrs :: Assoc String String
       , listeners :: Assoc String (DomEvent -> Mation m s)
           -- ^
-          -- Knowledge of the listeners is needed here so that @embed@
+          -- Knowledge of the listeners is needed here so that @enroot@
           -- can be implemented
           --
           -- Otherwise we could put listeners in @fixup@
@@ -74,20 +74,19 @@ mkTag info = Html [ HTag info' ]
 
 
 -- | Embed one @Html@ within another
--- FIXME: rename? probably -- conflicts with <embed>
-embed :: forall m large small. Lens' large small -> Html m small -> Html m large
-embed lens (Html arr) = Html $ map (embed1 lens) arr
+enroot :: forall m large small. Lens' large small -> Html m small -> Html m large
+enroot lens (Html arr) = Html $ map (enroot1 lens) arr
 
-embed1 :: forall m large small. Lens' large small -> Html1 m small -> Html1 m large
-embed1 lens = case _ of
+enroot1 :: forall m large small. Lens' large small -> Html1 m small -> Html1 m large
+enroot1 lens = case _ of
   HRawNode node -> HRawNode node
   HRawHtml html -> HRawHtml html
   HText text -> HText text
   HTag { tag, attrs, listeners, fixup, children } ->
     HTag
       { tag, attrs, fixup
-      , listeners: map (map (Mation.embed lens)) listeners
-      , children: map (embed1 lens) children
+      , listeners: map (map (Mation.enroot lens)) listeners
+      , children: map (enroot1 lens) children
       }
 
 

@@ -78,8 +78,8 @@ runMation (Mation f) step = f (step >>> liftEffect)
 -- are able to lift a mation on a 'small' type to one on a 'large' type.
 --
 -- This is what allows composition of Html components!
-embed :: forall m large small. Setter' large small -> Mation m small -> Mation m large
-embed lens (Mation f) =
+enroot :: forall m large small. Setter' large small -> Mation m small -> Mation m large
+enroot lens (Mation f) =
   Mation \apply -> f \endo -> apply (lens %~ endo)
 
 instance Apply m => Semigroup (Mation m s) where
