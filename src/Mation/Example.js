@@ -1,7 +1,8 @@
 
-export const repeat =
+export const repeatedly =
 eff => () => {
   eff();
   const id = setInterval(eff, 200);
-  return () => clearInterval(id);
+  const cancel = () => clearInterval(id);
+  return { cancel };
 };

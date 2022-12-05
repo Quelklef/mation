@@ -2,10 +2,9 @@ module Mation.Example where
 
 import Mation.Prelude
 
-import Effect.Console (log)
 import Mation as M
 
-foreign import repeat :: Effect Unit -> Effect (Effect Unit)
+foreign import repeatedly :: Effect Unit -> Effect { cancel :: Effect Unit }
 
 type Model =
   { count :: Int
@@ -30,7 +29,7 @@ render model =
   [ M.txt (show model.count)
   , M.txt " "
   , M.elt "button"
-    [ M.lis "click" $ M.Mation \step -> step (_count %~ (_ + 1))
+    [ M.lis "click" $ M.mkPure (_count %~ (_ + 1))
     ]
     [ M.txt "increment once"
     ]
@@ -39,18 +38,16 @@ render model =
       NotStreaming ->
         M.elt "button"
         [ M.lis "click" $
-            M.Mation \step -> do
-                cancel <- repeat (step $ _count %~ (_ + 1))
-                step (_streamState .~ Streaming { cancel })
+            M.mkCont \step -> do
+              { cancel } <- repeatedly (step $ _count %~ (_ + 1))
+              step (_streamState .~ Streaming { cancel })
         ]
         [ M.txt "start streaming"
         ]
       Streaming { cancel } ->
         M.elt "button"
         [ M.lis "click" $
-            M.Mation \step -> do
-                cancel
-                step (_streamState .~ NotStreaming)
+            M.mkEff (cancel $> (_streamState .~ NotStreaming))
         ]
         [ M.txt "stop streaming"
         ]
@@ -64,7 +61,6 @@ render model =
 
 main :: Effect Unit
 main = do
-  log "hello"
   M.runApp
     { initial
     , render

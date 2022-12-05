@@ -5,7 +5,7 @@ import Prelude as X
 import Effect (Effect) as X
 import Effect.Class (class MonadEffect, liftEffect) as X
 import Type.Proxy (Proxy (..)) as X
-import Data.Foldable (foldMap) as X
+import Data.Foldable (class Foldable, foldMap) as X
 import Data.Unit (Unit, unit) as X
 import Data.Tuple.Nested ((/\), type (/\)) as X
 import Data.Either (Either) as X
