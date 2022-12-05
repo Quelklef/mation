@@ -6,6 +6,7 @@ import Mation.Core.Mation (Mation)
 import Mation.Core.Mation as Mation
 import Mation.Core.Util.Assoc (Assoc)
 import Mation.Core.Util.Assoc as Assoc
+import Mation.Core.Many (class Many, float)
 
 
 foreign import data DOMNode :: Type
@@ -45,11 +46,11 @@ data Html1 m s
 -- constructing @Html@ values!
 newtype Html m s = Html (Array (Html1 m s))
 
-instance Semigroup (Html m s) where
-  append (Html a) (Html b) = Html (a <> b)
+instance Many (Html m s) (Html1 m s)
 
-instance Monoid (Html m s) where
-  mempty = Html []
+derive instance Newtype (Html m s) _
+derive newtype instance Semigroup (Html m s)
+derive newtype instance Monoid (Html m s)
 
 
 mkRawNode :: forall m s. DOMNode -> Html m s
@@ -71,11 +72,7 @@ mkTag :: forall m s.
   -> Html m s
 mkTag info = Html [ HTag info' ]
   where
-
   info' = info { children = float info.children }
-
-  float :: Array (Html m s) -> Array (Html1 m s)
-  float arr = arr >>= \(Html arr') -> arr'
 
 
 -- | Embed one @Html@ within another
@@ -131,11 +128,11 @@ data Prop1 m s
 -- constructing @Html@ values!
 newtype Prop m s = Prop (Array (Prop1 m s))
 
-instance Semigroup (Prop m s) where
-  append (Prop a) (Prop b) = Prop (a <> b)
+instance Many (Prop m s) (Prop1 m s)
 
-instance Monoid (Prop m s) where
-  mempty = Prop []
+derive instance Newtype (Prop m s) _
+derive newtype instance Semigroup (Prop m s)
+derive newtype instance Monoid (Prop m s)
 
 mkPair :: forall m s. String -> String -> Prop m s
 mkPair k v = Prop [ PPair k v ]
