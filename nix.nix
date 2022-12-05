@@ -34,37 +34,18 @@ nixed = purs-nix.purs
   { srcs = [ ./src ];
     dependencies =
       with purs-nix.ps-pkgs;
-      [ console
+      [
+        prelude
+        console
         effect
-        psci-support
-        ordered-collections
-        lists
         maybe
+        either
+        tuples
         newtype
         refs
-        argonaut-core
-        argonaut-codecs
-        argonaut-generic
-        either
         foldable-traversable
         profunctor-lenses
-        partial
-        prelude
-        strings
-        transformers
-        tuples
-        bifunctors
-        integers
-        numbers
-        control
-        arrays
-        lazy
         node-fs
-        stringutils
-        random
-        aff
-        aff-promise
-        quickcheck
       ];
   };
 
