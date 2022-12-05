@@ -58,7 +58,6 @@ embed lens = case _ of
 
 
 -- | Property of a virtual node
--- FIXME: rename?
 data Prop m s
 
     -- | Some string HTML attribute, like 'id' or 'style'
@@ -76,7 +75,7 @@ data Prop m s
   | PFixup (DOMNode -> Effect Unit)
       -- ^ FIXME: 'Effect' or 'm' ?
 
-    -- Identity property
+    -- Has no effect
   | PNoop
 
 
