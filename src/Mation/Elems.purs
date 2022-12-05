@@ -1,7 +1,7 @@
 module Mation.Elems (module X, module Mation.Elems) where
 
-import Mation.Gen.Tags as X
 import Mation.Core.Html (Html, Html', embed) as X
+import Mation.Gen.Tags as X
 
 import Mation.Core.Html (Html (..))
 

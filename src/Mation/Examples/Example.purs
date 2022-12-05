@@ -20,6 +20,7 @@ renderCounter model =
   , E.text " "
   , E.button
     [ P.onClick \_ -> M.mkPure (_count %~ (_ + 1))
+    , buttonStyle
     ]
     [ E.text "increment once"
     ]
@@ -31,6 +32,7 @@ renderCounter model =
             M.mkCont \step -> do
               { cancel } <- repeatedly (step $ _count %~ (_ + 1))
               step (_streamState .~ Streaming { cancel })
+        , buttonStyle
         ]
         [ E.text "start streaming"
         ]
@@ -38,6 +40,7 @@ renderCounter model =
         E.button
         [ P.onClick \_ ->
             M.mkEff (cancel $> (_streamState .~ NotStreaming))
+        , buttonStyle
         ]
         [ E.text "stop streaming"
         ]
@@ -47,6 +50,12 @@ renderCounter model =
 
   _count = prop (Proxy :: Proxy "count")
   _streamState = prop (Proxy :: Proxy "streamState")
+
+  buttonStyle :: forall m s. P.Prop m s
+  buttonStyle = P.style'
+    [ "border-radius" /\ "0"
+    , "border-color" /\ "red"
+    ]
 
 
 type Textbox = String

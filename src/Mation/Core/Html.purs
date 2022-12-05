@@ -101,3 +101,4 @@ mkElement tag props children =
     props # foldMap case _ of
       PFixup f -> f
       _ -> mempty
+
