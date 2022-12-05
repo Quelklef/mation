@@ -6,24 +6,12 @@ import Mation as M
 
 foreign import repeatedly :: Effect Unit -> Effect { cancel :: Effect Unit }
 
-type Model =
-  { count :: Int
-  , streamState :: StreamState
-  }
+type Counter = { count :: Int, streamState :: StreamState }
 
-data StreamState
-  = NotStreaming
-  | Streaming { cancel :: Effect Unit }
+data StreamState = NotStreaming | Streaming { cancel :: Effect Unit }
 
-initial :: Model
-initial =
-  { count: 0
-  , streamState: NotStreaming
-  }
-
-
-render :: Model -> M.Html' Model
-render model =
+renderCounter :: Counter -> M.Html' Counter
+renderCounter model =
   M.elt "div"
   [ ]
   [ M.txt (show model.count)
@@ -59,10 +47,33 @@ render model =
   _streamState = prop (Proxy :: Proxy "streamState")
 
 
+type Model =
+  { counter1 :: Counter
+  , counter2 :: Counter
+  }
+
+render :: Model -> M.Html' Model
+render model =
+  M.elt "div"
+  []
+  [ M.embed _counter1 (renderCounter model.counter1)
+  , M.elt "br" [] []
+  , M.embed _counter2 (renderCounter model.counter2)
+  ]
+
+  where
+
+  _counter1 = prop (Proxy :: Proxy "counter1")
+  _counter2 = prop (Proxy :: Proxy "counter2")
+
+
 main :: Effect Unit
 main = do
   M.runApp
-    { initial
+    { initial:
+        { counter1: { count: 0, streamState: NotStreaming }
+        , counter2: { count: 0, streamState: NotStreaming }
+        }
     , render
     , kickoff: mempty
     , toEffect: identity
