@@ -18,7 +18,7 @@ runApp' :: forall s.
       -- ^ Initial model value (ie state)
   , render :: s -> Html Effect s
       -- ^ How to display the model
-  , root :: DomNode
+  , root :: Effect DomNode
       -- ^
       -- Where should the application be mounted?
       --
@@ -31,7 +31,7 @@ runApp' args =
   runApp
     { initial: args.initial
     , render: args.render
-    , root: (pure :: DomNode -> Effect DomNode) args.root
+    , root: args.root
     , kickoff: Mation.mkNoop
     , listen: \_ -> pure unit
     , toEffect: identity

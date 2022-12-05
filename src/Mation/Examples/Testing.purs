@@ -1,4 +1,4 @@
-module Mation.Example where
+module Mation.Examples.Testing where
 
 import Mation.Core.Prelude
 
@@ -86,6 +86,13 @@ type Model =
   , textbox :: String
   }
 
+initial :: Model
+initial =
+  { counter1: { count: 0, streamState: NotStreaming }
+  , counter2: { count: 0, streamState: NotStreaming }
+  , textbox: "type in me"
+  }
+
 render :: Model -> E.Html' Model
 render model =
   E.div
@@ -114,11 +121,7 @@ render model =
 main :: Effect Unit
 main = do
   M.runApp
-    { initial:
-        { counter1: { count: 0, streamState: NotStreaming }
-        , counter2: { count: 0, streamState: NotStreaming }
-        , textbox: "type in me"
-        }
+    { initial
     , render
     , kickoff: mempty
     , listen: \_ -> pure unit

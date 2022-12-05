@@ -54,7 +54,7 @@ purs-nix-bundle-args = {
   # ^ necessary in some cases due to js bizareness
   #   compare 'var top = 5; console.log(top);'
   #   with '(function() { var top = 5; console.log(top); })'
-  module = "Mation.Example";
+  module = "Mation.Examples.AllExamples";
 };
 
 in {

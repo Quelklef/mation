@@ -8,6 +8,8 @@ import Foreign (Foreign) as X
 import Type.Proxy (Proxy (..)) as X
 import Prim.Coerce (class Coercible) as X
 import Safe.Coerce (coerce) as X
+import Data.Generic.Rep (class Generic) as X
+import Data.Show.Generic (genericShow) as X
 import Data.Foldable (class Foldable, foldMap, intercalate) as X
 import Data.Unit (Unit, unit) as X
 import Data.Tuple.Nested ((/\), type (/\)) as X

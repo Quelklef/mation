@@ -1,12 +1,10 @@
 
 export const patch_f =
-caseMaybe => ({ mOldHtml, newHtml }) => root => {
-  return (
-    caseMaybe
-      (mOldHtml)
-      (() => root.replaceWith(makeAnew(newHtml)))
-      (oldHtml => () => patch(root, oldHtml, newHtml))
-  );
+caseMaybe => ({ mOldHtml, newHtml }) => root => () => {
+
+  const oldHtml = caseMaybe(mOldHtml)(undefined)(x => x);
+  patch(root, oldHtml, newHtml);
+
 };
 
 function makeAnew(html) {
@@ -50,6 +48,13 @@ function makeAnew(html) {
 
 function patch(root, oldHtml, newHtml) {
 
+  // oldHtml may be nully, but newHtml must not be
+
+  if (!oldHtml) {
+    root.replaceWith(makeAnew(newHtml));
+    return;
+  }
+
   (
     newHtml
       (node => root.replaceWith(node))
@@ -69,7 +74,9 @@ function patch(root, oldHtml, newHtml) {
         (oldInfo => oldInfo.tag !== newInfo.tag)
     );
     if (shouldReplace) {
-      root.replaceWith(document.createElement(tag))
+      const newRoot = document.createElement(newInfo.tag);
+      root.replaceWith(newRoot)
+      root = newRoot;
     }
 
     const emptyInfo = { tag: newInfo.tag, attrs: [], listeners: [], children: [], fixup: () => {} };
@@ -130,15 +137,15 @@ function patchChildren(root, oldChildren, newChildren) {
   // Add new children + patch existing ones
   for (let i = 0; i < newChildren.length; i++) {
     // Ensure that a child exists
-    if (root.childNodes.length < i) root.append('');
+    if (root.childNodes.length <= i) root.append('');
     // Patch the child
     const child = root.childNodes[i];
     patch(child, oldChildren[i], newChildren[i]);
   }
 
   // Remove excess children
-  for (let i = newChildren.length; i < oldChildren.length; i++) {
-    root.childNodes[i].remove();
+  while (root.childNodes.length > newChildren.length) {
+    root.lastChild.remove();
   }
 }
 
