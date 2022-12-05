@@ -7,7 +7,3 @@ eff => () => {
   return { cancel };
 };
 
-export const getValue =
-ev => {
-  return ev.target.value;
-};

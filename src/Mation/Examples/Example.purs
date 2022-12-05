@@ -67,13 +67,11 @@ renderTextbox str =
   [ E.input
     [ P.type_ "text"
     , P.value str
-    , P.onInput \ev -> M.mkPure (const $ getValue ev)
+    , P.onInput' \val -> M.mkPure (const val)
     ]
   , E.text " "
   , E.text str
   ]
-
-foreign import getValue :: M.DOMEvent -> String
 
 
 type Model =
