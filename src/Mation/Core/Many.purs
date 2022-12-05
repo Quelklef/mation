@@ -41,13 +41,28 @@ The typeclass Many does not contain much logic. The value is more in providing
 a name for the pattern (Many), a single place to talk about it (this module),
 as well a place to put any logic there does happen to be.
 
+
+One may wonder why we use a Many class instead of defining a datatype
+
+  newtype Many a = Many (Array a)
+
+and then write e.g.
+
+  type Style a = Many (Style1 a)
+
+The reason for this is that, in this codebase, most such "many types" (eg Style)
+are exported and exposed to the user. Preferring a datatype over a type alias
+means that the user does not have to worry about (or even know!) what a 'Many' is.
+
 -}
 
 
 class
   ( Newtype t (Array t1)
   , Semigroup t
+      -- ^ Should be newtype-derived
   , Monoid t
+      -- ^ Should be newtype-derived
   ) <= Many t t1
 
 

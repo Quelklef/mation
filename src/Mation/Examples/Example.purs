@@ -121,6 +121,7 @@ main = do
         }
     , render
     , kickoff: mempty
+    , listen: \_ -> pure unit
     , toEffect: identity
     , root: M.useBody
     }

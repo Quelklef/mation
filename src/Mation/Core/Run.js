@@ -1,10 +1,13 @@
 
 export const useBody =
 () => {
-  const body = document.body;
+  const root = document.body;
+  if (root.childNodes.length < 1)
+    root.append('');
+  return root.childNodes[0];
+};
 
-  if (body.childNodes.length < 1)
-    body.append('');
-
-  return body.childNodes[0];
+export const useHtml =
+() => {
+  return document.html;
 };
