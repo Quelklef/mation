@@ -2,6 +2,8 @@ module Mation.Example where
 
 import Mation.Core.Prelude
 
+import Data.Array (range)
+
 import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
@@ -89,6 +91,12 @@ render model =
   , M.embed _counter2 (renderCounter model.counter2)
   , E.br []
   , M.embed _textbox (renderTextbox model.textbox)
+  , E.br []
+  , E.div
+    [ P.style' [ "font-size" /\ "0.35em" ] ]
+    [ flip foldMap (range 1 10) \n ->
+        E.p [] [ E.text $ show n <> ": monidal `Html` is great!" ]
+    ]
   ]
 
   where

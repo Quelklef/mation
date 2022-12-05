@@ -5,11 +5,11 @@ import Mation.Core.Prelude
 import Mation.Core.Util.Assoc (Assoc)
 import Mation.Core.Util.Assoc as Assoc
 import Mation.Core.Mation (Mation)
-import Mation.Core.Html (Html (..), DOMNode, DOMEvent)
+import Mation.Core.Html (Html, Html1 (..), DOMNode, DOMEvent)
 
 
 -- | Foreign interface Html type
-newtype Html_f = Html_f (
+newtype Html1_f = Html1_f (
     forall r.
        (DOMNode -> r)
     -> (String -> r)
@@ -18,14 +18,14 @@ newtype Html_f = Html_f (
         , attrs :: Array { name :: String, value :: String }
         , listeners :: Array { name :: String, handler :: DOMEvent -> Effect Unit }
         , fixup :: DOMNode -> Effect Unit
-        , children :: Array Html_f
+        , children :: Array Html1_f
         } -> r)
     -> r
   )
 
-to_f :: forall m s. (Mation m s -> Effect Unit) -> Html m s -> Html_f
-to_f toEff html = Html_f \hRawNode hRawHtml hText hTag ->
-  case html of
+to_f :: forall m s. (Mation m s -> Effect Unit) -> Html1 m s -> Html1_f
+to_f toEff h = Html1_f \hRawNode hRawHtml hText hTag ->
+  case h of
     HRawNode node -> hRawNode node
     HRawHtml html -> hRawHtml html
     HText text -> hText text
@@ -59,8 +59,8 @@ to_f toEff html = Html_f \hRawNode hRawHtml hText hTag ->
 -- for instance, re-rendering the model will not replace it.
 patchOnto :: forall m s.
   { toEff :: Mation m s -> Effect Unit
-  , old :: Maybe (Html m s)
-  , new :: Html m s
+  , old :: Maybe (Html1 m s)
+  , new :: Html1 m s
   }
   -> DOMNode -> Effect Unit
 patchOnto { toEff, old, new } =
@@ -80,7 +80,7 @@ patchOnto { toEff, old, new } =
 
 foreign import patch_f ::
      (forall a r. Maybe a -> r -> (a -> r) -> r)
-  -> { mOldHtml :: Maybe Html_f
-     , newHtml :: Html_f
+  -> { mOldHtml :: Maybe Html1_f
+     , newHtml :: Html1_f
      }
   -> DOMNode -> Effect Unit

@@ -4,11 +4,11 @@ import Mation.Core.Prelude
 
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
+import Effect.Exception (throw)
 
 import Mation.Core.Mation (Mation)
 import Mation.Core.Mation as Mation
-import Mation.Core.Html (Html, DOMNode)
-import Mation.Core.Html as Html
+import Mation.Core.Html (Html (..), Html1, DOMNode)
 import Mation.Core.Patch as Patch
 
 foreign import useBody :: Effect DOMNode
@@ -24,6 +24,14 @@ runApp :: forall m s. MonadEffect m =>
   } -> Effect Unit
 
 runApp args = do
+
+  let
+    -- Render to an Html1 instead of an Html
+    -- This is unsafe, but during usual usage of the framework should never happen
+    renderTo1 :: s -> Effect (Html1 m s)
+    renderTo1 = args.render >>> case _ of
+      Html [x] -> pure x
+      _ -> throw "Unexpected Html value: toplevel node contains more than one value. Did you `<>` or `fold` some top-level Html values? Please wrap them in a <div>!"
 
   -- This will eventually hold the real step function, but is
   -- initialized with a dummy
@@ -48,7 +56,7 @@ runApp args = do
   -- Render for the first time
   model /\ html <- do
     let model = args.initial
-    let html = args.render model
+    html <- renderTo1 model
     let patch = Patch.patchOnto { toEff, old: Nothing, new: html }
     args.root >>= patch
     pure $ model /\ html
@@ -62,7 +70,7 @@ runApp args = do
     step endo = do
       oldModel /\ oldHtml <- Ref.read ref
       let newModel = endo oldModel
-      let newHtml = args.render newModel
+      newHtml <- renderTo1 newModel
       Ref.write (newModel /\ newHtml) ref
       let patch = Patch.patchOnto { toEff, old: Just oldHtml, new: newHtml }
       args.root >>= patch

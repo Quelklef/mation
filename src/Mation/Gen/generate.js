@@ -45,7 +45,8 @@ function * tags() {
 function * attributes() {
   yield 'module Mation.Gen.Attributes where';
   yield '';
-  yield 'import Mation.Core.Html (Prop (..))';
+  yield 'import Prelude';
+  yield 'import Mation.Core.Html (Prop, mkPair, mkNoop)';
   yield '';
   yield '';
 
@@ -55,10 +56,10 @@ function * attributes() {
 
     if (attr.isBoolean) {
       yield `${ident} :: forall m s. Boolean -> Prop m s`;
-      yield `${ident} bool = if bool then PPair "${attr.name}" "${attr.name}" else PNoop`;
+      yield `${ident} bool = if bool then mkPair "${attr.name}" "${attr.name}" else mkNoop`;
     } else {
       yield `${ident} :: forall m s. String -> Prop m s`;
-      yield `${ident} val = PPair "${attr.name}" val`;
+      yield `${ident} = mkPair "${attr.name}"`;
     }
     yield '';
   }
@@ -67,8 +68,9 @@ function * attributes() {
 function * events() {
   yield 'module Mation.Gen.Events where';
   yield '';
-  yield 'import Mation.Core.Mation (Mation)'
-  yield 'import Mation.Core.Html (DOMEvent, Prop (..))';
+  yield 'import Prelude';
+  yield 'import Mation.Core.Mation (Mation)';
+  yield 'import Mation.Core.Html (DOMEvent, Prop, mkListener)';
   yield '';
   yield '';
 
@@ -77,7 +79,7 @@ function * events() {
     const onName = 'on' + capitalize(toIdent(event.name));
 
     yield `${onName} :: forall m s. (DOMEvent -> Mation m s) -> Prop m s`;
-    yield `${onName} = PListener "${event.name}"`;
+    yield `${onName} = mkListener "${event.name}"`;
     yield '';
   }
 

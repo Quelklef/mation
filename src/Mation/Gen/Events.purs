@@ -1,260 +1,261 @@
 module Mation.Gen.Events where
 
+import Prelude
 import Mation.Core.Mation (Mation)
-import Mation.Core.Html (DOMEvent, Prop (..))
+import Mation.Core.Html (DOMEvent, Prop, mkListener)
 
 
 onAbort :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onAbort = PListener "abort"
+onAbort = mkListener "abort"
 
 onAfterprint :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onAfterprint = PListener "afterprint"
+onAfterprint = mkListener "afterprint"
 
 onAnimationend :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onAnimationend = PListener "animationend"
+onAnimationend = mkListener "animationend"
 
 onAnimationiteration :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onAnimationiteration = PListener "animationiteration"
+onAnimationiteration = mkListener "animationiteration"
 
 onAnimationstart :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onAnimationstart = PListener "animationstart"
+onAnimationstart = mkListener "animationstart"
 
 onBeforeprint :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onBeforeprint = PListener "beforeprint"
+onBeforeprint = mkListener "beforeprint"
 
 onBeforeunload :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onBeforeunload = PListener "beforeunload"
+onBeforeunload = mkListener "beforeunload"
 
 onBlur :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onBlur = PListener "blur"
+onBlur = mkListener "blur"
 
 onCanplay :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onCanplay = PListener "canplay"
+onCanplay = mkListener "canplay"
 
 onCanplaythrough :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onCanplaythrough = PListener "canplaythrough"
+onCanplaythrough = mkListener "canplaythrough"
 
 onChange :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onChange = PListener "change"
+onChange = mkListener "change"
 
 onClick :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onClick = PListener "click"
+onClick = mkListener "click"
 
 onContextmenu :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onContextmenu = PListener "contextmenu"
+onContextmenu = mkListener "contextmenu"
 
 onCopy :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onCopy = PListener "copy"
+onCopy = mkListener "copy"
 
 onCut :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onCut = PListener "cut"
+onCut = mkListener "cut"
 
 onDblclick :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onDblclick = PListener "dblclick"
+onDblclick = mkListener "dblclick"
 
 onDrag :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onDrag = PListener "drag"
+onDrag = mkListener "drag"
 
 onDragend :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onDragend = PListener "dragend"
+onDragend = mkListener "dragend"
 
 onDragenter :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onDragenter = PListener "dragenter"
+onDragenter = mkListener "dragenter"
 
 onDragleave :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onDragleave = PListener "dragleave"
+onDragleave = mkListener "dragleave"
 
 onDragover :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onDragover = PListener "dragover"
+onDragover = mkListener "dragover"
 
 onDragstart :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onDragstart = PListener "dragstart"
+onDragstart = mkListener "dragstart"
 
 onDrop :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onDrop = PListener "drop"
+onDrop = mkListener "drop"
 
 onDurationchange :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onDurationchange = PListener "durationchange"
+onDurationchange = mkListener "durationchange"
 
 onEnded :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onEnded = PListener "ended"
+onEnded = mkListener "ended"
 
 onError :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onError = PListener "error"
+onError = mkListener "error"
 
 onFocus :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onFocus = PListener "focus"
+onFocus = mkListener "focus"
 
 onFocusin :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onFocusin = PListener "focusin"
+onFocusin = mkListener "focusin"
 
 onFocusout :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onFocusout = PListener "focusout"
+onFocusout = mkListener "focusout"
 
 onFullscreenchange :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onFullscreenchange = PListener "fullscreenchange"
+onFullscreenchange = mkListener "fullscreenchange"
 
 onFullscreenerror :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onFullscreenerror = PListener "fullscreenerror"
+onFullscreenerror = mkListener "fullscreenerror"
 
 onHashchange :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onHashchange = PListener "hashchange"
+onHashchange = mkListener "hashchange"
 
 onInput :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onInput = PListener "input"
+onInput = mkListener "input"
 
 onInvalid :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onInvalid = PListener "invalid"
+onInvalid = mkListener "invalid"
 
 onKeydown :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onKeydown = PListener "keydown"
+onKeydown = mkListener "keydown"
 
 onKeypress :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onKeypress = PListener "keypress"
+onKeypress = mkListener "keypress"
 
 onKeyup :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onKeyup = PListener "keyup"
+onKeyup = mkListener "keyup"
 
 onLoad :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onLoad = PListener "load"
+onLoad = mkListener "load"
 
 onLoadeddata :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onLoadeddata = PListener "loadeddata"
+onLoadeddata = mkListener "loadeddata"
 
 onLoadedmetadata :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onLoadedmetadata = PListener "loadedmetadata"
+onLoadedmetadata = mkListener "loadedmetadata"
 
 onLoadstart :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onLoadstart = PListener "loadstart"
+onLoadstart = mkListener "loadstart"
 
 onMessage :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onMessage = PListener "message"
+onMessage = mkListener "message"
 
 onMousedown :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onMousedown = PListener "mousedown"
+onMousedown = mkListener "mousedown"
 
 onMouseenter :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onMouseenter = PListener "mouseenter"
+onMouseenter = mkListener "mouseenter"
 
 onMouseleave :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onMouseleave = PListener "mouseleave"
+onMouseleave = mkListener "mouseleave"
 
 onMousemove :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onMousemove = PListener "mousemove"
+onMousemove = mkListener "mousemove"
 
 onMouseover :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onMouseover = PListener "mouseover"
+onMouseover = mkListener "mouseover"
 
 onMouseout :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onMouseout = PListener "mouseout"
+onMouseout = mkListener "mouseout"
 
 onMouseup :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onMouseup = PListener "mouseup"
+onMouseup = mkListener "mouseup"
 
 onMousewheel :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onMousewheel = PListener "mousewheel"
+onMousewheel = mkListener "mousewheel"
 
 onOffline :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onOffline = PListener "offline"
+onOffline = mkListener "offline"
 
 onOnline :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onOnline = PListener "online"
+onOnline = mkListener "online"
 
 onOpen :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onOpen = PListener "open"
+onOpen = mkListener "open"
 
 onPagehide :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onPagehide = PListener "pagehide"
+onPagehide = mkListener "pagehide"
 
 onPageshow :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onPageshow = PListener "pageshow"
+onPageshow = mkListener "pageshow"
 
 onPaste :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onPaste = PListener "paste"
+onPaste = mkListener "paste"
 
 onPause :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onPause = PListener "pause"
+onPause = mkListener "pause"
 
 onPlay :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onPlay = PListener "play"
+onPlay = mkListener "play"
 
 onPlaying :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onPlaying = PListener "playing"
+onPlaying = mkListener "playing"
 
 onPopstate :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onPopstate = PListener "popstate"
+onPopstate = mkListener "popstate"
 
 onProgress :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onProgress = PListener "progress"
+onProgress = mkListener "progress"
 
 onRatechange :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onRatechange = PListener "ratechange"
+onRatechange = mkListener "ratechange"
 
 onResize :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onResize = PListener "resize"
+onResize = mkListener "resize"
 
 onReset :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onReset = PListener "reset"
+onReset = mkListener "reset"
 
 onScroll :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onScroll = PListener "scroll"
+onScroll = mkListener "scroll"
 
 onSearch :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onSearch = PListener "search"
+onSearch = mkListener "search"
 
 onSeeked :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onSeeked = PListener "seeked"
+onSeeked = mkListener "seeked"
 
 onSeeking :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onSeeking = PListener "seeking"
+onSeeking = mkListener "seeking"
 
 onSelect :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onSelect = PListener "select"
+onSelect = mkListener "select"
 
 onShow :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onShow = PListener "show"
+onShow = mkListener "show"
 
 onStalled :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onStalled = PListener "stalled"
+onStalled = mkListener "stalled"
 
 onStorage :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onStorage = PListener "storage"
+onStorage = mkListener "storage"
 
 onSubmit :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onSubmit = PListener "submit"
+onSubmit = mkListener "submit"
 
 onSuspend :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onSuspend = PListener "suspend"
+onSuspend = mkListener "suspend"
 
 onTimeupdate :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onTimeupdate = PListener "timeupdate"
+onTimeupdate = mkListener "timeupdate"
 
 onToggle :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onToggle = PListener "toggle"
+onToggle = mkListener "toggle"
 
 onTouchcancel :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onTouchcancel = PListener "touchcancel"
+onTouchcancel = mkListener "touchcancel"
 
 onTouchend :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onTouchend = PListener "touchend"
+onTouchend = mkListener "touchend"
 
 onTouchmove :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onTouchmove = PListener "touchmove"
+onTouchmove = mkListener "touchmove"
 
 onTouchstart :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onTouchstart = PListener "touchstart"
+onTouchstart = mkListener "touchstart"
 
 onTransitionend :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onTransitionend = PListener "transitionend"
+onTransitionend = mkListener "transitionend"
 
 onUnload :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onUnload = PListener "unload"
+onUnload = mkListener "unload"
 
 onVolumechange :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onVolumechange = PListener "volumechange"
+onVolumechange = mkListener "volumechange"
 
 onWaiting :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onWaiting = PListener "waiting"
+onWaiting = mkListener "waiting"
 
 onWheel :: forall m s. (DOMEvent -> Mation m s) -> Prop m s
-onWheel = PListener "wheel"
+onWheel = mkListener "wheel"
