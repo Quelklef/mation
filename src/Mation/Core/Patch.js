@@ -14,9 +14,10 @@ function makeAnew(html) {
     html
       (node => node)
       (html => {
-        const root = document.createElement('html');
+        const root = document.createElement('div');
         root.innerHTML = html;
-        return root.childNodes[0];
+        root.style.display = 'contents';
+        return root;
       })
       (text => document.createTextNode(text))
       (info => {

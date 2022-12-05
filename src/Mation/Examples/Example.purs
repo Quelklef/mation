@@ -67,13 +67,16 @@ renderTextbox :: Textbox -> E.Html' Textbox
 renderTextbox str =
   E.div
   []
-  [ E.input
-    [ P.type_ "text"
-    , P.value str
-    , P.onInput' \val -> M.mkPure (const val)
+  [ E.p
+    []
+    [ E.input
+      [ P.type_ "text"
+      , P.value str
+      , P.onInput' \val -> M.mkPure (const val)
+      ]
     ]
-  , E.text " "
-  , E.text str
+  , E.p [] [ E.text "As text: ", E.text str ]
+  , E.p [] [ E.text "As html: ", E.rawHtml str ]
   ]
 
 
@@ -87,12 +90,13 @@ render :: Model -> E.Html' Model
 render model =
   E.div
   []
-  [ M.embed _counter1 (renderCounter model.counter1)
+  [ E.hr []
+  , M.embed _counter1 (renderCounter model.counter1)
   , E.br []
   , M.embed _counter2 (renderCounter model.counter2)
-  , E.br []
+  , E.hr []
   , M.embed _textbox (renderTextbox model.textbox)
-  , E.br []
+  , E.hr []
   , E.div
     [ P.style' [ S.fontSize "0.35em" ] ]
     [ flip foldMap (range 1 10) \n ->

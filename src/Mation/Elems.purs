@@ -5,9 +5,13 @@ import Mation.Gen.Tags as X
 
 import Effect (Effect)
 
-import Mation.Core.Html (Html (..), mkText)
+import Mation.Core.Html (Html (..))
+import Mation.Core.Html as Html
 
 type Html' s = Html Effect s
 
 text :: forall m s. String -> Html m s
-text = mkText
+text = Html.mkText
+
+rawHtml :: forall m s. String -> Html m s
+rawHtml = Html.mkRawHtml
