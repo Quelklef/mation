@@ -25,8 +25,7 @@ runMation :: forall m s. Mation m s -> ((s -> s) -> Effect Unit) -> m Unit
 runMation (Mation f) step = f (step >>> liftEffect)
 
 
--- FIXME: I think @Lens'@ can be weakened to @Setter'@
-embed :: forall m large small. Lens' large small -> Mation m small -> Mation m large
+embed :: forall m large small. Setter' large small -> Mation m small -> Mation m large
 embed lens (Mation f) =
   Mation \apply -> f \endo -> apply (lens %~ endo)
 
