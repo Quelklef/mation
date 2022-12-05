@@ -9,6 +9,7 @@ import Mation.Assoc as Assoc
 
 
 foreign import data DOMNode :: Type
+foreign import data DOMEvent :: Type
 
 -- | Virtual DOM type
 data Html m s
@@ -25,7 +26,7 @@ data Html m s
   | HVirtual
       { tag :: String
       , attrs :: Assoc String String
-      , listeners :: Assoc String (Mation m s)
+      , listeners :: Assoc String (DOMEvent -> Mation m s)
           -- ^
           -- Knowledge of the listeners is needed here so that @embed@
           -- can be implemented
@@ -45,7 +46,7 @@ embed lens = case _ of
   HText text -> HText text
   HVirtual { tag, attrs, listeners, fixup, children } ->
     HVirtual { tag, attrs, fixup
-             , listeners: map (Mation.embed lens) listeners
+             , listeners: map (map (Mation.embed lens)) listeners
              , children: map (embed lens) children
              }
 
@@ -56,7 +57,7 @@ newtype Html_f = Html_f (
     -> (String -> r)
     -> ({ tag :: String
         , attrs :: Array { name :: String, value :: String }
-        , listeners :: Array { name :: String, handler :: Effect Unit }
+        , listeners :: Array { name :: String, handler :: DOMEvent -> Effect Unit }
         , fixup :: DOMNode -> Effect Unit
         , children :: Array Html_f
         } -> r)
@@ -72,7 +73,7 @@ to_f toEff html = Html_f \hembed htext hvirtual ->
       hvirtual
         { tag
         , attrs: attrs # Assoc.toArray # map \(name /\ value) -> { name, value }
-        , listeners: listeners # Assoc.toArray # map \(name /\ mation) -> { name, handler: toEff mation }
+        , listeners: listeners # Assoc.toArray # map \(name /\ handler) -> { name, handler: map toEff handler }
         , fixup
         , children: to_f toEff <$> children
         }
@@ -158,7 +159,7 @@ data Prop m s
   = PPair String String
 
     -- | Event listener
-  | PListener String (Mation m s)
+  | PListener String (DOMEvent -> Mation m s)
 
     -- |
     -- Fixup function
@@ -172,7 +173,7 @@ data Prop m s
 att :: forall m s. String -> String -> Prop m s
 att = PPair
 
-lis :: forall m s. String -> Mation m s -> Prop m s
+lis :: forall m s. String -> (DOMEvent -> Mation m s) -> Prop m s
 lis = PListener
 
 

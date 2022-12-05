@@ -6,3 +6,8 @@ eff => () => {
   const cancel = () => clearInterval(id);
   return { cancel };
 };
+
+export const getValue =
+ev => {
+  return ev.target.value;
+};

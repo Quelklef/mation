@@ -14,6 +14,9 @@ mkCont = Mation
 mkPure :: forall m s. MonadEffect m => (s -> s) -> Mation m s
 mkPure endo = Mation \step -> liftEffect (step endo)
 
+mkNoop :: forall m s. Applicative m => Mation m s
+mkNoop = Mation \_step -> pure unit
+
 mkEff :: forall m s. MonadEffect m => m (s -> s) -> Mation m s
 mkEff getEndo = Mation \step -> getEndo >>= \endo -> liftEffect (step endo)
 

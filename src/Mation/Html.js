@@ -24,9 +24,10 @@ function makeAnew(html) {
         }
 
         node._listeners = {};
-        for (const { name, handler } of listeners) {
-          node._listeners[name] = handler;
-          node.addEventListener(name, handler);
+        for (const listener of listeners) {
+          const handler = ev => listener.handler(ev)();
+          node._listeners[listener.name] = handler;
+          node.addEventListener(listener.name, handler);
         }
 
         for (const child of children) {
@@ -104,10 +105,11 @@ function patchListeners(root, oldListeners, newListeners) {
   }
 
   // Add new listeners
-  const map = root._listeners = {};
+  root._listeners = {};
   for (const listener of newListeners) {
-    root.addEventListener(listener.name, listener.handler);
-    map[listener.name] = listener.handler;
+    const handler = ev => listener.handler(ev)();
+    root.addEventListener(listener.name, handler);
+    root._listeners[listener.name] = handler;
   }
 }
 
