@@ -86,7 +86,8 @@ function * events() {
   yield '';
   yield 'import Prelude';
   yield 'import Mation.Core.Mation (Mation)';
-  yield 'import Mation.Core.Html (DOMEvent, Prop, mkListener)';
+  yield 'import Mation.Core.Dom (DomEvent)';
+  yield 'import Mation.Core.Html (Prop, mkListener)';
   yield '';
   yield '';
 
@@ -94,7 +95,7 @@ function * events() {
   for (const event of events) {
     const onName = 'on' + capitalize(toIdent(event.name));
 
-    yield `${onName} :: forall m s. (DOMEvent -> Mation m s) -> Prop m s`;
+    yield `${onName} :: forall m s. (DomEvent -> Mation m s) -> Prop m s`;
     yield `${onName} = mkListener "${event.name}"`;
     yield '';
   }

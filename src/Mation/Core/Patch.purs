@@ -2,22 +2,22 @@ module Mation.Core.Patch where
 
 import Mation.Core.Prelude
 
-import Mation.Core.Util.Assoc (Assoc)
 import Mation.Core.Util.Assoc as Assoc
 import Mation.Core.Mation (Mation)
-import Mation.Core.Html (Html, Html1 (..), DOMNode, DOMEvent)
+import Mation.Core.Html (Html1 (..))
+import Mation.Core.Dom (DomNode, DomEvent)
 
 
 -- | Foreign interface Html type
 newtype Html1_f = Html1_f (
     forall r.
-       (DOMNode -> r)
+       (DomNode -> r)
     -> (String -> r)
     -> (String -> r)
     -> ({ tag :: String
         , attrs :: Array { name :: String, value :: String }
-        , listeners :: Array { name :: String, handler :: DOMEvent -> Effect Unit }
-        , fixup :: DOMNode -> Effect Unit
+        , listeners :: Array { name :: String, handler :: DomEvent -> Effect Unit }
+        , fixup :: DomNode -> Effect Unit
         , children :: Array Html1_f
         } -> r)
     -> r
@@ -62,7 +62,7 @@ patchOnto :: forall m s.
   , old :: Maybe (Html1 m s)
   , new :: Html1 m s
   }
-  -> DOMNode -> Effect Unit
+  -> DomNode -> Effect Unit
 patchOnto { toEff, old, new } =
   patch_f
     caseMaybe
@@ -83,4 +83,4 @@ foreign import patch_f ::
   -> { mOldHtml :: Maybe Html1_f
      , newHtml :: Html1_f
      }
-  -> DOMNode -> Effect Unit
+  -> DomNode -> Effect Unit

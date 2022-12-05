@@ -4,6 +4,7 @@ import Prelude as X
 
 import Effect (Effect) as X
 import Effect.Class (class MonadEffect, liftEffect) as X
+import Foreign (Foreign) as X
 import Type.Proxy (Proxy (..)) as X
 import Prim.Coerce (class Coercible) as X
 import Safe.Coerce (coerce) as X

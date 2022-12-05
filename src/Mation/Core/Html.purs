@@ -6,16 +6,14 @@ import Mation.Core.Mation (Mation)
 import Mation.Core.Mation as Mation
 import Mation.Core.Util.Assoc (Assoc)
 import Mation.Core.Util.Assoc as Assoc
+import Mation.Core.Dom (DomNode, DomEvent)
 import Mation.Core.Many (class Many, float)
 
 
-foreign import data DOMNode :: Type
-foreign import data DOMEvent :: Type
-
 data Html1 m s
 
-    -- | Embed an existing DOMNode directly into the virtual dom
-  = HRawNode DOMNode
+    -- | Embed an existing DomNode directly into the virtual dom
+  = HRawNode DomNode
 
     -- | Raw HTML
   | HRawHtml String
@@ -27,13 +25,13 @@ data Html1 m s
   | HTag
       { tag :: String
       , attrs :: Assoc String String
-      , listeners :: Assoc String (DOMEvent -> Mation m s)
+      , listeners :: Assoc String (DomEvent -> Mation m s)
           -- ^
           -- Knowledge of the listeners is needed here so that @embed@
           -- can be implemented
           --
           -- Otherwise we could put listeners in @fixup@
-      , fixup :: DOMNode -> Effect Unit
+      , fixup :: DomNode -> Effect Unit
       , children :: Array (Html1 m s)
       }
 
@@ -53,7 +51,7 @@ derive newtype instance Semigroup (Html m s)
 derive newtype instance Monoid (Html m s)
 
 
-mkRawNode :: forall m s. DOMNode -> Html m s
+mkRawNode :: forall m s. DomNode -> Html m s
 mkRawNode node = Html [ HRawNode node ]
 
 mkRawHtml :: forall m s. String -> Html m s
@@ -65,8 +63,8 @@ mkText text = Html [ HText text ]
 mkTag :: forall m s.
   { tag :: String
   , attrs :: Assoc String String
-  , listeners :: Assoc String (DOMEvent -> Mation m s)
-  , fixup :: DOMNode -> Effect Unit
+  , listeners :: Assoc String (DomEvent -> Mation m s)
+  , fixup :: DomNode -> Effect Unit
   , children :: Array (Html m s)
   }
   -> Html m s
@@ -104,7 +102,7 @@ data Prop1 m s
   = PPair String String
 
     -- | Event listener
-  | PListener String (DOMEvent -> Mation m s)
+  | PListener String (DomEvent -> Mation m s)
 
     -- |
     -- Fixup function
@@ -112,7 +110,7 @@ data Prop1 m s
     -- This is called on the DOM Node after it is mounted. This variant
     -- should be used with extreme caution as it gives the programmer enough
     -- power to circumvent framework safeties.
-  | PFixup (DOMNode -> Effect Unit)
+  | PFixup (DomNode -> Effect Unit)
       -- ^ FIXME: 'Effect' or 'm' ?
 
     -- Has no effect
@@ -137,10 +135,10 @@ derive newtype instance Monoid (Prop m s)
 mkPair :: forall m s. String -> String -> Prop m s
 mkPair k v = Prop [ PPair k v ]
 
-mkListener :: forall m s. String -> (DOMEvent -> Mation m s) -> Prop m s
+mkListener :: forall m s. String -> (DomEvent -> Mation m s) -> Prop m s
 mkListener k v = Prop [ PListener k v ]
 
-mkFixup :: forall m s. (DOMNode -> Effect Unit) -> Prop m s
+mkFixup :: forall m s. (DomNode -> Effect Unit) -> Prop m s
 mkFixup f = Prop [ PFixup f ]
 
 mkNoop :: forall m s. Prop m s

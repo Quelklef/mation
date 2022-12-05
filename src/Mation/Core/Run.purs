@@ -8,7 +8,8 @@ import Effect.Exception (throw)
 
 import Mation.Core.Mation (Mation)
 import Mation.Core.Mation as Mation
-import Mation.Core.Html (Html (..), Html1, DOMNode)
+import Mation.Core.Html (Html (..), Html1)
+import Mation.Core.Dom (DomNode)
 import Mation.Core.Patch as Patch
 
 -- | Simplified version of @runApp@
@@ -17,7 +18,7 @@ runApp' :: forall s.
       -- ^ Initial model value (ie state)
   , render :: s -> Html Effect s
       -- ^ How to display the model
-  , root :: DOMNode
+  , root :: DomNode
       -- ^
       -- Where should the application be mounted?
       --
@@ -30,15 +31,12 @@ runApp' args =
   runApp
     { initial: args.initial
     , render: args.render
-    , root: pure args.root
+    , root: (pure :: DomNode -> Effect DomNode) args.root
     , kickoff: Mation.mkNoop
     , listen: \_ -> pure unit
     , toEffect: identity
     }
 
-
--- FIXME: parameterize over DOMNode type, because I don't want to have to choose
---        a dom FFI library
 
 -- | Run an application
 runApp :: forall m s. MonadEffect m =>
@@ -53,7 +51,7 @@ runApp :: forall m s. MonadEffect m =>
       -- ^
       -- How to display the model value
 
-  , root :: Effect DOMNode
+  , root :: Effect DomNode
       -- ^
       -- Where should the application be mounted?
       --
@@ -150,11 +148,11 @@ runApp args = do
 -- Used to mount an application on <body>
 --
 -- Application will be rendered as a child of <body>
-foreign import useBody :: Effect DOMNode
+foreign import useBody :: Effect DomNode
 
 -- |
 --
 -- Used to mount an application on <html>
 --
 -- Application will replace <html> each render
-foreign import useHtml :: Effect DOMNode
+foreign import useHtml :: Effect DomNode
