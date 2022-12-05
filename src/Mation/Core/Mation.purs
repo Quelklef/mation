@@ -1,6 +1,6 @@
-module Mation.Mation where
+module Mation.Core.Mation where
 
-import Mation.Prelude
+import Mation.Core.Prelude
 
 
 newtype Mation m s = Mation (Step s -> m Unit)
@@ -20,8 +20,10 @@ mkNoop = Mation \_step -> pure unit
 mkEff :: forall m s. MonadEffect m => m (s -> s) -> Mation m s
 mkEff getEndo = Mation \step -> getEndo >>= \endo -> liftEffect (step endo)
 
+
 runMation :: forall m s. Mation m s -> ((s -> s) -> Effect Unit) -> m Unit
 runMation (Mation f) step = f (step >>> liftEffect)
+
 
 -- FIXME: I think @Lens'@ can be weakened to @Setter'@
 embed :: forall m large small. Lens' large small -> Mation m small -> Mation m large

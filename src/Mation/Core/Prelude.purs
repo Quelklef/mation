@@ -1,4 +1,4 @@
-module Mation.Prelude (module X) where
+module Mation.Core.Prelude (module X) where
 
 import Prelude as X
 

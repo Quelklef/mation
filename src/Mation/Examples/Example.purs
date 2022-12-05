@@ -1,8 +1,10 @@
 module Mation.Example where
 
-import Mation.Prelude
+import Mation.Core.Prelude
 
 import Mation as M
+import Mation.Elems as E
+import Mation.Props as P
 
 foreign import repeatedly :: Effect Unit -> Effect { cancel :: Effect Unit }
 
@@ -10,34 +12,34 @@ type Counter = { count :: Int, streamState :: StreamState }
 
 data StreamState = NotStreaming | Streaming { cancel :: Effect Unit }
 
-renderCounter :: Counter -> M.Html' Counter
+renderCounter :: Counter -> E.Html' Counter
 renderCounter model =
-  M.elt "div"
+  E.div
   [ ]
-  [ M.txt (show model.count)
-  , M.txt " "
-  , M.elt "button"
-    [ M.lis "click" \_ -> M.mkPure (_count %~ (_ + 1))
+  [ E.text (show model.count)
+  , E.text " "
+  , E.button
+    [ P.onClick \_ -> M.mkPure (_count %~ (_ + 1))
     ]
-    [ M.txt "increment once"
+    [ E.text "increment once"
     ]
-  , M.txt " "
+  , E.text " "
   , case model.streamState of
       NotStreaming ->
-        M.elt "button"
-        [ M.lis "click" \_ ->
+        E.button
+        [ P.onClick \_ ->
             M.mkCont \step -> do
               { cancel } <- repeatedly (step $ _count %~ (_ + 1))
               step (_streamState .~ Streaming { cancel })
         ]
-        [ M.txt "start streaming"
+        [ E.text "start streaming"
         ]
       Streaming { cancel } ->
-        M.elt "button"
-        [ M.lis "click" \_ ->
+        E.button
+        [ P.onClick \_ ->
             M.mkEff (cancel $> (_streamState .~ NotStreaming))
         ]
-        [ M.txt "stop streaming"
+        [ E.text "stop streaming"
         ]
   ]
 
@@ -49,18 +51,17 @@ renderCounter model =
 
 type Textbox = String
 
-renderTextbox :: Textbox -> M.Html' Textbox
+renderTextbox :: Textbox -> E.Html' Textbox
 renderTextbox str =
-  M.elt "div"
+  E.div
   []
-  [ M.elt "input"
-    [ M.att "type" "text"
-    , M.att "value" str
-    , M.lis "input" \ev -> M.mkPure (const $ getValue ev)
+  [ E.input
+    [ P.type_ "text"
+    , P.value str
+    , P.onInput \ev -> M.mkPure (const $ getValue ev)
     ]
-    []
-  , M.txt " "
-  , M.txt str
+  , E.text " "
+  , E.text str
   ]
 
 foreign import getValue :: M.DOMEvent -> String
@@ -72,14 +73,14 @@ type Model =
   , textbox :: String
   }
 
-render :: Model -> M.Html' Model
+render :: Model -> E.Html' Model
 render model =
-  M.elt "div"
+  E.div
   []
   [ M.embed _counter1 (renderCounter model.counter1)
-  , M.elt "br" [] []
+  , E.br []
   , M.embed _counter2 (renderCounter model.counter2)
-  , M.elt "br" [] []
+  , E.br []
   , M.embed _textbox (renderTextbox model.textbox)
   ]
 

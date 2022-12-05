@@ -1,18 +1,17 @@
-module Mation.Run where
+module Mation.Core.Run where
 
-import Mation.Prelude
+import Mation.Core.Prelude
 
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
 
-import Mation.Mation (Mation)
-import Mation.Mation as Mation
-import Mation.Html (Html, DOMNode)
-import Mation.Html as Html
-
+import Mation.Core.Mation (Mation)
+import Mation.Core.Mation as Mation
+import Mation.Core.Html (Html, DOMNode)
+import Mation.Core.Html as Html
+import Mation.Core.Patch as Patch
 
 foreign import useBody :: Effect DOMNode
-
 
 -- FIXME: parameterize over DOMNode type, because I don't want to have to choose
 --        a dom FFI library
@@ -50,7 +49,7 @@ runApp args = do
   model /\ html <- do
     let model = args.initial
     let html = args.render model
-    let patch = Html.patchOnto { toEff, old: Nothing, new: html }
+    let patch = Patch.patchOnto { toEff, old: Nothing, new: html }
     args.root >>= patch
     pure $ model /\ html
 
@@ -65,7 +64,7 @@ runApp args = do
       let newModel = endo oldModel
       let newHtml = args.render newModel
       Ref.write (newModel /\ newHtml) ref
-      let patch = Html.patchOnto { toEff, old: Just oldHtml, new: newHtml }
+      let patch = Patch.patchOnto { toEff, old: Just oldHtml, new: newHtml }
       args.root >>= patch
 
   Ref.write step stepRef

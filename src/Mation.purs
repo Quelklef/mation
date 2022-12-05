@@ -1,5 +1,5 @@
 module Mation (module X) where
 
-import Mation.Html (Html, Html', DOMNode, DOMEvent, embed, elt, att, lis, txt) as X
-import Mation.Mation (Mation, mkCont, mkEff, mkPure, mkNoop) as X
-import Mation.Run (runApp, useBody) as X
+import Mation.Core.Html (Html, Html', DOMNode, DOMEvent, embed) as X
+import Mation.Core.Mation (Mation, mkCont, mkEff, mkPure, mkNoop) as X
+import Mation.Core.Run (runApp, useBody) as X

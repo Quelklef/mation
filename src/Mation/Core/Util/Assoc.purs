@@ -1,6 +1,6 @@
-module Mation.Assoc where
+module Mation.Core.Util.Assoc where
 
-import Mation.Prelude
+import Mation.Core.Prelude
 
 
 newtype Assoc k v = Assoc (Array (k /\ v))
