@@ -344,3 +344,4 @@ video props children = mkElement "video" props children
 
 wbr :: forall m s. Array (Prop m s) -> Html m s
 wbr props = mkElement "wbr" props []
+

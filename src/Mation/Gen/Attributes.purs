@@ -10,8 +10,8 @@ abbr = mkPair "abbr"
 accept :: forall m s. String -> Prop m s
 accept = mkPair "accept"
 
-acceptcharset :: forall m s. String -> Prop m s
-acceptcharset = mkPair "accept-charset"
+acceptCharset :: forall m s. String -> Prop m s
+acceptCharset = mkPair "accept-charset"
 
 accesskey :: forall m s. String -> Prop m s
 accesskey = mkPair "accesskey"
@@ -160,8 +160,8 @@ href = mkPair "href"
 hreflang :: forall m s. String -> Prop m s
 hreflang = mkPair "hreflang"
 
-httpequiv :: forall m s. String -> Prop m s
-httpequiv = mkPair "http-equiv"
+httpEquiv :: forall m s. String -> Prop m s
+httpEquiv = mkPair "http-equiv"
 
 id :: forall m s. String -> Prop m s
 id = mkPair "id"
@@ -381,3 +381,4 @@ width = mkPair "width"
 
 wrap :: forall m s. String -> Prop m s
 wrap = mkPair "wrap"
+

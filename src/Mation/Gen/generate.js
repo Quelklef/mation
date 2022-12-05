@@ -2,18 +2,34 @@ const fs = require('fs');
 const plib = require('path');
 
 function main() {
-  fs.writeFileSync(plib.resolve(__dirname, 'Tags.purs'), [...tags()].join('\n'));
-  fs.writeFileSync(plib.resolve(__dirname, 'Attributes.purs'), [...attributes()].join('\n'));
-  fs.writeFileSync(plib.resolve(__dirname, 'Events.purs'), [...events()].join('\n'));
+  const emit = (name, f) => {
+    fs.writeFileSync(
+      plib.resolve(__dirname, name),
+      [...f()].join('\n') + '\n'
+    );
+  }
+
+  emit('Tags.purs', tags)
+  emit('Attributes.purs', attributes)
+  emit('Events.purs', events)
+  emit('Styles.purs', styles)
 }
 
 
 // Convert a string to a similar purescript identifier
 function toIdent(str) {
-  const psKeywords = new Set(['class', 'data', 'type']);
-
   let ident = str;
-  ident = ident.replace(/-/g, '');
+
+  // kebab-case -> camelCase
+  ident = (
+    ident
+    .split('-')
+    .map((part, idx) => idx === 0 ? part : part.slice(0, 1).toUpperCase() + part.slice(1))
+    .join('')
+  );
+
+  // Ensure not a Purescript identifier
+  const psKeywords = new Set(['class', 'data', 'type']);
   if (psKeywords.has(ident))
     ident += '_';
 
@@ -85,6 +101,24 @@ function * events() {
 
   function capitalize(str) {
     return str.slice(0, 1).toUpperCase() + str.slice(1);
+  }
+}
+
+function * styles() {
+  yield 'module Mation.Gen.Styles where';
+  yield '';
+  yield 'import Prelude';
+  yield 'import Mation.Core.Style (Style, mkStyle)';
+  yield '';
+  yield '';
+
+  const { styles } = require('./data/styles.js');
+  for (const style of styles) {
+    const ident = toIdent(style.name);
+
+    yield `${ident} :: String -> Style`;
+    yield `${ident} = mkStyle "${style.name}"`
+    yield '';
   }
 }
 

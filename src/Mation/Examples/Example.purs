@@ -7,6 +7,7 @@ import Data.Array (range)
 import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
+import Mation.Styles as S
 
 foreign import repeatedly :: Effect Unit -> Effect { cancel :: Effect Unit }
 
@@ -55,8 +56,8 @@ renderCounter model =
 
   buttonStyle :: forall m s. P.Prop m s
   buttonStyle = P.style'
-    [ "border-radius" /\ "0"
-    , "border-color" /\ "red"
+    [ S.borderRadius "0"
+    , S.borderColor "red"
     ]
 
 
@@ -93,7 +94,7 @@ render model =
   , M.embed _textbox (renderTextbox model.textbox)
   , E.br []
   , E.div
-    [ P.style' [ "font-size" /\ "0.35em" ] ]
+    [ P.style' [ S.fontSize "0.35em" ] ]
     [ flip foldMap (range 1 10) \n ->
         E.p [] [ E.text $ show n <> ": monidal `Html` is great!" ]
     ]
