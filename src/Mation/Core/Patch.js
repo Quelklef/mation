@@ -13,6 +13,11 @@ function makeAnew(html) {
   return (
     html
       (node => node)
+      (html => {
+        const root = document.createElement('html');
+        root.innerHTML = html;
+        return root.childNodes[0];
+      })
       (text => document.createTextNode(text))
       (info => {
         const { tag, attrs, listeners, fixup, children } = info;
@@ -44,22 +49,21 @@ function makeAnew(html) {
 
 function patch(root, oldHtml, newHtml) {
 
-  newHtml(embedCase)(textCase)(virtualCase);
+  (
+    newHtml
+      (node => root.replaceWith(node))
+      (html => root.innerHTML = html)
+      (text => root.replaceWith(text))
+      (tagCase)
+  );
 
-  function embedCase(node) {
-    root.replaceWith(node);
-  }
-
-  function textCase(text) {
-    root.replaceWith(text);
-  }
-
-  function virtualCase(newInfo) {
+  function tagCase(newInfo) {
 
     // If tag type has changed, replace root
     const shouldReplace = (
       oldHtml
         (node => true)
+        (html => true)
         (text => true)
         (oldInfo => oldInfo.tag !== newInfo.tag)
     );
@@ -68,7 +72,13 @@ function patch(root, oldHtml, newHtml) {
     }
 
     const emptyInfo = { tag: newInfo.tag, attrs: [], listeners: [], children: [], fixup: () => {} };
-    const oldInfo = oldHtml(node => emptyInfo)(text => emptyInfo)(oldInfo => oldInfo);
+    const oldInfo = (
+      oldHtml
+        (node => emptyInfo)
+        (html => emptyInfo)
+        (text => emptyInfo)
+        (oldInfo => oldInfo)
+    );
 
     patchAttrs(root, oldInfo.attrs, newInfo.attrs);
     patchListeners(root, oldInfo.listeners, newInfo.listeners);

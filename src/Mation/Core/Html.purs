@@ -15,15 +15,16 @@ foreign import data DOMEvent :: Type
 data Html m s
 
     -- | Embed an existing DOMNode directly into the virtual dom
-    -- FIXME: rename this? and perhaps HText? they're both "embeds" in a sense ...
-  = HEmbed DOMNode
+  = HRawNode DOMNode
+
+    -- | Raw HTML
+  | HRawHtml String
 
     -- | Text node
   | HText String
 
     -- | Virtual node
-    -- FIXME: rename this
-  | HVirtual
+  | HTag
       { tag :: String
       , attrs :: Assoc String String
       , listeners :: Assoc String (DOMEvent -> Mation m s)
@@ -36,20 +37,20 @@ data Html m s
       , children :: Array (Html m s)
       }
 
--- | Simple Html type
-type Html' s = Html Effect s
 
 -- | Embed one @Html@ within another
 -- FIXME: rename? probably -- conflicts with <embed>
 embed :: forall m large small. Lens' large small -> Html m small -> Html m large
 embed lens = case _ of
-  HEmbed node -> HEmbed node
+  HRawNode node -> HRawNode node
+  HRawHtml html -> HRawHtml html
   HText text -> HText text
-  HVirtual { tag, attrs, listeners, fixup, children } ->
-    HVirtual { tag, attrs, fixup
-             , listeners: map (map (Mation.embed lens)) listeners
-             , children: map (embed lens) children
-             }
+  HTag { tag, attrs, listeners, fixup, children } ->
+    HTag
+      { tag, attrs, fixup
+      , listeners: map (map (Mation.embed lens)) listeners
+      , children: map (embed lens) children
+      }
 
 
 
@@ -83,7 +84,7 @@ data Prop m s
 -- | Create an element
 mkElement :: forall m s. String -> Array (Prop m s) -> Array (Html m s) -> Html m s
 mkElement tag props children =
-  HVirtual { tag, attrs, listeners, fixup, children }
+  HTag { tag, attrs, listeners, fixup, children }
 
   where
 

@@ -13,6 +13,7 @@ newtype Html_f = Html_f (
     forall r.
        (DOMNode -> r)
     -> (String -> r)
+    -> (String -> r)
     -> ({ tag :: String
         , attrs :: Array { name :: String, value :: String }
         , listeners :: Array { name :: String, handler :: DOMEvent -> Effect Unit }
@@ -23,12 +24,13 @@ newtype Html_f = Html_f (
   )
 
 to_f :: forall m s. (Mation m s -> Effect Unit) -> Html m s -> Html_f
-to_f toEff html = Html_f \hembed htext hvirtual ->
+to_f toEff html = Html_f \hRawNode hRawHtml hText hTag ->
   case html of
-    HEmbed node -> hembed node
-    HText text -> htext text
-    HVirtual { tag, attrs, listeners, fixup, children } ->
-      hvirtual
+    HRawNode node -> hRawNode node
+    HRawHtml html -> hRawHtml html
+    HText text -> hText text
+    HTag { tag, attrs, listeners, fixup, children } ->
+      hTag
         { tag
         , attrs: attrs # Assoc.toArray # map \(name /\ value) -> { name, value }
         , listeners: listeners # Assoc.toArray # map \(name /\ handler) -> { name, handler: map toEff handler }
