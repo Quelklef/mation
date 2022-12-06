@@ -307,6 +307,9 @@ fontVariant = mkStyle "font-variant"
 fontWeight :: String -> Style
 fontWeight = mkStyle "font-weight"
 
+gap :: String -> Style
+gap = mkStyle "gap"
+
 grid :: String -> Style
 grid = mkStyle "grid"
 

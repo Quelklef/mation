@@ -7,14 +7,16 @@ import Mation.Elems as E
 import Mation.Styles as S
 import Mation.Props as P
 
-import Mation.Examples.Testing as Testing
+import Mation.Examples.Counter as Counter
+import Mation.Examples.Components as Components
 import Mation.Examples.LensProduct as LensProduct
+import Mation.Examples.TestingZone as TestingZone
 
 
-data Page = Testing | LensProduct
+data Page = Counter | Components | LensProduct | TestingZone
 
 pages :: Array Page
-pages = [ Testing, LensProduct ]
+pages = [ Counter, Components, LensProduct, TestingZone ]
   -- Don't want to add a whole dep for Enum for a testing module
 
 derive instance Generic Page _
@@ -24,14 +26,18 @@ instance Show Page where show x = genericShow x
 
 type Model =
   { page :: Page
-  , testing :: Testing.Model
+  , counter :: Counter.Model
+  , components :: Components.Model
   , lensProduct :: LensProduct.Model
+  , testing :: TestingZone.Model
   }
 
 initial :: Model
 initial =
-  { page: Testing
-  , testing: Testing.initial
+  { page: Counter
+  , counter: Counter.initial
+  , components: Components.initial
+  , testing: TestingZone.initial
   , lensProduct: LensProduct.initial
   }
 
@@ -41,36 +47,50 @@ render model =
   E.div
   []
   [ navBar
-  , case model.page of
-      Testing -> E.enroot _testing (Testing.render model.testing)
-      LensProduct -> E.enroot _lensProduct (LensProduct.render model.lensProduct)
+  , E.div
+    [ P.style' [ S.padding "1em" ] ]
+    [ case model.page of
+        Counter -> E.enroot _counter (Counter.render model.counter)
+        Components -> E.enroot _components (Components.render model.components)
+        TestingZone -> E.enroot _testing (TestingZone.render model.testing)
+        LensProduct -> E.enroot _lensProduct (LensProduct.render model.lensProduct)
+    ]
   ]
 
   where
 
   navBar =
     E.div
-    []
-    [ E.text "Nav: "
-    , intercalate (E.text " ") $ flip map pages \page ->
-        E.span
-        [ P.onClick \_ -> M.mkPure (_page .~ page)
+    [ P.style'
+        [ S.display "flex"
+        , S.gap "1em"
+        , S.alignItems "center"
+        , S.fontFamily "sans-serif"
+        , S.padding "0 2em"
+        , S.backgroundColor "rgb(50, 50, 50)"
+        , S.color "white"
         ]
-        [ let isCurrent = page == model.page in
-          E.span
-          [ P.style'
-            [ S.cursor "pointer"
-            , if isCurrent then S.fontWeight "bold" else mempty
-            ]
+    ]
+    [ E.text "Test cases: "
+    , intercalate (E.text " ") $ flip map pages \page ->
+        let isCurrent = page == model.page in
+        E.span
+        [ P.style'
+          [ S.cursor "pointer"
+          , S.lineHeight "3em"
+          , if isCurrent then S.textDecoration "underline" else mempty
           ]
-          [ E.text (show page)
-          ]
+        , P.onClick \_ -> M.mkPure (_page .~ page)
+        ]
+        [ E.text (show page)
         ]
     ]
 
   _page = prop (Proxy :: Proxy "page")
-  _testing = prop (Proxy :: Proxy "testing")
+  _counter = prop (Proxy :: Proxy "counter")
+  _components = prop (Proxy :: Proxy "components")
   _lensProduct = prop (Proxy :: Proxy "lensProduct")
+  _testing = prop (Proxy :: Proxy "testing")
 
 
 main :: Effect Unit
@@ -80,3 +100,4 @@ main =
     , render
     , root: M.useBody
     }
+

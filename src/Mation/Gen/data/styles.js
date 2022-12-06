@@ -100,6 +100,7 @@ exports.styles = [
   { name: "font-style" },
   { name: "font-variant" },
   { name: "font-weight" },
+  { name: "gap" },
   { name: "grid" },
   { name: "grid-area" },
   { name: "grid-auto-columns" },
