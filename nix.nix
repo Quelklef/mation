@@ -30,24 +30,7 @@ purs-nix =
       }
     ) { inherit system; };
 
-nixed = purs-nix.purs
-  { srcs = [ ./src ];
-    dependencies =
-      with purs-nix.ps-pkgs;
-      [
-        prelude
-        console
-        effect
-        maybe
-        either
-        tuples
-        newtype
-        refs
-        foldable-traversable
-        profunctor-lenses
-        node-fs
-      ];
-  };
+nixed = purs-nix.purs (import ./package.nix purs-nix);
 
 purs-nix-bundle-args = {
   esbuild.format = "iife";
