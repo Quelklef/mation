@@ -42,20 +42,7 @@ purs-nix-bundle-args = {
 
 in {
 
-  deriv = pkgs.stdenv.mkDerivation {
-    src = ./.;
-    name = "mation";
-
-    installPhase = ''
-      mkdir $out
-
-      cp $src/index.html $out/
-      cp ${nixed.modules.Main.bundle purs-nix-bundle-args} $out/main.js
-
-      echo "${pkgs.python3}/bin/python3.8 -m http.server -d \$(dirname \$(readlink -f \$0))" > $out/run.sh
-      chmod +x $out/run.sh
-    '';
-  };
+  deriv = null;
 
   shell = pkgs.mkShell {
     buildInputs = [
@@ -64,10 +51,25 @@ in {
         bundle = purs-nix-bundle-args;
       })
       pkgs.python3
+      pkgs.nodejs
       pkgs.entr
     ];
 
     shellHook = ''
+
+      root=$PWD
+
+      function mation.build {(
+        cd "$root"
+        node ./src/Mation/Gen/generate.js &&
+        purs-nix bundle
+      )}
+
+      function mation.devt {(
+        export -f mation.build
+        find . -name '*.purs' | entr -crs 'mation.build && python3 -m http.server'
+      )}
+
     '';
   };
 
