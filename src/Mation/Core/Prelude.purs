@@ -10,12 +10,13 @@ import Prim.Coerce (class Coercible) as X
 import Safe.Coerce (coerce) as X
 import Data.Generic.Rep (class Generic) as X
 import Data.Show.Generic (genericShow) as X
-import Data.Foldable (class Foldable, foldMap, intercalate) as X
+import Data.Foldable (class Foldable, fold, foldMap, intercalate) as X
 import Data.Unit (Unit, unit) as X
 import Data.Tuple.Nested ((/\), type (/\)) as X
 import Data.Either (Either (..)) as X
 import Data.Maybe (Maybe (..), fromMaybe) as X
 import Data.Map (Map) as X
+import Data.Monoid (power) as X
 import Data.Lens.Lens (Lens') as X
 import Data.Lens.Setter (Setter') as X
 import Data.Lens.Record (prop) as X

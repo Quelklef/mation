@@ -67,7 +67,9 @@ in {
 
       function mation.devt {(
         export -f mation.build
-        find . -name '*.purs' | entr -crs 'mation.build && python3 -m http.server'
+        { find . -name '*.purs';
+          find src -name '*.js';
+        } | entr -crs 'mation.build && python3 -m http.server'
       )}
 
     '';

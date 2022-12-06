@@ -11,12 +11,13 @@ import Mation.Examples.Counter as Counter
 import Mation.Examples.Components as Components
 import Mation.Examples.LensProduct as LensProduct
 import Mation.Examples.TestingZone as TestingZone
+import Mation.Examples.PerfTest as PerfTest
 
 
-data Page = Counter | Components | LensProduct | TestingZone
+data Page = Counter | Components | LensProduct | TestingZone | PerfTest
 
 pages :: Array Page
-pages = [ Counter, Components, LensProduct, TestingZone ]
+pages = [ Counter, Components, LensProduct, TestingZone, PerfTest ]
   -- Don't want to add a whole dep for Enum for a testing module
 
 derive instance Generic Page _
@@ -30,6 +31,7 @@ type Model =
   , components :: Components.Model
   , lensProduct :: LensProduct.Model
   , testing :: TestingZone.Model
+  , perfTest :: PerfTest.Model
   }
 
 initial :: Model
@@ -39,6 +41,7 @@ initial =
   , components: Components.initial
   , testing: TestingZone.initial
   , lensProduct: LensProduct.initial
+  , perfTest: PerfTest.initial
   }
 
 
@@ -54,6 +57,7 @@ render model =
         Components -> E.enroot _components (Components.render model.components)
         TestingZone -> E.enroot _testing (TestingZone.render model.testing)
         LensProduct -> E.enroot _lensProduct (LensProduct.render model.lensProduct)
+        PerfTest -> E.enroot _perfTest (PerfTest.render model.perfTest)
     ]
   ]
 
@@ -91,6 +95,7 @@ render model =
   _components = prop (Proxy :: Proxy "components")
   _lensProduct = prop (Proxy :: Proxy "lensProduct")
   _testing = prop (Proxy :: Proxy "testing")
+  _perfTest = prop (Proxy :: Proxy "perfTest")
 
 
 main :: Effect Unit
