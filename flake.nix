@@ -121,13 +121,6 @@ in {
       moduleloc="$examplesloc/Counter.purs"
       hostloc='localhost:8000'
 
-      xterm=${pkgs.xterm}/bin/xterm
-      terminal=''${TERM:-$xterm}
-
-      vim=${pkgs.vim}/bin/vim
-      editor=''${EDITOR:-$vim}
-      editor=''${VISUAL:-$editor}
-
       original_pwd=$(pwd)
       mkRelative() { echo -n './'; realpath --relative-to="$original_pwd" "$1"; }
 
