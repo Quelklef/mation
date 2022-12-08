@@ -123,6 +123,7 @@ runApp args = do
     html <- renderTo1 model
     let patch = Patch.patchOnto { toEff, old: Nothing, new: html }
     args.root >>= patch
+    args.listen model
     pure $ model /\ html
 
   -- Holds current model & rendered HTML
@@ -138,6 +139,7 @@ runApp args = do
       Ref.write (newModel /\ newHtml) ref
       let patch = Patch.patchOnto { toEff, old: Just oldHtml, new: newHtml }
       args.root >>= patch
+      args.listen newModel
 
   -- Populate the stepRef with the correct value
   Ref.write step stepRef

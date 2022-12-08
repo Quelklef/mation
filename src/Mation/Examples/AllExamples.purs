@@ -10,14 +10,15 @@ import Mation.Props as P
 import Mation.Examples.Counter as Counter
 import Mation.Examples.Components as Components
 import Mation.Examples.LensProduct as LensProduct
+import Mation.Examples.Demo as Demo
 import Mation.Examples.TestingZone as TestingZone
 import Mation.Examples.PerfTest as PerfTest
 
 
-data Page = Counter | Components | LensProduct | TestingZone | PerfTest
+data Page = Counter | Components | LensProduct | Demo | TestingZone | PerfTest
 
 pages :: Array Page
-pages = [ Counter, Components, LensProduct, TestingZone, PerfTest ]
+pages = [ Counter, Components, LensProduct, Demo, TestingZone, PerfTest ]
   -- Don't want to add a whole dep for Enum for a testing module
 
 derive instance Generic Page _
@@ -25,22 +26,49 @@ derive instance Eq Page
 instance Show Page where show x = genericShow x
 
 
+
+syncPageToUrl :: Page -> Effect Unit
+syncPageToUrl = show >>> syncPageToUrl_f
+
+foreign import syncPageToUrl_f :: String -> Effect Unit
+
+
+getPageFromUrl :: Effect (Maybe Page)
+getPageFromUrl = fromString <$> getPageFromUrl_f
+
+  where
+
+  fromString :: String -> Maybe Page
+  fromString = case _ of
+    "Counter" -> Just Counter
+    "Components" -> Just Components
+    "LensProduct" -> Just LensProduct
+    "Demo" -> Just Demo
+    "TestingZone" -> Just TestingZone
+    "PerfTest" -> Just PerfTest
+    _ -> Nothing
+
+foreign import getPageFromUrl_f :: Effect String
+
+
 type Model =
   { page :: Page
   , counter :: Counter.Model
   , components :: Components.Model
   , lensProduct :: LensProduct.Model
+  , demo :: Demo.Model
   , testing :: TestingZone.Model
   , perfTest :: PerfTest.Model
   }
 
-initial :: Model
-initial =
+preinitial :: Model
+preinitial =
   { page: Counter
   , counter: Counter.initial
   , components: Components.initial
   , testing: TestingZone.initial
   , lensProduct: LensProduct.initial
+  , demo: Demo.initial
   , perfTest: PerfTest.initial
   }
 
@@ -57,6 +85,7 @@ render model =
         Components -> E.enroot _components (Components.render model.components)
         TestingZone -> E.enroot _testing (TestingZone.render model.testing)
         LensProduct -> E.enroot _lensProduct (LensProduct.render model.lensProduct)
+        Demo -> E.enroot _demo (Demo.render model.demo)
         PerfTest -> E.enroot _perfTest (PerfTest.render model.perfTest)
     ]
   ]
@@ -75,7 +104,7 @@ render model =
         , S.color "white"
         ]
     ]
-    [ E.text "Test cases: "
+    [ E.text "Examples:"
     , intercalate (E.text " ") $ flip map pages \page ->
         let isCurrent = page == model.page in
         E.span
@@ -94,15 +123,23 @@ render model =
   _counter = prop (Proxy :: Proxy "counter")
   _components = prop (Proxy :: Proxy "components")
   _lensProduct = prop (Proxy :: Proxy "lensProduct")
+  _demo = prop (Proxy :: Proxy "demo")
   _testing = prop (Proxy :: Proxy "testing")
   _perfTest = prop (Proxy :: Proxy "perfTest")
 
 
 main :: Effect Unit
-main =
-  M.runApp'
+main = do
+  initial <-
+    getPageFromUrl >>= case _ of
+      Nothing -> pure $ preinitial
+      Just page -> pure $ preinitial { page = page }
+
+  M.runApp
     { initial
     , render
     , root: M.useBody
+    , listen: \model -> syncPageToUrl model.page
+    , kickoff: mempty
+    , toEffect: identity
     }
-
