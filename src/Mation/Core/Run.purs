@@ -145,16 +145,11 @@ runApp args = do
   Ref.write step stepRef
 
 
--- |
---
--- Used to mount an application on <body>
---
--- Application will be rendered as a child of <body>
-foreign import useBody :: Effect DomNode
+-- | Mount an application as a child of <body>
+foreign import onBody :: Effect DomNode
 
--- |
---
--- Used to mount an application on <html>
---
--- Application will replace <html> each render
-foreign import useHtml :: Effect DomNode
+-- | Mount an application on '<body>'. The application will replace '<body>' each render
+foreign import underBody:: Effect DomNode
+
+-- | Mount an application on '<html>'. The application will replace '<html>' each render
+foreign import onHtml :: Effect DomNode

@@ -115,4 +115,4 @@ render model =
 
 
 main :: Effect Unit
-main = M.runApp' { initial, render, root: M.useBody }
+main = M.runApp' { initial, render, root: M.underBody }

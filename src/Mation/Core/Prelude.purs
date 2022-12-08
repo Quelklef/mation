@@ -10,7 +10,7 @@ import Prim.Coerce (class Coercible) as X
 import Safe.Coerce (coerce) as X
 import Data.Generic.Rep (class Generic) as X
 import Data.Show.Generic (genericShow) as X
-import Data.Foldable (class Foldable, fold, foldMap, intercalate) as X
+import Data.Foldable (class Foldable, fold, foldMap, intercalate, elem) as X
 import Data.Unit (Unit, unit) as X
 import Data.Tuple.Nested ((/\), type (/\)) as X
 import Data.Either (Either (..)) as X

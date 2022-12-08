@@ -126,6 +126,6 @@ main = do
     , kickoff: mempty
     , listen: \_ -> pure unit
     , toEffect: identity
-    , root: M.useBody
+    , root: M.underBody
     }
 

@@ -42,4 +42,4 @@ render model =
 
 -- | Run the app, mounting on <body>
 main :: Effect Unit
-main = M.runApp' { initial, render, root: M.useBody }
+main = M.runApp' { initial, render, root: M.underBody }

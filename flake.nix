@@ -19,38 +19,41 @@
       module = "Mation.Examples.AllExamples";
     };
 
-    # Used in both development as well as for the demo
-    shell-pkgs = [
-        (nixed.command {
-          srcs = [ "$PWD/src" ];
-          bundle = purs-nix-bundle-args;
-        })
-        pkgs.python3
-        pkgs.nodejs
-        pkgs.entr
-      ];
-    shell-hook = ''
-      root=$PWD
+    # For both development and the live demo
+    devt-shell = {
+      runtime-deps = [
+          (nixed.command {
+            srcs = [ "$PWD/src" ];
+            bundle = purs-nix-bundle-args;
+          })
+          pkgs.python3
+          pkgs.nodejs
+          pkgs.entr
+        ];
 
-      function mation.build {(
-        cd "$root"
-        node ./src/Mation/Gen/generate.js &&
-        purs-nix bundle
-      )}
+      shell-hook = ''
+        root=$PWD
 
-      function mation.devt {(
-        export -f mation.build
-        { find . -name '*.purs';
-          find src -name '*.js';
-        } | entr -crs 'mation.build && python3 -m http.server'
-      )}
-    '';
+        function mation.build {(
+          cd "$root"
+          node ./src/Mation/Gen/generate.js &&
+          purs-nix bundle
+        )}
+
+        function mation.devt {(
+          export -f mation.build
+          { find . -name '*.purs';
+            find src -name '*.js';
+          } | entr -crs 'mation.build && echo "You may need to reload your browser" && python3 -m http.server'
+        )}
+      '';
+    };
 
   in {
 
     devShells.${system}.default = pkgs.mkShell {
-      buildInputs = shell-pkgs;
-      shellHook = shell-hook;
+      buildInputs = devt-shell.runtime-deps;
+      shellHook = devt-shell.shell-hook;
     };
 
     apps.${system}.demo = let
@@ -59,14 +62,35 @@
         "mation-interactive-demo"
         ''
           #!${pkgs.bash}/bin/bash
-
           set -euo pipefail
 
-          demoloc="$(pwd)/mation-demo"
+          export PATH="$PATH:${pkgs.lib.strings.makeBinPath [ pkgs.coreutils ]}"
 
+          demoloc="$(pwd)/mation-demo"
+          examplesloc="$demoloc/src/Mation/Examples"
+          moduleloc="$examplesloc/Counter.purs"
+          hostloc='localhost:8000'
+
+          xterm=${pkgs.xterm}/bin/xterm
+          terminal=''${TERM:-$xterm}
+
+          vim=${pkgs.vim}/bin/vim
+          editor=''${EDITOR:-$vim}
+          editor=''${VISUAL:-$editor}
+
+          original_pwd=$(pwd)
+          mkRelative() { echo -n './'; realpath --relative-to="$original_pwd" "$1"; }
+
+          echo
           echo 'Mation interactive demo!'
-          echo "This demo will create a (temporary!) directory at $demoloc and serve on localhost:8000"
-          read -p 'Is that OK? press enter to continue or Ctrl+C to quit '
+          echo '========================'
+          echo
+          echo 'This script will do the following:'
+          echo " 1. Create a temporary directory at $(mkRelative "$demoloc")"
+          echo " 2. Serve the demo at $hostloc"
+          echo
+          read -p 'All good? Press enter to continue or Ctrl-C to cancel. '
+          clear
 
           mkdir "$demoloc"
           trap "rm -rf '$demoloc'" EXIT  # remove on quit
@@ -74,16 +98,19 @@
           cp ${./.}/. -r .
           chmod +w -R .
 
-          export PATH="$PATH:${pkgs.lib.strings.makeBinPath shell-pkgs}"
-          ${shell-hook}
+          export PATH="$PATH:${pkgs.lib.strings.makeBinPath devt-shell.runtime-deps}"
+          ${devt-shell.shell-hook}
 
           mation.build
 
           clear
-          echo 'Demo is prepared!'
-          echo 'Now we will serve the demo on localhost:8000.'
-          echo "The demo code is located at $(pwd)/src/Mation/Examples. You are encouraged to poke around and mess around! The module Examples/Demo is a stub file for you to create your own app at. If you edit this file the demo will automatically recompile and reload."
-          read -p 'Press enter to run the demo. Press Crtl+C to quit '
+          echo "Demo initialized at $examplesloc"
+          echo
+          echo 'Now I would recommend:'
+          echo " 1. Opening your browser to $hostloc"
+          echo " 2. Opening your editor to $moduleloc"
+          echo
+          read -p 'Press enter when done! '
 
           mation.devt
         '';
