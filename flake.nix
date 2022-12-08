@@ -43,7 +43,7 @@ outputs = { self, ... }@inputs: let
         { find . -name '*.purs';
           find src -name '*.js';
         } | entr -crs "
-              cd "$root" &&
+              cd '$root' &&
               node ./src/Mation/Gen/generate.js &&
               purs-nix bundle &&
               echo 'You may need to reload your browser' &&
