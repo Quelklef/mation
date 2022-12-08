@@ -141,6 +141,8 @@ runApp args = do
   -- Populate the stepRef with the correct value
   Ref.write step stepRef
 
+  toEff args.kickoff
+
 
 -- | Mount an application as a child of `<body>`
 foreign import onBody :: Effect DomNode

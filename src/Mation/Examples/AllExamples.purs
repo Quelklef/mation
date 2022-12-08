@@ -3,6 +3,7 @@ module Mation.Examples.AllExamples where
 import Mation.Core.Prelude
 
 import Mation as M
+import Mation.Core.Mation as MM
 import Mation.Elems as E
 import Mation.Styles as S
 import Mation.Props as P
@@ -11,6 +12,7 @@ import Mation.Examples.Welcome as Welcome
 import Mation.Examples.Counter as Counter
 import Mation.Examples.Components as Components
 import Mation.Examples.LensProduct as LensProduct
+import Mation.Examples.AsyncApiCall as AsyncApiCall
 import Mation.Examples.TestingZone as TestingZone
 import Mation.Examples.PerfTest as PerfTest
 
@@ -24,16 +26,17 @@ data Page
   | Counter
   | Components
   | LensProduct
+  | AsyncApiCall
 
   -- Testing stuff
   | TestingZone
   | PerfTest
 
 separateAfter :: Array Page
-separateAfter = [ Welcome, LensProduct ]
+separateAfter = [ Welcome, AsyncApiCall ]
 
 pages :: Array Page
-pages = [ Welcome, Counter, Components, LensProduct, TestingZone, PerfTest ]
+pages = [ Welcome, Counter, Components, LensProduct, AsyncApiCall, TestingZone, PerfTest ]
   -- Don't want to add a whole dep for Enum for a testing module
 
 derive instance Generic Page _
@@ -47,6 +50,7 @@ pretty = case _ of
   Counter -> "Counter"
   Components -> "Components"
   LensProduct -> "Lens-product"
+  AsyncApiCall -> "Async-API-call"
   TestingZone -> "Testing-zone"
   PerfTest -> "Perf-test"
 
@@ -57,6 +61,7 @@ unpretty = case _ of
   "Components" -> Just Components
   "Lens-product" -> Just LensProduct
   "Testing-zone" -> Just TestingZone
+  "Async-API-call" -> Just AsyncApiCall
   "Perf-test" -> Just PerfTest
   _ -> Nothing
 
@@ -80,9 +85,20 @@ type Model =
   , counter :: Counter.Model
   , components :: Components.Model
   , lensProduct :: LensProduct.Model
+  , asyncApiCall :: AsyncApiCall.Model
   , testing :: TestingZone.Model
   , perfTest :: PerfTest.Model
   }
+
+_page = prop (Proxy :: Proxy "page")
+
+_welcome = prop (Proxy :: Proxy "welcome")
+_counter = prop (Proxy :: Proxy "counter")
+_components = prop (Proxy :: Proxy "components")
+_lensProduct = prop (Proxy :: Proxy "lensProduct")
+_asyncApiCall = prop (Proxy :: Proxy "asyncApiCall")
+_testing = prop (Proxy :: Proxy "testing")
+_perfTest = prop (Proxy :: Proxy "perfTest")
 
 
 render :: Model -> E.Html' Model
@@ -99,6 +115,7 @@ render model =
         Components -> E.enroot _components (Components.render model.components)
         TestingZone -> E.enroot _testing (TestingZone.render model.testing)
         LensProduct -> E.enroot _lensProduct (LensProduct.render model.lensProduct)
+        AsyncApiCall -> E.enroot _asyncApiCall (AsyncApiCall.render model.asyncApiCall)
         PerfTest -> E.enroot _perfTest (PerfTest.render model.perfTest)
     ]
   ]
@@ -136,16 +153,6 @@ render model =
         ]
     ]
 
-  _page = prop (Proxy :: Proxy "page")
-
-  _welcome = prop (Proxy :: Proxy "welcome")
-  _counter = prop (Proxy :: Proxy "counter")
-  _components = prop (Proxy :: Proxy "components")
-  _lensProduct = prop (Proxy :: Proxy "lensProduct")
-  _demo = prop (Proxy :: Proxy "demo")
-  _testing = prop (Proxy :: Proxy "testing")
-  _perfTest = prop (Proxy :: Proxy "perfTest")
-
 
 initialize :: Effect Model
 initialize = do
@@ -164,8 +171,14 @@ initialize = do
     , components: Components.initial
     , testing: TestingZone.initial
     , lensProduct: LensProduct.initial
+    , asyncApiCall: AsyncApiCall.initial
     , perfTest: PerfTest.initial
     }
+
+
+kickoff :: M.Mation Effect Model
+kickoff =
+  M.mkNoop
 
 
 main :: Effect Unit
@@ -176,7 +189,7 @@ main = do
     , render
     , root: M.onBody
     , listen: \model -> syncPageToUrl model.page
-    , kickoff: mempty
+    , kickoff: kickoff
     , toEffect: identity
     }
 

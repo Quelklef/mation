@@ -2,8 +2,12 @@
 export const syncPageToUrl_f =
 pageStr => () => {
   const url = new URL(window.location);
-  url.searchParams.set('page', pageStr);
-  window.history.pushState(null, '', url.toString());
+  if (url.searchParams.get('page') === pageStr) {
+    return;
+  } else {
+    url.searchParams.set('page', pageStr);
+    window.history.pushState(null, '', url.toString());
+  }
 };
 
 export const getPageFromUrl_f =
