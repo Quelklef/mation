@@ -17,6 +17,15 @@
 
 - Monoidal HTML: monoidal affordances like `foldMap` can be used to create `Html` values, which notably improves ergonomics. No more awkward appending a list of `Html` values to another list!
 
+- Powerful styling: give an element a `background-color` with `S.backgroundColor "red"`. Do it on `:hover` with `S.onHover [ S.backgroundColor "red" ]`. Even `@media` queries are supported!
+
+
+## Anti-features
+
+- Mation is currently in development and the API is not solidified
+
+- Currently Mation is not the best choice for performance-sensitive applications
+
 
 ## Demo
 

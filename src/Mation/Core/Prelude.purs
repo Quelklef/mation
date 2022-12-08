@@ -3,7 +3,7 @@
 -- |
 -- | This module is not intended to be consumed by clients
 
-module Mation.Core.Prelude (module X) where
+module Mation.Core.Prelude (module X, module Mation.Core.Prelude) where
   
 import Prelude as X
 
@@ -22,8 +22,11 @@ import Data.Either (Either (..)) as X
 import Data.Maybe (Maybe (..), fromMaybe) as X
 import Data.Map (Map) as X
 import Data.Monoid (power) as X
+import Data.Monoid.Endo (Endo (..)) as X
 import Data.Lens.Lens (Lens') as X
 import Data.Lens.Setter (Setter') as X
 import Data.Lens.Record (prop) as X
 import Data.Lens.Setter ((.~), (%~)) as X
 import Data.Newtype (class Newtype) as X
+
+type Endo' a = X.Endo (->) a

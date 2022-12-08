@@ -13,6 +13,7 @@ function main() {
   emit('Attributes.purs', attributes)
   emit('Events.purs', events)
   emit('Styles.purs', styles)
+  emit('PseudoClasses.purs', pseudoClasses);
 }
 
 
@@ -114,10 +115,6 @@ function * events() {
     yield `${onName} = mkListener "${event.name}"`;
     yield '';
   }
-
-  function capitalize(str) {
-    return str.slice(0, 1).toUpperCase() + str.slice(1);
-  }
 }
 
 function * styles() {
@@ -126,7 +123,8 @@ function * styles() {
   yield 'module Mation.Gen.Styles where';
   yield '';
   yield 'import Prelude';
-  yield 'import Mation.Core.Style (Style, mkStyle)';
+  yield 'import Mation.Core.Style (Style (..), Style1 (..))';
+  yield 'import Mation.Core.Util.PuncturedFold (PuncturedFold)';
   yield '';
   yield '';
 
@@ -136,10 +134,47 @@ function * styles() {
 
     yield `-- | [CSS ${style.name} property](https://developer.mozilla.org/en-US/docs/Web/CSS/${encodeURIComponent(style.name)}). This is generated code.`;
     yield `${ident} :: String -> Style`;
-    yield `${ident} = mkStyle "${style.name}"`
+    yield `${ident} val = Style [ SPair "${style.name}" val ]`
     yield '';
   }
 }
 
+function * pseudoClasses() {
+  yield preamble('CSS pseudo-classes');
+  yield '';
+  yield 'module Mation.Gen.PseudoClasses where';
+  yield '';
+  yield 'import Mation.Core.Prelude';
+  yield '';
+  yield 'import Mation.Core.Style (Style)';
+  yield 'import Mation.Core.Style as S';
+  yield 'import Mation.Core.Many as FM';
+  yield 'import Mation.Core.Util.PuncturedFold as PF';
+  yield '';
+  yield '';
+
+  const { pseudoClasses } = require('./data/pseudo-classes.js');
+  for (const pcls of pseudoClasses) {
+    const ident = 'on' + capitalize(toIdent(pcls.name));
+
+    const args = range(pcls.arity).map(n => `x${n+1}`).join(' ');
+    const argsCall = pcls.arity === 0 ? '' : ('(' + range(pcls.arity).map(n => `" <> x${n+1} <> "`).join(', ') + ')');
+    const argTypes = range(pcls.arity).map(_ => `String -> `).join('');
+
+    yield `-- | [CSS :${pcls.name} pseudo-class](https://developer.mozilla.org/en-US/docs/Web/CSS/:${pcls.name}). This is generated code.`;
+    yield `${ident} :: ${argTypes} Array Style -> Style`
+    yield `${ident} ${args} styles = FM.singleton $ S.SScopeASelector (PF.PF [ PF.Hole, PF.Elem $ ":${pcls.name}${argsCall}" ]) (S.SConcat $ FM.float styles)`;
+    yield '';
+  }
+}
+
+
+function capitalize(str) {
+  return str.slice(0, 1).toUpperCase() + str.slice(1);
+}
+
+function range(n) {
+  return new Array(n).fill(null).map((_, i) => i);
+}
 
 main();

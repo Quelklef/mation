@@ -35,7 +35,7 @@ data VNode msg
           -- can be implemented
           --
           -- Otherwise we could put listeners in `fixup`
-      , fixup :: DomNode -> Effect Unit
+      , fixup :: DomNode -> Effect { restore :: Effect Unit }
       , children :: Array (VNode msg)
       }
 
@@ -51,7 +51,7 @@ type CaseVNode = forall msg r.
   -> ({ tag :: String
       , attrs :: Assoc String String
       , listeners :: Assoc String (DomEvent -> msg)
-      , fixup :: DomNode -> Effect Unit
+      , fixup :: DomNode -> Effect { restore :: Effect Unit }
       , children :: Array (VNode msg)
       } -> r)
   -> r
@@ -95,7 +95,7 @@ mkTag :: forall m s.
   { tag :: String
   , attrs :: Assoc String String
   , listeners :: Assoc String (DomEvent -> Mation m s)
-  , fixup :: DomNode -> Effect Unit
+  , fixup :: DomNode -> Effect { restore :: Effect Unit }
   , children :: Array (Html m s)
   }
   -> Html m s
@@ -125,7 +125,7 @@ data Prop1 m s
     -- | This is called on the DOM Node after it is mounted. This variant
     -- | should be used with extreme caution as it gives the programmer enough
     -- | power to circumvent framework safeties.
-  | PFixup (DomNode -> Effect Unit)
+  | PFixup (DomNode -> Effect { restore :: Effect Unit })
       -- ^ FIXME: 'Effect' or 'm' ?
 
     -- | Has no effect
@@ -152,7 +152,7 @@ mkPair k v = Prop [ PPair k v ]
 mkListener :: forall m s. String -> (DomEvent -> Mation m s) -> Prop m s
 mkListener k v = Prop [ PListener k v ]
 
-mkFixup :: forall m s. (DomNode -> Effect Unit) -> Prop m s
+mkFixup :: forall m s. (DomNode -> Effect { restore :: Effect Unit }) -> Prop m s
 mkFixup f = Prop [ PFixup f ]
 
 mkNoop :: forall m s. Prop m s

@@ -23,6 +23,10 @@ caseMaybe => casePair => caseVNode => {
   function tagCase(root, mOldVNode, newVTag) {
     // mOldVNode may be nully
 
+    // Perform fixup-restore from last frame
+    if (root._fixupRestore)
+      root._fixupRestore();
+
     // If root is not a tag of correct type, replace it
     const shouldReplace = (
       !mOldVNode ||
@@ -52,7 +56,8 @@ caseMaybe => casePair => caseVNode => {
     patchListeners(root, oldVTag.listeners, newVTag.listeners);
     patchChildren(root, oldVTag.children, newVTag.children);
 
-    newVTag.fixup(root)();
+    const { restore } = newVTag.fixup(root)();
+    root._fixupRestore = restore;
   }
 
   function patchAttrs(root, oldAttrs, newAttrs) {

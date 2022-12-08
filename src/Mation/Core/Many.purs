@@ -2,6 +2,7 @@ module Mation.Core.Many where
 
 import Mation.Core.Prelude
 
+import Data.Array as Array
 
 
 -- | In a number of places in this codebase, we follow a certain pattern. We have
@@ -62,14 +63,16 @@ import Mation.Core.Prelude
 -- | The reason for this is that, in this codebase, most such "many types" (eg `Style`)
 -- | are exported and exposed to the user. Preferring a datatype over a type alias
 -- | means that the user does not have to worry about (or even know!) what a '`Many`' is.
-
 class
+    -- | Should be compiler-derived
   ( Newtype t (Array t1)
     -- | Should be newtype-derived
   , Semigroup t
     -- | Should be newtype-derived
   , Monoid t
-  ) <= Many t t1
+  ) <=
+    Many t t1
+  | t -> t1
 
 
 -- | Flatten upwards
@@ -78,3 +81,6 @@ class
 -- | an `Array (Array t1)`. This turns it into an `Array t1`.
 float :: forall t t1. Many t t1 => Array t -> Array t1
 float arr = arr >>= coerce
+
+singleton :: forall t t1. Many t t1 => t1 -> t
+singleton = Array.singleton >>> coerce

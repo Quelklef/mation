@@ -18,6 +18,7 @@
       foldable-traversable
       profunctor-lenses
       node-fs
+      unordered-collections  # class Hashable
     ];
 
 }
