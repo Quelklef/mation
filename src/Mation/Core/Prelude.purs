@@ -1,5 +1,10 @@
-module Mation.Core.Prelude (module X) where
 
+-- | This is the prelude used internally in the Mation codebase
+-- |
+-- | This module is not intended to be consumed by clients
+
+module Mation.Core.Prelude (module X) where
+  
 import Prelude as X
 
 import Effect (Effect) as X

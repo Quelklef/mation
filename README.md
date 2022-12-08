@@ -23,3 +23,18 @@ Try it out!
 ```bash
 nix run github:quelklef/mation/main#demo
 ```
+
+
+## Docs
+
+You can serve the current docs with
+
+```bash
+nix run github:quelklef/mation/main#docs
+```
+
+or just build them with
+
+```bash
+nix build github:quelklef/mation/main#docs
+```

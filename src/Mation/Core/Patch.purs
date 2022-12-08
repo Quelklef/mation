@@ -39,24 +39,22 @@ to_f toEff h = Html1_f \hRawNode hRawHtml hText hTag ->
         }
 
 
+-- | Instead of patching onto a DOM Node directly, we diff the old and new state
+-- | to generate a patch function which is then applied to a DOM node.
 -- |
---
--- Instead of patching onto a DOM Node directly, we diff the old and new state
--- to generate a patch function which is then applied to a DOM node.
---
--- This is so that the patching algorithm does not react to changes made to
--- the DOM by external javascript. If, for instance, external javascript adds
--- some "_secretInfo" attribute to a DOM node, we will not remove it during
--- patching.
---
--- (There is a discussion to be had about whether the programmer making use of
--- a "_secretInfo" attribute is a good idea or not. However, that's up to
--- the programmer, not this library, and it's nicer for this library to play
--- nicely.)
---
--- The downside to this design is that it means the patching is less robust:
--- if some DOM node attribute is accidentally deleted by external javascript,
--- for instance, re-rendering the model will not replace it.
+-- | This is so that the patching algorithm does not react to changes made to
+-- | the DOM by external javascript. If, for instance, external javascript adds
+-- | some "_secretInfo" attribute to a DOM node, we will not remove it during
+-- | patching.
+-- |
+-- | (There is a discussion to be had about whether the programmer making use of
+-- | a "_secretInfo" attribute is a good idea or not. However, that's up to
+-- | the programmer, not this library, and it's nicer for this library to play
+-- | nicely.)
+-- |
+-- | The downside to this design is that it means the patching is less robust:
+-- | if some DOM node attribute is accidentally deleted by external javascript,
+-- | for instance, re-rendering the model will not replace it.
 patchOnto :: forall m s.
   { toEff :: Mation m s -> Effect Unit
   , old :: Maybe (Html1 m s)

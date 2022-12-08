@@ -1,5 +1,8 @@
-module Mation.Core.Html where
 
+-- | Mation virtual dom
+
+module Mation.Core.Html where
+  
 import Mation.Core.Prelude
 
 import Mation.Core.Mation (Mation)
@@ -10,6 +13,7 @@ import Mation.Core.Dom (DomNode, DomEvent)
 import Mation.Core.Many (class Many, float)
 
 
+-- | A single virtual node
 data Html1 m s
 
     -- | Embed an existing DomNode directly into the virtual dom
@@ -27,21 +31,21 @@ data Html1 m s
       , attrs :: Assoc String String
       , listeners :: Assoc String (DomEvent -> Mation m s)
           -- ^
-          -- Knowledge of the listeners is needed here so that @enroot@
+          -- Knowledge of the listeners is needed here so that `enroot`
           -- can be implemented
           --
-          -- Otherwise we could put listeners in @fixup@
+          -- Otherwise we could put listeners in `fixup`
       , fixup :: DomNode -> Effect Unit
       , children :: Array (Html1 m s)
       }
 
 
+-- | Virtual DOM type
 -- |
--- Virtual DOM type
---
--- Note that this type instantiates @Monoid@, meaning that it can be used
--- with functions like @when@ and @foldMap@. This can be very handy when
--- constructing @Html@ values!
+-- | This is the free monoid over `Html1`
+-- |
+-- | Since this type instantiates `Monoid`, it can be used with functions like `when` and `foldMap`.
+-- | This can be very handy when constructing `Html` values!
 newtype Html m s = Html (Array (Html1 m s))
 
 instance Many (Html m s) (Html1 m s)
@@ -73,11 +77,12 @@ mkTag info = Html [ HTag info' ]
   info' = info { children = float info.children }
 
 
--- | Embed one @Html@ within another
-enroot :: forall m large small. Lens' large small -> Html m small -> Html m large
+-- | Embed one `Html` within another
+enroot :: forall m large small. Setter' large small -> Html m small -> Html m large
 enroot lens (Html arr) = Html $ map (enroot1 lens) arr
 
-enroot1 :: forall m large small. Lens' large small -> Html1 m small -> Html1 m large
+-- | Embed one `Html1` within another
+enroot1 :: forall m large small. Setter' large small -> Html1 m small -> Html1 m large
 enroot1 lens = case _ of
   HRawNode node -> HRawNode node
   HRawHtml html -> HRawHtml html
@@ -94,7 +99,7 @@ enroot1 lens = case _ of
 
 
 
--- | One vnode property
+-- | A single vnode property
 data Prop1 m s
 
     -- | Some string HTML attribute, like 'id' or 'style'
@@ -103,26 +108,24 @@ data Prop1 m s
     -- | Event listener
   | PListener String (DomEvent -> Mation m s)
 
+    -- | Fixup function
     -- |
-    -- Fixup function
-    --
-    -- This is called on the DOM Node after it is mounted. This variant
-    -- should be used with extreme caution as it gives the programmer enough
-    -- power to circumvent framework safeties.
+    -- | This is called on the DOM Node after it is mounted. This variant
+    -- | should be used with extreme caution as it gives the programmer enough
+    -- | power to circumvent framework safeties.
   | PFixup (DomNode -> Effect Unit)
       -- ^ FIXME: 'Effect' or 'm' ?
 
-    -- Has no effect
+    -- | Has no effect
   | PNoop
 
 
+-- | Virtual node properties
 -- |
---
--- Virtual node properties
---
--- Note that this type instantiates @Monoid@, meaning that it can be used
--- with functions like @when@ and @foldMap@. This can be very handy when
--- constructing @Html@ values!
+-- | This is the free monoid over `Prop1`
+-- |
+-- | Since this type instantiates `Monoid`, it can be used with functions like `when` and `foldMap`.
+-- | This can be very handy when constructing `Html` values!
 newtype Prop m s = Prop (Array (Prop1 m s))
 
 instance Many (Prop m s) (Prop1 m s)

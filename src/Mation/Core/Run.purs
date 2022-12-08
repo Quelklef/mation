@@ -14,17 +14,20 @@ import Mation.Core.Patch as Patch
 
 -- | Simplified version of @runApp@
 runApp' :: forall s.
+
+    -- | Initial model value (ie state)
   { initial :: s
-      -- ^ Initial model value (ie state)
+
+    -- | How to display the model
   , render :: s -> Html Effect s
-      -- ^ How to display the model
+
+    -- | Where should the application be mounted?
+    -- |
+    -- | Try eg. `onBody` to mount on <body>
+    -- |
+    -- | Note that the supplied DOM node may be replaced on each render
   , root :: Effect DomNode
-      -- ^
-      -- Where should the application be mounted?
-      --
-      -- Try eg. @useBody@ to mount on <body>
-      --
-      -- Note that the supplied DOM node may be replaced on each render
+
   } -> Effect Unit
 
 runApp' args =
@@ -41,49 +44,43 @@ runApp' args =
 -- | Run an application
 runApp :: forall m s. MonadEffect m =>
 
+    -- | Initial model value
+    -- |
+    -- | The type variable is 's' for 'state'
   { initial :: s
-      -- ^
-      -- Initial model value
-      --
-      -- The type variable is 's' for 'state'
 
+    -- | How to display the model value
   , render :: s -> Html m s
-      -- ^
-      -- How to display the model value
 
+    -- | Where should the application be mounted?
+    -- |
+    -- | Try eg. `onBody` to mount on <body>
+    -- |
+    -- | Note that the supplied DOM node may be replaced on each render
+    -- |
+    -- | Note that this is an `Effect`, meaning that the mount point
+    -- | can change. However, the rendering algorithm does not
+    -- | respect arbitrary mountpoint modification. For various reasons,
+    -- | it expects the mountpoint to contain something that looks
+    -- | reasonably close to the result of the previous render.
+    -- | Practically this means that you cannot re-mount a running
+    -- | application to new node DOM node; you either move the DOM node
+    -- | itself or .cloneNode() it.
   , root :: Effect DomNode
-      -- ^
-      -- Where should the application be mounted?
-      --
-      -- Try eg. @useBody@ to mount on <body>
-      --
-      -- Note that the supplied DOM node may be replaced on each render
-      --
-      -- Note that this is an @Effect@, meaning that the mount point
-      -- can change. However, the rendering algorithm does not
-      -- respect arbitrary mountpoint modification. For various reasons,
-      -- it expects the mountpoint to contain something that looks
-      -- reasonably close to the result of the previous render.
-      -- Practically this means that you cannot re-mount a running
-      -- application to new node DOM node; you either move the DOM node
-      -- itself or .cloneNode() it.
 
+    -- | An initial `Mation` to execute
   , kickoff :: Mation m s
-      -- ^
-      -- An initial mation to execute
 
+    -- | Called every time the state changes
+    -- |
+    -- | This is the ONLY place in the codebase where the state
+    -- | can be read back out of a running application.
+    -- | Usually reading state should not be necessary, and should
+    -- | be done with caution.
   , listen :: s -> Effect Unit
-      -- ^
-      -- Called every time the state changes
-      --
-      -- This is the ONLY place in the codebase where the state
-      -- can be read back out of a running application.
-      -- Usually reading state should not be necessary, and should
-      -- be done with caution.
 
+    -- | Turn the custom monad into an Effect
   , toEffect :: forall a. m a -> Effect a
-      -- ^
-      -- Turn the custom monad into an Effect
 
   } -> Effect Unit
 
@@ -145,11 +142,11 @@ runApp args = do
   Ref.write step stepRef
 
 
--- | Mount an application as a child of <body>
+-- | Mount an application as a child of `<body>`
 foreign import onBody :: Effect DomNode
 
--- | Mount an application on '<body>'. The application will replace '<body>' each render
+-- | Mount an application on `<body>`. The application will replace `<body>` each render
 foreign import underBody:: Effect DomNode
 
--- | Mount an application on '<html>'. The application will replace '<html>' each render
+-- | Mount an application on `<html>`. The application will replace `<html>` each render
 foreign import onHtml :: Effect DomNode

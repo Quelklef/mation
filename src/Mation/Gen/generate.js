@@ -36,7 +36,15 @@ function toIdent(str) {
   return ident;
 }
 
+const preamble = what => (
+`-- | This module contains generated code relating to ${what}.
+-- |
+-- | Names are converted from their canonical \`kebab-case\` form into \`camelCase\`, which is idiomatic for Purescript. For example, \`align-content\` becomes \`alignContent\`. Purescript-reserved words are suffixed by an understore, so \`type\` becomes \`type_\`.`
+);
+
 function * tags() {
+  yield preamble('HTML tags');
+  yield '';
   yield 'module Mation.Gen.Tags where';
   yield '';
   yield 'import Mation.Core.Html (Prop, Html, mkElement)';
@@ -47,6 +55,7 @@ function * tags() {
   for (const tag of tags) {
     const ident = toIdent(tag.name);
 
+    yield `-- | [HTML <${tag.name}> tag](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/${encodeURIComponent(tag.name)}). This is generated code.`;
     if (!tag.isVoid) {
       yield `${ident} :: forall m s. Array (Prop m s) -> Array (Html m s) -> Html m s`;
       yield `${ident} props children = mkElement "${tag.name}" props children`
@@ -59,6 +68,8 @@ function * tags() {
 }
 
 function * attributes() {
+  yield preamble('HTML attributes');
+  yield '';
   yield 'module Mation.Gen.Attributes where';
   yield '';
   yield 'import Prelude';
@@ -70,6 +81,7 @@ function * attributes() {
   for (const attr of attributes) {
     const ident = toIdent(attr.name);
 
+    yield `-- | [HTML ${attr.name} attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/${encodeURIComponent(attr.name)}). This is generated code.`;
     if (attr.isBoolean) {
       yield `${ident} :: forall m s. Boolean -> Prop m s`;
       yield `${ident} bool = if bool then mkPair "${attr.name}" "${attr.name}" else mkNoop`;
@@ -82,6 +94,8 @@ function * attributes() {
 }
 
 function * events() {
+  yield preamble('HTML events');
+  yield '';
   yield 'module Mation.Gen.Events where';
   yield '';
   yield 'import Prelude';
@@ -95,6 +109,7 @@ function * events() {
   for (const event of events) {
     const onName = 'on' + capitalize(toIdent(event.name));
 
+    yield `-- | [HTML ${event.name} event](https://developer.mozilla.org/en-US/docs/Web/API/Element/${encodeURIComponent(event.name)}_event). This is generated code.`;
     yield `${onName} :: forall m s. (DomEvent -> Mation m s) -> Prop m s`;
     yield `${onName} = mkListener "${event.name}"`;
     yield '';
@@ -106,6 +121,8 @@ function * events() {
 }
 
 function * styles() {
+  yield preamble('CSS styles');
+  yield '';
   yield 'module Mation.Gen.Styles where';
   yield '';
   yield 'import Prelude';
@@ -117,6 +134,7 @@ function * styles() {
   for (const style of styles) {
     const ident = toIdent(style.name);
 
+    yield `-- | [CSS ${style.name} property](https://developer.mozilla.org/en-US/docs/Web/CSS/${encodeURIComponent(style.name)}). This is generated code.`;
     yield `${ident} :: String -> Style`;
     yield `${ident} = mkStyle "${style.name}"`
     yield '';
