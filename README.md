@@ -11,6 +11,8 @@
 
 - Simple components: a component is written exactly the same as an app. You create a `ComponentModel` type and a `renderComponent` view, and you're done. No lifecycle hooks, no nothing. Simple.
 
+- Monolithic state: even with components, state does not become fragmented. Whereas in React or Vue a child component may take on state unknown to the parent component, the same is not possible in Mation.
+
 - Ergonomic IO: as event handlers become more complex, the code does not. Want to run a pure state update on button press? Sure. Need to perform a monadic effect as well? You got it. Need to perform *multiple*? Not a problem! Need to execute a long-running process, occasionally updating the model of your progress, and finally concluding? Still covered.
 
 - Monoidal HTML: monoidal affordances like `foldMap` can be used to create `Html` values, which notably improves ergonomics. No more awkward appending a list of `Html` values to another list!
