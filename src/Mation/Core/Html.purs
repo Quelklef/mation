@@ -13,42 +13,69 @@ import Mation.Core.Dom (DomNode, DomEvent)
 import Mation.Core.Many (class Many, float)
 
 
--- | A single virtual node
-data Html1 m s
+-- | One virtual node, parameterized by listener result
+data VNode msg
 
     -- | Embed an existing DomNode directly into the virtual dom
-  = HRawNode DomNode
+  = VRawNode DomNode
 
     -- | Raw HTML
-  | HRawHtml String
+  | VRawHtml String
 
     -- | Text node
-  | HText String
+  | VText String
 
     -- | Virtual node
-  | HTag
+  | VTag
       { tag :: String
       , attrs :: Assoc String String
-      , listeners :: Assoc String (DomEvent -> Mation m s)
+      , listeners :: Assoc String (DomEvent -> msg)
           -- ^
           -- Knowledge of the listeners is needed here so that `enroot`
           -- can be implemented
           --
           -- Otherwise we could put listeners in `fixup`
       , fixup :: DomNode -> Effect Unit
-      , children :: Array (Html1 m s)
+      , children :: Array (VNode msg)
       }
+
+
+derive instance Functor VNode
+
+
+type CaseVNode = forall msg r.
+     VNode msg
+  -> (DomNode -> r)
+  -> (String -> r)
+  -> (String -> r)
+  -> ({ tag :: String
+      , attrs :: Assoc String String
+      , listeners :: Assoc String (DomEvent -> msg)
+      , fixup :: DomNode -> Effect Unit
+      , children :: Array (VNode msg)
+      } -> r)
+  -> r
+
+-- | Case analysis on `VNode`
+caseVNode :: CaseVNode
+caseVNode vnode vRawNode vRawHtml vText vTag =
+  case vnode of
+    VRawNode x -> vRawNode x
+    VRawHtml x -> vRawHtml x
+    VText x -> vText x
+    VTag x -> vTag x
+
 
 
 -- | Virtual DOM type
 -- |
--- | This is the free monoid over `Html1`
+-- | This is the free monoid over `VNode`
 -- |
 -- | Since this type instantiates `Monoid`, it can be used with functions like `when` and `foldMap`.
 -- | This can be very handy when constructing `Html` values!
-newtype Html m s = Html (Array (Html1 m s))
+newtype Html m s = Html (Array (VNode (Mation m s)))
 
-instance Many (Html m s) (Html1 m s)
+instance Many (Html m s) (VNode (Mation m s))
 
 derive instance Newtype (Html m s) _
 derive newtype instance Semigroup (Html m s)
@@ -56,13 +83,13 @@ derive newtype instance Monoid (Html m s)
 
 
 mkRawNode :: forall m s. DomNode -> Html m s
-mkRawNode node = Html [ HRawNode node ]
+mkRawNode node = Html [ VRawNode node ]
 
 mkRawHtml :: forall m s. String -> Html m s
-mkRawHtml html = Html [ HRawHtml html ]
+mkRawHtml html = Html [ VRawHtml html ]
 
 mkText :: forall m s. String -> Html m s
-mkText text = Html [ HText text ]
+mkText text = Html [ VText text ]
 
 mkTag :: forall m s.
   { tag :: String
@@ -72,29 +99,14 @@ mkTag :: forall m s.
   , children :: Array (Html m s)
   }
   -> Html m s
-mkTag info = Html [ HTag info' ]
+mkTag info = Html [ VTag info' ]
   where
   info' = info { children = float info.children }
 
 
 -- | Embed one `Html` within another
 enroot :: forall m large small. Setter' large small -> Html m small -> Html m large
-enroot lens (Html arr) = Html $ map (enroot1 lens) arr
-
--- | Embed one `Html1` within another
-enroot1 :: forall m large small. Setter' large small -> Html1 m small -> Html1 m large
-enroot1 lens = case _ of
-  HRawNode node -> HRawNode node
-  HRawHtml html -> HRawHtml html
-  HText text -> HText text
-  HTag { tag, attrs, listeners, fixup, children } ->
-    HTag
-      { tag, attrs, fixup
-      , listeners: map (map (Mation.enroot lens)) listeners
-      , children: map (enroot1 lens) children
-      }
-
-
+enroot lens (Html arr) = Html $ map (map (Mation.enroot lens)) arr
 
 
 
@@ -156,7 +168,7 @@ mkElement tag props children =
   where
 
   flat :: Array (Prop1 m s)
-  flat = props >>= \(Prop arr) -> arr
+  flat = float props
 
   attrs = Assoc.fromFoldable $
     flat # foldMap case _ of

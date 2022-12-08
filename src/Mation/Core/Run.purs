@@ -8,7 +8,7 @@ import Effect.Exception (throw)
 
 import Mation.Core.Mation (Mation)
 import Mation.Core.Mation as Mation
-import Mation.Core.Html (Html (..), Html1)
+import Mation.Core.Html (Html (..), VNode)
 import Mation.Core.Dom (DomNode)
 import Mation.Core.Patch as Patch
 
@@ -87,9 +87,9 @@ runApp :: forall m s. MonadEffect m =>
 runApp args = do
 
   let
-    -- Render to an Html1 instead of an Html
+    -- Render to an VNode instead of an Html
     -- This is unsafe, but during usual usage of the framework should never happen
-    renderTo1 :: s -> Effect (Html1 m s)
+    renderTo1 :: s -> Effect (VNode (Mation m s))
     renderTo1 = args.render >>> case _ of
       Html [x] -> pure x
       _ -> throw "Unexpected Html value: toplevel node contains more than one value. Did you `<>` or `fold` some top-level Html values? Please wrap them in some container element."

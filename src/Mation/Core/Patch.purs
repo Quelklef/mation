@@ -4,39 +4,8 @@ import Mation.Core.Prelude
 
 import Mation.Core.Util.Assoc as Assoc
 import Mation.Core.Mation (Mation)
-import Mation.Core.Html (Html1 (..))
+import Mation.Core.Html (VNode (..), CaseVNode, caseVNode)
 import Mation.Core.Dom (DomNode, DomEvent)
-
-
--- | Foreign interface Html type
-newtype Html1_f = Html1_f (
-    forall r.
-       (DomNode -> r)
-    -> (String -> r)
-    -> (String -> r)
-    -> ({ tag :: String
-        , attrs :: Array { name :: String, value :: String }
-        , listeners :: Array { name :: String, handler :: DomEvent -> Effect Unit }
-        , fixup :: DomNode -> Effect Unit
-        , children :: Array Html1_f
-        } -> r)
-    -> r
-  )
-
-to_f :: forall m s. (Mation m s -> Effect Unit) -> Html1 m s -> Html1_f
-to_f toEff h = Html1_f \hRawNode hRawHtml hText hTag ->
-  case h of
-    HRawNode node -> hRawNode node
-    HRawHtml html -> hRawHtml html
-    HText text -> hText text
-    HTag { tag, attrs, listeners, fixup, children } ->
-      hTag
-        { tag
-        , attrs: attrs # Assoc.toArray # map \(name /\ value) -> { name, value }
-        , listeners: listeners # Assoc.toArray # map \(name /\ handler) -> { name, handler: map toEff handler }
-        , fixup
-        , children: to_f toEff <$> children
-        }
 
 
 -- | Instead of patching onto a DOM Node directly, we diff the old and new state
@@ -57,28 +26,44 @@ to_f toEff h = Html1_f \hRawNode hRawHtml hText hTag ->
 -- | for instance, re-rendering the model will not replace it.
 patchOnto :: forall m s.
   { toEff :: Mation m s -> Effect Unit
-  , old :: Maybe (Html1 m s)
-  , new :: Html1 m s
+  , old :: Maybe (VNode (Mation m s))
+  , new :: VNode (Mation m s)
   }
   -> DomNode -> Effect Unit
 patchOnto { toEff, old, new } =
   patch_f
     caseMaybe
-    { mOldHtml: to_f toEff <$> old
-    , newHtml: to_f toEff new
+    casePair
+    caseVNode
+    { mOldVNode: map (map toEff) old
+    , newVNode: map toEff new
     }
 
-  where
-
-  caseMaybe :: forall a r. Maybe a -> r -> (a -> r) -> r
-  caseMaybe maybe nothing just =
-    case maybe of
-      Nothing -> nothing
-      Just a -> just a
 
 foreign import patch_f ::
-     (forall a r. Maybe a -> r -> (a -> r) -> r)
-  -> { mOldHtml :: Maybe Html1_f
-     , newHtml :: Html1_f
+     CaseMaybe
+  -> CasePair
+  -> CaseVNode
+  -> { mOldVNode :: Maybe (VNode (Effect Unit))
+     , newVNode :: VNode (Effect Unit)
      }
   -> DomNode -> Effect Unit
+
+
+
+type CaseMaybe =
+  forall a r. Maybe a -> r -> (a -> r) -> r
+
+-- | Case analysis on `Maybe`
+caseMaybe :: CaseMaybe
+caseMaybe maybe nothing just =
+  case maybe of
+    Nothing -> nothing
+    Just a -> just a
+
+
+type CasePair =
+  forall a b r. (a /\ b) -> (a -> b -> r) -> r
+
+casePair :: CasePair
+casePair (a /\ b) f = f a b

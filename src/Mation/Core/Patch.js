@@ -1,151 +1,113 @@
 
 export const patch_f =
-caseMaybe => ({ mOldHtml, newHtml }) => root => () => {
+caseMaybe => casePair => caseVNode => {
 
-  const oldHtml = caseMaybe(mOldHtml)(undefined)(x => x);
-  patch(root, oldHtml, newHtml);
+  return ({ mOldVNode, newVNode }) => root => () => {
+    const nOldVNode = caseMaybe(mOldVNode)(undefined)(x => x);
+    patch(root, nOldVNode, newVNode);
+  };
 
-};
-
-function makeAnew(html) {
-  return (
-    html
-      (node => node)
-      (html => {
-        const root = document.createElement('div');
-        root.innerHTML = html;
-        root.style.display = 'contents';
-        return root;
-      })
-      (text => document.createTextNode(text))
-      (info => {
-        const { tag, attrs, listeners, fixup, children } = info;
-
-        const node = document.createElement(tag);
-
-        for (const { name, value } of attrs) {
-          node.setAttribute(name, value);
-        }
-
-        node._listeners = {};
-        for (const listener of listeners) {
-          const handler = ev => listener.handler(ev)();
-          node._listeners[listener.name] = handler;
-          node.addEventListener(listener.name, handler);
-        }
-
-        for (const child of children) {
-          node.append(makeAnew(child));
-        }
-
-        fixup(node)();
-
-        return node;
-      })
-  );
-}
-
-
-function patch(root, oldHtml, newHtml) {
-
-  // oldHtml may be nully, but newHtml must not be
-
-  if (!oldHtml) {
-    root.replaceWith(makeAnew(newHtml));
-    return;
+  // Create an empty VTag
+  function mkEmptyVTag(tag){
+    return { tag, attrs: [], listeners: [], children: [], fixup: () => {} };
   }
 
-  (
-    newHtml
-      (node => root.replaceWith(node))
+  function patch(root, mOldVNode, newVNode) {
+    caseVNode(newVNode)
+      (domNode => root.replaceWith(domNode))
       (html => root.innerHTML = html)
       (text => root.replaceWith(text))
-      (tagCase)
-  );
+      (newVTag => tagCase(root, mOldVNode, newVTag))
+  }
 
-  function tagCase(newInfo) {
+  function tagCase(root, mOldVNode, newVTag) {
+    // mOldVNode may be nully
 
-    // If tag type has changed, replace root
+    // If root is not a tag of correct type, replace it
     const shouldReplace = (
-      oldHtml
-        (node => true)
+      !mOldVNode ||
+      caseVNode(mOldVNode)
+        (domNode => true)
         (html => true)
         (text => true)
-        (oldInfo => oldInfo.tag !== newInfo.tag)
+        (oldVTag => oldVTag.tag !== newVTag.tag)
     );
     if (shouldReplace) {
-      const newRoot = document.createElement(newInfo.tag);
+      const newRoot = document.createElement(newVTag.tag);
       root.replaceWith(newRoot)
       root = newRoot;
     }
 
-    const emptyInfo = { tag: newInfo.tag, attrs: [], listeners: [], children: [], fixup: () => {} };
-    const oldInfo = (
-      oldHtml
-        (node => emptyInfo)
-        (html => emptyInfo)
-        (text => emptyInfo)
-        (oldInfo => oldInfo)
+    const empty = mkEmptyVTag(newVTag.tag);
+    const oldVTag = (
+      !mOldVNode ? empty :
+      caseVNode(mOldVNode)
+        (domNode => empty)
+        (html => empty)
+        (text => empty)
+        (oldVTag => oldVTag)
     );
 
-    patchAttrs(root, oldInfo.attrs, newInfo.attrs);
-    patchListeners(root, oldInfo.listeners, newInfo.listeners);
-    patchChildren(root, oldInfo.children, newInfo.children);
+    patchAttrs(root, oldVTag.attrs, newVTag.attrs);
+    patchListeners(root, oldVTag.listeners, newVTag.listeners);
+    patchChildren(root, oldVTag.children, newVTag.children);
 
-    newInfo.fixup(root)();
-
+    newVTag.fixup(root)();
   }
 
-}
+  function patchAttrs(root, oldAttrs, newAttrs) {
+    // Add new attrs + modify changed attrs
+    for (const attr of newAttrs) {
+      const [name, value] = casePair(attr)(a => b => [a, b]);
+      root.setAttribute(name, value);
+    }
 
-function patchAttrs(root, oldAttrs, newAttrs) {
-  // Add new attrs + modify changed attrs
-  for (const attr of newAttrs) {
-    root.setAttribute(attr.name, attr.value);
-  }
-
-  // Remove old attrs
-  const newAttrNames = new Set(newAttrs.map(({ name }) => name));
-  for (const attr of oldAttrs) {
-    if (!newAttrNames.has(attr.name)) {
-      root.removeAttribute(attr.name);
+    // Remove old attrs
+    const newAttrNames = new Set(newAttrs.map(attr => casePair(attr)(name => _ => name)));
+    for (const attr of oldAttrs) {
+      const [name, _] = casePair(attr)(a => b => [a, b]);
+      if (!newAttrNames.has(name)) {
+        root.removeAttribute(name);
+      }
     }
   }
-}
 
-function patchListeners(root, oldListeners, newListeners) {
-  // Can't diff functions, so just remove all old listeners then add the new
+  function patchListeners(root, oldListeners, newListeners) {
+    // Can't diff functions, so just remove all old listeners then add the new
 
-  // Remove old listeners
-  for (const listener of oldListeners) {
-    const map = root._listeners ?? {};
-    root.removeEventListener(listener.name, map[listener.name]);
+    // Remove old listeners
+    // Read listeners from oldListeners instead of from root._listeners so that
+    // we don't remove listeners added by other code
+    for (const listener of oldListeners) {
+      const [name, _] = casePair(listener)(a => b => [a, b]);
+      const map = root._listeners ?? {};
+      root.removeEventListener(name, map[name]);
+    }
+
+    // Add new listeners
+    root._listeners = {};
+    for (const listener of newListeners) {
+      const [name, handler] = casePair(listener)(a => b => [a, b]);
+      const domHandler = ev => handler(ev)();
+      root.addEventListener(name, domHandler);
+      root._listeners[name] = domHandler;
+    }
   }
 
-  // Add new listeners
-  root._listeners = {};
-  for (const listener of newListeners) {
-    const handler = ev => listener.handler(ev)();
-    root.addEventListener(listener.name, handler);
-    root._listeners[listener.name] = handler;
-  }
-}
+  function patchChildren(root, oldChildren, newChildren) {
+    // Add new children + patch existing ones
+    for (let i = 0; i < newChildren.length; i++) {
+      // Ensure that a child exists
+      if (root.childNodes.length <= i) root.append('');
+      // Patch the child
+      const child = root.childNodes[i];
+      patch(child, oldChildren[i], newChildren[i]);
+    }
 
-function patchChildren(root, oldChildren, newChildren) {
-  // nb. No keyed elements at the moment
-
-  // Add new children + patch existing ones
-  for (let i = 0; i < newChildren.length; i++) {
-    // Ensure that a child exists
-    if (root.childNodes.length <= i) root.append('');
-    // Patch the child
-    const child = root.childNodes[i];
-    patch(child, oldChildren[i], newChildren[i]);
+    // Remove excess children
+    while (root.childNodes.length > newChildren.length) {
+      root.lastChild.remove();
+    }
   }
 
-  // Remove excess children
-  while (root.childNodes.length > newChildren.length) {
-    root.lastChild.remove();
-  }
-}
-
+};
