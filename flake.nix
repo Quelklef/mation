@@ -34,6 +34,7 @@ outputs = { self, ... }@inputs: let
         pkgs.python3
         pkgs.nodejs
         pkgs.entr
+        pkgs.findutils  # find
       ];
 
     shell-hook = ''
@@ -107,14 +108,25 @@ in {
     # -- interactive demo -- #
 
     demo.type = "app";
-    demo.program = builtins.toString (
+    demo.program = let
+      # Reset shell environment and do not read profile/rc files
+      bash-pure = pkgs.writeScript "bash-pure" ''
+        #!${pkgs.bash}/bin/bash
+        exec env -i ${pkgs.bash}/bin/bash --noprofile --norc "$@"
+      '';
+      # Inherit shell environment but do not read profile/rc files
+      bash-semipure = pkgs.writeScript "bash-semipure" ''
+        #!${pkgs.bash}/bin/bash
+        exec ${pkgs.bash}/bin/bash --noprofile --norc "$@"
+      '';
+    in builtins.toString (
       pkgs.writeScript
       "mation-interactive-demo"
       ''
-      #!${pkgs.bash}/bin/bash
+      #!${bash-pure}
       set -euo pipefail
 
-      export PATH="$PATH:${pkgs.lib.strings.makeBinPath [ pkgs.coreutils ]}"
+      export PATH="${pkgs.lib.strings.makeBinPath [ pkgs.coreutils ]}:''${PATH:+$PATH}"
 
       demoloc="$(pwd)/mation-demo"
       examplesloc="$demoloc/src/Mation/Examples"
@@ -140,7 +152,7 @@ in {
       cp ${./.}/. -r .
       chmod +w -R .
 
-      export PATH="$PATH:${pkgs.lib.strings.makeBinPath devt-shell.runtime-deps}"
+      export PATH="${pkgs.lib.strings.makeBinPath devt-shell.runtime-deps}:''${PATH:+$PATH}"
       ${devt-shell.shell-hook}
 
       echo
@@ -151,6 +163,10 @@ in {
       echo " 2. Opening your editor to $moduleloc"
       echo
       read -p 'Press enter when done! '
+
+      # Have entr use bash
+      # Don't use bash-pure because we do want it to inherit *this* environment
+      export SHELL='${bash-semipure}'
 
       mation.devt
       ''
