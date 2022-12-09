@@ -121,7 +121,7 @@ toProp1 style =
   let
     className = "_mationcss-" <> show (hash style)
     selector = "." <> className
-    css = toCss selector (mapStyle1 PF.toEndo style)
+    css = toCss selector (mapStyle1 PF.toEndoCom style)
   in mkFixup \node -> do
     restoreCss <- putCss { css, forClass: className }
     restoreClass <- putClass node className

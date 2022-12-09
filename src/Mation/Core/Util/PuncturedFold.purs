@@ -11,19 +11,18 @@ import Data.Hashable (class Hashable, hash)
 -- |
 -- | ```
 -- | f = \x -> a1 <> x <> a2 <> a3 <> x
--- | f = \x -> fold [ a1, x, a2, a3, x ]
+-- |   = \x -> fold [ a1, x, a2, a3, x ]
 -- | ```
 -- |
 -- | The type `PuncturedFold A` gives a concrete representation to
--- | exactly those functions. That is, the type `PuncturedFold A` is
+-- | exactly such functions. That is, the type `PuncturedFold A` is
 -- | a subscture of `A -> A` (relative to both composition and
--- | concatenation; see the functions below) for which we have nice
+-- | concatenation; see the functions later on) for which we have nice
 -- | properties like the ability to write an `Eq` instance.
 -- |
 -- | We think of these functions as calls to `fold` awaiting a single
--- | value to complete. That value has been "punched out" of the call,
+-- | value to complete. That value has been "punched out" of the `fold`,
 -- | hence the name `PuncturedFold`.
--- |
 -- |
 -- | A `PuncturedFold A` is represented as an array of elemens, each of
 -- | which is either an element of `A` or a `Hole`, which represents
@@ -31,7 +30,7 @@ import Data.Hashable (class Hashable, hash)
 -- | be expressed as
 -- |
 -- | ```
--- | pf = [ Elem a1, Hole, Elem a2, Elem a3, Hole ]
+-- | pf = PF [ Elem a1, Hole, Elem a2, Elem a3, Hole ]
 -- | ```
 newtype PuncturedFold a = PF (Array (Elem a))
 
@@ -51,11 +50,48 @@ instance Hashable a => Hashable (Elem a) where
     Elem x -> hash $ 2 /\ x
 
 
-toEndo :: forall a. Monoid a => PuncturedFold a -> Endo' a
-toEndo = toEndo_ >>> Endo
+-- | Turn a `PuncturedFold` into an `Endo (->)`.
+-- |
+-- | This interprets each `Hole` a parameter and interprets
+-- | element juxtaposition as monoidal concatenation.
+-- |
+-- | For instance,
+-- |
+-- | ```
+-- | toEndoCom (PF [ Elem "anti-", Hole, Elem "ism" ])
+-- | = Endo (\str -> "anti-" <> str <> "ism")
+-- | ```
+toEndoCom :: forall a. Monoid a => PuncturedFold a -> Endo' a
+toEndoCom = toEndoCat >>> Endo
 
-toEndo_ :: forall a. Monoid a => PuncturedFold a -> (a -> a)
-toEndo_ (PF elems) =
+-- | Same as `toEndo` but without the `Endo` newtype
+-- |
+-- | Note that `a -> a` and `Endo (->) a` have different monoid
+-- | instances. Hence, `toEndoCom` and `toEndoCat`, differing
+-- | only in `newtype`s, are different monoid-injections
+-- | from `PuncturedFold a` into `a -> a`.
+-- |
+-- | Namely, `toEndoCom` is the injection which takes `<>`
+-- | to function composition, and `toEndoCat` is the inection
+-- | which takes `<>` to function-result-concatenation.
+-- |
+-- | For instance, if we let
+-- |
+-- | ```
+-- | brace = PF [ Elem "{", Hole, "}" ]
+-- | brack = PF [ Elem "[", Hole, "]" ]
+-- | ```
+-- |
+-- | Then we get
+-- |
+-- | ```
+-- | (let Endo f = toEndoCom brace <> toEndoCom brack in f "😄")
+-- | = "{[😄]} "
+-- | (let Endo f = toEndoCat brace <> toEndoCat brack in f "😄")
+-- | = "{😄}[😄]"
+-- | ```
+toEndoCat :: forall a. Monoid a => PuncturedFold a -> (a -> a)
+toEndoCat (PF elems) =
   elems # foldMap case _ of
     Hole -> identity
     Elem a -> const a
@@ -63,16 +99,16 @@ toEndo_ (PF elems) =
 
 -- | Concatenate two punctured folds
 -- |
--- | This is the preimage of `<>` under `toEndo_`.
--- | That is, ``toEndo_ (pf1 `concat` pf2) = toEndo_ pf1 <> toEndo_ pf2``
+-- | This is the preimage of `<>` under `toEndoCat`.
+-- | That is, ``toEndoCat (pf1 `concat` pf2) = toEndoCat pf1 <> toEndoCat pf2``
 concat :: forall a. PuncturedFold a -> PuncturedFold a -> PuncturedFold a
 concat (PF xs) (PF ys) = PF (xs <> ys)
 
 
 -- | Compose two punctured folds
 -- |
--- | This is the preimage of `<>` under `toEndo`.
--- | That is, ``toEndo (pf1 `compose` pf2) = toEndo pf1 <> toEndo pf2``
+-- | This is the preimage of `<>` under `toEndoCom`.
+-- | That is, ``toEndoCom (pf1 `compose` pf2) = toEndoCom pf1 <> toEndoCom pf2``
 compose :: forall a. PuncturedFold a -> PuncturedFold a -> PuncturedFold a
 compose (PF xs) (PF ys) = PF $
   ys >>= case _ of
