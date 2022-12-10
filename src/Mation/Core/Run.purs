@@ -108,40 +108,45 @@ runApp args = do
 
   let
     -- Turn a Mation into an Effect
-    -- Required by patchOnto
-    toEff :: Mation m s -> Effect Unit
-    toEff mat = do
+    execMation :: Mation m s -> Effect Unit
+    execMation mat = do
       step <- Ref.read stepRef
       args.toEffect $ Mation.runMation mat step
 
   -- Render for the first time
-  model /\ html <- do
+  model /\ vNode <- do
     let model = args.initial
-    html <- renderTo1 model
-    let patch = Patch.patchOnto { toEff, old: Nothing, new: html }
+    vNode <- renderTo1 model
+    let patch = Patch.patchOnto
+                  { mOldVNode: Nothing
+                  , newVNode: execMation <$> vNode
+                  }
     args.root >>= patch
     args.listen model
-    pure $ model /\ html
+    pure $ model /\ vNode
 
   -- Holds current model & rendered HTML
-  ref <- Ref.new (model /\ html)
+  ref <- Ref.new (model /\ vNode)
 
   let
     -- This is the actual step function
     step :: (s -> s) -> Effect Unit
     step endo = do
-      oldModel /\ oldHtml <- Ref.read ref
+      oldModel /\ oldVNode <- Ref.read ref
       let newModel = endo oldModel
-      newHtml <- renderTo1 newModel
-      Ref.write (newModel /\ newHtml) ref
-      let patch = Patch.patchOnto { toEff, old: Just oldHtml, new: newHtml }
+      newVNode <- renderTo1 newModel
+      Ref.write (newModel /\ newVNode) ref
+      let patch = Patch.patchOnto
+                    { mOldVNode: Just (execMation <$> oldVNode)
+                    , newVNode: execMation <$> newVNode
+                    }
       args.root >>= patch
       args.listen newModel
 
   -- Populate the stepRef with the correct value
   Ref.write step stepRef
 
-  toEff args.kickoff
+  execMation args.kickoff
 
 
 -- | Mount an application as a child of `<body>`
@@ -152,3 +157,4 @@ foreign import underBody:: Effect DomNode
 
 -- | Mount an application on `<html>`. The application will replace `<html>` each render
 foreign import onHtml :: Effect DomNode
+

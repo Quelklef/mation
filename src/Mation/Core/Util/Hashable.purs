@@ -16,7 +16,10 @@ instance Hashable String where
   hash s = m3 [s]
 
 instance Hashable Int where
-  hash n = hash (show n)
+  hash = hash <<< show
+
+instance Hashable Number where
+  hash = hash <<< show
 
 instance Hashable a => Hashable (Array a) where
   hash = m3 <<< map hash

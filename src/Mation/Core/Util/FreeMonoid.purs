@@ -87,3 +87,6 @@ float arr = arr >>= coerce
 -- | Inject
 singleton :: forall t t1. FreeMonoid t t1 => t1 -> t
 singleton = Array.singleton >>> coerce
+
+unwrap :: forall t t1. FreeMonoid t t1 => t -> Array t1
+unwrap = coerce

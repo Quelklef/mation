@@ -23,8 +23,10 @@ import Data.Maybe (Maybe (..), fromMaybe) as X
 import Data.Map (Map) as X
 import Data.Monoid (power) as X
 import Data.Monoid.Endo (Endo (..)) as X
+import Data.Lens.Types (Getter') as X
 import Data.Lens.Lens (Lens') as X
 import Data.Lens.Setter (Setter') as X
+import Data.Lens.Getter ((^.)) as X
 import Data.Lens.Record (prop) as X
 import Data.Lens.Setter ((.~), (%~)) as X
 import Data.Newtype (class Newtype) as X

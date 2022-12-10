@@ -6,6 +6,9 @@ import Mation.Core.Util.Assoc as Assoc
 import Mation.Core.Mation (Mation)
 import Mation.Core.Html (VNode (..), CaseVNode, caseVNode)
 import Mation.Core.Dom (DomNode, DomEvent)
+import Mation.Core.Util.UnsureEq (Unsure (..))
+import Mation.Core.Util.FreeMonoid as FM
+import Mation.Core.Util.Assoc (Assoc (..))
 
 
 -- | Instead of patching onto a DOM Node directly, we diff the old and new state
@@ -24,30 +27,33 @@ import Mation.Core.Dom (DomNode, DomEvent)
 -- | The downside to this design is that it means the patching is less robust:
 -- | if some DOM node attribute is accidentally deleted by external javascript,
 -- | for instance, re-rendering the model will not replace it.
-patchOnto :: forall m s.
-  { toEff :: Mation m s -> Effect Unit
-  , old :: Maybe (VNode (Mation m s))
-  , new :: VNode (Mation m s)
+patchOnto ::
+  { mOldVNode :: Maybe (VNode (Effect Unit))
+  , newVNode :: VNode (Effect Unit)
   }
   -> DomNode -> Effect Unit
-patchOnto { toEff, old, new } =
+patchOnto { mOldVNode, newVNode } =
   patch_f
-    caseMaybe
-    casePair
-    caseVNode
-    { mOldVNode: map (map toEff) old
-    , newVNode: map toEff new
+    { caseMaybe
+    , casePair
+    , caseUnsure
+    , caseVNode
+    }
+    { mOldVNode
+    , newVNode
     }
 
 
 foreign import patch_f ::
-     CaseMaybe
-  -> CasePair
-  -> CaseVNode
-  -> { mOldVNode :: Maybe (VNode (Effect Unit))
-     , newVNode :: VNode (Effect Unit)
-     }
-  -> DomNode -> Effect Unit
+   { caseMaybe :: CaseMaybe
+   , casePair :: CasePair
+   , caseUnsure :: CaseUnsure
+   , caseVNode ::CaseVNode
+   } ->
+   { mOldVNode :: Maybe (VNode (Effect Unit))
+   , newVNode :: VNode (Effect Unit)
+   }
+  -> (DomNode -> Effect Unit)
 
 
 
@@ -67,3 +73,13 @@ type CasePair =
 
 casePair :: CasePair
 casePair (a /\ b) f = f a b
+
+
+type CaseUnsure =
+  forall a r. Unsure a -> (a -> r) -> r -> r
+
+caseUnsure :: CaseUnsure
+caseUnsure uc certainly uncertain =
+  case uc of
+    Certainly x -> certainly x
+    Unsure -> uncertain

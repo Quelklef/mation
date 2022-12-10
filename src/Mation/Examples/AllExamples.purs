@@ -16,6 +16,7 @@ import Mation.Examples.AsyncApiCall as AsyncApiCall
 import Mation.Examples.Styling as Styling
 import Mation.Examples.TestingZone as TestingZone
 import Mation.Examples.PerfTest as PerfTest
+import Mation.Examples.Pruning as Pruning
 
 
 data Page
@@ -33,12 +34,13 @@ data Page
   -- Testing stuff
   | TestingZone
   | PerfTest
+  | Pruning
 
 separateAfter :: Array Page
 separateAfter = [ Welcome, Styling ]
 
 pages :: Array Page
-pages = [ Welcome, Counter, Components, LensProduct, AsyncApiCall, Styling, TestingZone, PerfTest ]
+pages = [ Welcome, Counter, Components, LensProduct, AsyncApiCall, Styling, TestingZone, PerfTest, Pruning ]
   -- Don't want to add a whole dep for Enum for a testing module
 
 derive instance Generic Page _
@@ -56,6 +58,7 @@ pretty = case _ of
   Styling -> "Styling"
   TestingZone -> "Testing-zone"
   PerfTest -> "Perf-test"
+  Pruning -> "Pruning"
 
 unpretty :: String -> Maybe Page
 unpretty = case _ of
@@ -67,6 +70,7 @@ unpretty = case _ of
   "Async-API-call" -> Just AsyncApiCall
   "Styling" -> Just Styling
   "Perf-test" -> Just PerfTest
+  "Pruning" -> Just Pruning
   _ -> Nothing
 
 
@@ -93,6 +97,7 @@ type Model =
   , styling :: Styling.Model
   , testing :: TestingZone.Model
   , perfTest :: PerfTest.Model
+  , pruning :: Pruning.Model
   }
 
 _page = prop (Proxy :: Proxy "page")
@@ -105,6 +110,7 @@ _asyncApiCall = prop (Proxy :: Proxy "asyncApiCall")
 _styling = prop (Proxy :: Proxy "styling")
 _testing = prop (Proxy :: Proxy "testing")
 _perfTest = prop (Proxy :: Proxy "perfTest")
+_pruning = prop (Proxy :: Proxy "pruning")
 
 
 render :: Model -> E.Html' Model
@@ -124,6 +130,7 @@ render model =
         AsyncApiCall -> E.enroot _asyncApiCall (AsyncApiCall.render model.asyncApiCall)
         Styling -> E.enroot _styling (Styling.render model.styling)
         PerfTest -> E.enroot _perfTest (PerfTest.render model.perfTest)
+        Pruning -> E.enroot _pruning (Pruning.render model.pruning)
     ]
   ]
 
@@ -182,6 +189,7 @@ initialize = do
     , asyncApiCall: AsyncApiCall.initial
     , styling: Styling.initial
     , perfTest: PerfTest.initial
+    , pruning: Pruning.initial
     }
 
 

@@ -12,6 +12,9 @@ import Mation.Core.Util.FreeMonoid as FM
 
 type Model = Unit
 
+-- FIXME: Navigating to this page from Fast-enroot breaks.
+--        This occurs even when Fast-enroot doesn't use caching!
+
 initial :: Model
 initial = unit
 
