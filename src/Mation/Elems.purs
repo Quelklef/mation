@@ -15,6 +15,8 @@ import Mation.Core.Html as Html
 import Mation.Core.Html (Html)
 import Mation.Core.Mation (Mation)
 import Mation.Core.Dom (DomNode, DomEvent)
+import Mation.Core.Prop (Prop)
+import Mation.Core.Prop as Prop
 import Mation.Core.Util.Assoc (Assoc (..))
 import Mation.Core.Util.FreeMonoid as FM
 
@@ -33,20 +35,6 @@ rawHtml = Html.mkRawHtml
 rawNode :: forall m s. DomNode -> Html m s
 rawNode = Html.mkRawNode
 
--- | Do-it-yourself element creation
-mkTag :: forall m s.
-  { tag :: String
-  , attrs :: Map String String
-  , listeners :: Map String (DomEvent -> Mation m s)
-  , fixup :: DomNode -> Effect { restore :: Effect Unit }
-  , children :: Array (Html m s)
-  }
-  -> Html m s
-mkTag { tag, attrs, listeners, fixup, children } =
-  Html.mkTag
-    { tag
-    , attrs: Assoc $ Map.toUnfoldable attrs
-    , listeners: Assoc $ Map.toUnfoldable listeners
-    , fixup
-    , children
-    }
+-- | Bring-your-own tagname
+mkTag :: forall m s. String -> Array (Prop m s) -> Array (Html m s) -> Html m s
+mkTag = Prop.mkElement
