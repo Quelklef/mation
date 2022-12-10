@@ -1,7 +1,7 @@
 
 -- | Functions for creating and modifying `Prop`erties
 
-module Mation.Props (module X, style', onInput') where
+module Mation.Props (module X, style', onInput', fixup, mkPair, mkListener) where
   
 import Mation.Core.Prop (Prop) as X
 import Mation.Gen.Attributes as X
@@ -9,8 +9,9 @@ import Mation.Gen.Events as X
 
 import Mation.Core.Prelude
 import Mation.Core.Mation (Mation)
-import Mation.Core.Prop (Prop, mkPair)
-import Mation.Core.Dom (DomEvent)
+import Mation.Core.Prop (Prop)
+import Mation.Core.Prop as Prop
+import Mation.Core.Dom (DomEvent, DomNode)
 import Mation.Core.Style (Style (..))
 import Mation.Core.Style as Style
 import Mation.Core.Util.PuncturedFold (PuncturedFold)
@@ -26,3 +27,17 @@ onInput' :: forall m s. (String -> Mation m s) -> Prop m s
 onInput' f = X.onInput (\ev -> f (getTargetValue ev))
 
 foreign import getTargetValue :: DomEvent -> String
+
+-- | Create a `Prop` which will execute a given function on the rendered DOM node
+-- | and then execute the given `restore` before rendering the next frame
+fixup :: forall m s. (DomNode -> Effect { restore :: Effect Unit }) -> Prop m s
+fixup = Prop.mkFixup
+
+-- | Do-it-yourself HTML attribute
+mkPair :: forall m s. String -> String -> Prop m s
+mkPair = Prop.mkPair
+
+-- | Do-it-yourself event listener
+mkListener :: forall m s. String -> (DomEvent -> Mation m s) -> Prop m s
+mkListener = Prop.mkListener
+
