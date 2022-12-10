@@ -133,7 +133,7 @@ render model =
     E.div
     [ P.style'
         [ S.display "flex"
-        , S.gap "1em"
+        , S.gap "1.5em"
         , S.alignItems "center"
         , S.fontFamily "sans-serif"
         , S.padding "0 2em"
@@ -147,7 +147,8 @@ render model =
           E.span
           [ P.style'
             [ S.cursor "pointer"
-            , S.lineHeight "3em"
+            , S.textAlign "center"
+            , S.padding "1em 0"
             , if isCurrent then S.textDecoration "underline" else mempty
             ]
           , P.onClick \_ -> M.mkPure (_page .~ page)
