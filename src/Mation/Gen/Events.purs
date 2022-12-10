@@ -7,7 +7,7 @@ module Mation.Gen.Events where
 import Prelude
 import Mation.Core.Mation (Mation)
 import Mation.Core.Dom (DomEvent)
-import Mation.Core.Html (Prop, mkListener)
+import Mation.Core.Prop (Prop, mkListener)
 
 
 -- | [HTML abort event](https://developer.mozilla.org/en-US/docs/Web/API/Element/abort_event). This is generated code.

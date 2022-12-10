@@ -4,7 +4,8 @@
 
 module Mation.Gen.Tags where
 
-import Mation.Core.Html (Prop, Html, mkElement)
+import Mation.Core.Html (Html)
+import Mation.Core.Prop (Prop, mkElement)
 
 
 -- | [HTML <a> tag](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a). This is generated code.

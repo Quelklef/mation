@@ -5,7 +5,8 @@
 module Mation.Gen.Attributes where
 
 import Prelude
-import Mation.Core.Html (Prop, mkPair, mkNoop)
+import Mation.Core.Html (Html)
+import Mation.Core.Prop (Prop, mkPair, mkNoop)
 
 
 -- | [HTML abbr attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/abbr). This is generated code.

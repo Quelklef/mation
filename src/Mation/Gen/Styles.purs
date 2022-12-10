@@ -5,795 +5,794 @@
 module Mation.Gen.Styles where
 
 import Prelude
-import Mation.Core.Style (Style (..), Style1 (..))
-import Mation.Core.Util.PuncturedFold (PuncturedFold)
+import Mation.Core.Style (Style (..), mkPair)
 
 
 -- | [CSS align-content property](https://developer.mozilla.org/en-US/docs/Web/CSS/align-content). This is generated code.
 alignContent :: String -> Style
-alignContent val = Style [ SPair "align-content" val ]
+alignContent = mkPair "align-content"
 
 -- | [CSS align-items property](https://developer.mozilla.org/en-US/docs/Web/CSS/align-items). This is generated code.
 alignItems :: String -> Style
-alignItems val = Style [ SPair "align-items" val ]
+alignItems = mkPair "align-items"
 
 -- | [CSS align-self property](https://developer.mozilla.org/en-US/docs/Web/CSS/align-self). This is generated code.
 alignSelf :: String -> Style
-alignSelf val = Style [ SPair "align-self" val ]
+alignSelf = mkPair "align-self"
 
 -- | [CSS all property](https://developer.mozilla.org/en-US/docs/Web/CSS/all). This is generated code.
 all :: String -> Style
-all val = Style [ SPair "all" val ]
+all = mkPair "all"
 
 -- | [CSS animation property](https://developer.mozilla.org/en-US/docs/Web/CSS/animation). This is generated code.
 animation :: String -> Style
-animation val = Style [ SPair "animation" val ]
+animation = mkPair "animation"
 
 -- | [CSS animation-delay property](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-delay). This is generated code.
 animationDelay :: String -> Style
-animationDelay val = Style [ SPair "animation-delay" val ]
+animationDelay = mkPair "animation-delay"
 
 -- | [CSS animation-direction property](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-direction). This is generated code.
 animationDirection :: String -> Style
-animationDirection val = Style [ SPair "animation-direction" val ]
+animationDirection = mkPair "animation-direction"
 
 -- | [CSS animation-duration property](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-duration). This is generated code.
 animationDuration :: String -> Style
-animationDuration val = Style [ SPair "animation-duration" val ]
+animationDuration = mkPair "animation-duration"
 
 -- | [CSS animation-fill-mode property](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-fill-mode). This is generated code.
 animationFillMode :: String -> Style
-animationFillMode val = Style [ SPair "animation-fill-mode" val ]
+animationFillMode = mkPair "animation-fill-mode"
 
 -- | [CSS animation-iteration-count property](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-iteration-count). This is generated code.
 animationIterationCount :: String -> Style
-animationIterationCount val = Style [ SPair "animation-iteration-count" val ]
+animationIterationCount = mkPair "animation-iteration-count"
 
 -- | [CSS animation-name property](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-name). This is generated code.
 animationName :: String -> Style
-animationName val = Style [ SPair "animation-name" val ]
+animationName = mkPair "animation-name"
 
 -- | [CSS animation-play-state property](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-play-state). This is generated code.
 animationPlayState :: String -> Style
-animationPlayState val = Style [ SPair "animation-play-state" val ]
+animationPlayState = mkPair "animation-play-state"
 
 -- | [CSS animation-timing-function property](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-timing-function). This is generated code.
 animationTimingFunction :: String -> Style
-animationTimingFunction val = Style [ SPair "animation-timing-function" val ]
+animationTimingFunction = mkPair "animation-timing-function"
 
 -- | [CSS backface-visibility property](https://developer.mozilla.org/en-US/docs/Web/CSS/backface-visibility). This is generated code.
 backfaceVisibility :: String -> Style
-backfaceVisibility val = Style [ SPair "backface-visibility" val ]
+backfaceVisibility = mkPair "backface-visibility"
 
 -- | [CSS background property](https://developer.mozilla.org/en-US/docs/Web/CSS/background). This is generated code.
 background :: String -> Style
-background val = Style [ SPair "background" val ]
+background = mkPair "background"
 
 -- | [CSS background-attachment property](https://developer.mozilla.org/en-US/docs/Web/CSS/background-attachment). This is generated code.
 backgroundAttachment :: String -> Style
-backgroundAttachment val = Style [ SPair "background-attachment" val ]
+backgroundAttachment = mkPair "background-attachment"
 
 -- | [CSS background-blend-mode property](https://developer.mozilla.org/en-US/docs/Web/CSS/background-blend-mode). This is generated code.
 backgroundBlendMode :: String -> Style
-backgroundBlendMode val = Style [ SPair "background-blend-mode" val ]
+backgroundBlendMode = mkPair "background-blend-mode"
 
 -- | [CSS background-clip property](https://developer.mozilla.org/en-US/docs/Web/CSS/background-clip). This is generated code.
 backgroundClip :: String -> Style
-backgroundClip val = Style [ SPair "background-clip" val ]
+backgroundClip = mkPair "background-clip"
 
 -- | [CSS background-color property](https://developer.mozilla.org/en-US/docs/Web/CSS/background-color). This is generated code.
 backgroundColor :: String -> Style
-backgroundColor val = Style [ SPair "background-color" val ]
+backgroundColor = mkPair "background-color"
 
 -- | [CSS background-image property](https://developer.mozilla.org/en-US/docs/Web/CSS/background-image). This is generated code.
 backgroundImage :: String -> Style
-backgroundImage val = Style [ SPair "background-image" val ]
+backgroundImage = mkPair "background-image"
 
 -- | [CSS background-origin property](https://developer.mozilla.org/en-US/docs/Web/CSS/background-origin). This is generated code.
 backgroundOrigin :: String -> Style
-backgroundOrigin val = Style [ SPair "background-origin" val ]
+backgroundOrigin = mkPair "background-origin"
 
 -- | [CSS background-position property](https://developer.mozilla.org/en-US/docs/Web/CSS/background-position). This is generated code.
 backgroundPosition :: String -> Style
-backgroundPosition val = Style [ SPair "background-position" val ]
+backgroundPosition = mkPair "background-position"
 
 -- | [CSS background-repeat property](https://developer.mozilla.org/en-US/docs/Web/CSS/background-repeat). This is generated code.
 backgroundRepeat :: String -> Style
-backgroundRepeat val = Style [ SPair "background-repeat" val ]
+backgroundRepeat = mkPair "background-repeat"
 
 -- | [CSS background-size property](https://developer.mozilla.org/en-US/docs/Web/CSS/background-size). This is generated code.
 backgroundSize :: String -> Style
-backgroundSize val = Style [ SPair "background-size" val ]
+backgroundSize = mkPair "background-size"
 
 -- | [CSS border property](https://developer.mozilla.org/en-US/docs/Web/CSS/border). This is generated code.
 border :: String -> Style
-border val = Style [ SPair "border" val ]
+border = mkPair "border"
 
 -- | [CSS border-bottom property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom). This is generated code.
 borderBottom :: String -> Style
-borderBottom val = Style [ SPair "border-bottom" val ]
+borderBottom = mkPair "border-bottom"
 
 -- | [CSS border-bottom-color property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom-color). This is generated code.
 borderBottomColor :: String -> Style
-borderBottomColor val = Style [ SPair "border-bottom-color" val ]
+borderBottomColor = mkPair "border-bottom-color"
 
 -- | [CSS border-bottom-left-radius property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom-left-radius). This is generated code.
 borderBottomLeftRadius :: String -> Style
-borderBottomLeftRadius val = Style [ SPair "border-bottom-left-radius" val ]
+borderBottomLeftRadius = mkPair "border-bottom-left-radius"
 
 -- | [CSS border-bottom-right-radius property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom-right-radius). This is generated code.
 borderBottomRightRadius :: String -> Style
-borderBottomRightRadius val = Style [ SPair "border-bottom-right-radius" val ]
+borderBottomRightRadius = mkPair "border-bottom-right-radius"
 
 -- | [CSS border-bottom-style property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom-style). This is generated code.
 borderBottomStyle :: String -> Style
-borderBottomStyle val = Style [ SPair "border-bottom-style" val ]
+borderBottomStyle = mkPair "border-bottom-style"
 
 -- | [CSS border-bottom-width property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom-width). This is generated code.
 borderBottomWidth :: String -> Style
-borderBottomWidth val = Style [ SPair "border-bottom-width" val ]
+borderBottomWidth = mkPair "border-bottom-width"
 
 -- | [CSS border-collapse property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-collapse). This is generated code.
 borderCollapse :: String -> Style
-borderCollapse val = Style [ SPair "border-collapse" val ]
+borderCollapse = mkPair "border-collapse"
 
 -- | [CSS border-color property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-color). This is generated code.
 borderColor :: String -> Style
-borderColor val = Style [ SPair "border-color" val ]
+borderColor = mkPair "border-color"
 
 -- | [CSS border-image property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-image). This is generated code.
 borderImage :: String -> Style
-borderImage val = Style [ SPair "border-image" val ]
+borderImage = mkPair "border-image"
 
 -- | [CSS border-image-outset property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-image-outset). This is generated code.
 borderImageOutset :: String -> Style
-borderImageOutset val = Style [ SPair "border-image-outset" val ]
+borderImageOutset = mkPair "border-image-outset"
 
 -- | [CSS border-image-repeat property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-image-repeat). This is generated code.
 borderImageRepeat :: String -> Style
-borderImageRepeat val = Style [ SPair "border-image-repeat" val ]
+borderImageRepeat = mkPair "border-image-repeat"
 
 -- | [CSS border-image-slice property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-image-slice). This is generated code.
 borderImageSlice :: String -> Style
-borderImageSlice val = Style [ SPair "border-image-slice" val ]
+borderImageSlice = mkPair "border-image-slice"
 
 -- | [CSS border-image-source property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-image-source). This is generated code.
 borderImageSource :: String -> Style
-borderImageSource val = Style [ SPair "border-image-source" val ]
+borderImageSource = mkPair "border-image-source"
 
 -- | [CSS border-image-width property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-image-width). This is generated code.
 borderImageWidth :: String -> Style
-borderImageWidth val = Style [ SPair "border-image-width" val ]
+borderImageWidth = mkPair "border-image-width"
 
 -- | [CSS border-left property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-left). This is generated code.
 borderLeft :: String -> Style
-borderLeft val = Style [ SPair "border-left" val ]
+borderLeft = mkPair "border-left"
 
 -- | [CSS border-left-color property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-left-color). This is generated code.
 borderLeftColor :: String -> Style
-borderLeftColor val = Style [ SPair "border-left-color" val ]
+borderLeftColor = mkPair "border-left-color"
 
 -- | [CSS border-left-style property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-left-style). This is generated code.
 borderLeftStyle :: String -> Style
-borderLeftStyle val = Style [ SPair "border-left-style" val ]
+borderLeftStyle = mkPair "border-left-style"
 
 -- | [CSS border-left-width property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-left-width). This is generated code.
 borderLeftWidth :: String -> Style
-borderLeftWidth val = Style [ SPair "border-left-width" val ]
+borderLeftWidth = mkPair "border-left-width"
 
 -- | [CSS border-radius property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-radius). This is generated code.
 borderRadius :: String -> Style
-borderRadius val = Style [ SPair "border-radius" val ]
+borderRadius = mkPair "border-radius"
 
 -- | [CSS border-right property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-right). This is generated code.
 borderRight :: String -> Style
-borderRight val = Style [ SPair "border-right" val ]
+borderRight = mkPair "border-right"
 
 -- | [CSS border-right-color property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-right-color). This is generated code.
 borderRightColor :: String -> Style
-borderRightColor val = Style [ SPair "border-right-color" val ]
+borderRightColor = mkPair "border-right-color"
 
 -- | [CSS border-right-style property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-right-style). This is generated code.
 borderRightStyle :: String -> Style
-borderRightStyle val = Style [ SPair "border-right-style" val ]
+borderRightStyle = mkPair "border-right-style"
 
 -- | [CSS border-right-width property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-right-width). This is generated code.
 borderRightWidth :: String -> Style
-borderRightWidth val = Style [ SPair "border-right-width" val ]
+borderRightWidth = mkPair "border-right-width"
 
 -- | [CSS border-spacing property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-spacing). This is generated code.
 borderSpacing :: String -> Style
-borderSpacing val = Style [ SPair "border-spacing" val ]
+borderSpacing = mkPair "border-spacing"
 
 -- | [CSS border-style property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-style). This is generated code.
 borderStyle :: String -> Style
-borderStyle val = Style [ SPair "border-style" val ]
+borderStyle = mkPair "border-style"
 
 -- | [CSS border-top property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-top). This is generated code.
 borderTop :: String -> Style
-borderTop val = Style [ SPair "border-top" val ]
+borderTop = mkPair "border-top"
 
 -- | [CSS border-top-color property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-top-color). This is generated code.
 borderTopColor :: String -> Style
-borderTopColor val = Style [ SPair "border-top-color" val ]
+borderTopColor = mkPair "border-top-color"
 
 -- | [CSS border-top-left-radius property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-top-left-radius). This is generated code.
 borderTopLeftRadius :: String -> Style
-borderTopLeftRadius val = Style [ SPair "border-top-left-radius" val ]
+borderTopLeftRadius = mkPair "border-top-left-radius"
 
 -- | [CSS border-top-right-radius property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-top-right-radius). This is generated code.
 borderTopRightRadius :: String -> Style
-borderTopRightRadius val = Style [ SPair "border-top-right-radius" val ]
+borderTopRightRadius = mkPair "border-top-right-radius"
 
 -- | [CSS border-top-style property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-top-style). This is generated code.
 borderTopStyle :: String -> Style
-borderTopStyle val = Style [ SPair "border-top-style" val ]
+borderTopStyle = mkPair "border-top-style"
 
 -- | [CSS border-top-width property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-top-width). This is generated code.
 borderTopWidth :: String -> Style
-borderTopWidth val = Style [ SPair "border-top-width" val ]
+borderTopWidth = mkPair "border-top-width"
 
 -- | [CSS border-width property](https://developer.mozilla.org/en-US/docs/Web/CSS/border-width). This is generated code.
 borderWidth :: String -> Style
-borderWidth val = Style [ SPair "border-width" val ]
+borderWidth = mkPair "border-width"
 
 -- | [CSS bottom property](https://developer.mozilla.org/en-US/docs/Web/CSS/bottom). This is generated code.
 bottom :: String -> Style
-bottom val = Style [ SPair "bottom" val ]
+bottom = mkPair "bottom"
 
 -- | [CSS box-shadow property](https://developer.mozilla.org/en-US/docs/Web/CSS/box-shadow). This is generated code.
 boxShadow :: String -> Style
-boxShadow val = Style [ SPair "box-shadow" val ]
+boxShadow = mkPair "box-shadow"
 
 -- | [CSS box-sizing property](https://developer.mozilla.org/en-US/docs/Web/CSS/box-sizing). This is generated code.
 boxSizing :: String -> Style
-boxSizing val = Style [ SPair "box-sizing" val ]
+boxSizing = mkPair "box-sizing"
 
 -- | [CSS caption-side property](https://developer.mozilla.org/en-US/docs/Web/CSS/caption-side). This is generated code.
 captionSide :: String -> Style
-captionSide val = Style [ SPair "caption-side" val ]
+captionSide = mkPair "caption-side"
 
 -- | [CSS caret-color property](https://developer.mozilla.org/en-US/docs/Web/CSS/caret-color). This is generated code.
 caretColor :: String -> Style
-caretColor val = Style [ SPair "caret-color" val ]
+caretColor = mkPair "caret-color"
 
 -- | [CSS clear property](https://developer.mozilla.org/en-US/docs/Web/CSS/clear). This is generated code.
 clear :: String -> Style
-clear val = Style [ SPair "clear" val ]
+clear = mkPair "clear"
 
 -- | [CSS clip property](https://developer.mozilla.org/en-US/docs/Web/CSS/clip). This is generated code.
 clip :: String -> Style
-clip val = Style [ SPair "clip" val ]
+clip = mkPair "clip"
 
 -- | [CSS clip-path property](https://developer.mozilla.org/en-US/docs/Web/CSS/clip-path). This is generated code.
 clipPath :: String -> Style
-clipPath val = Style [ SPair "clip-path" val ]
+clipPath = mkPair "clip-path"
 
 -- | [CSS color property](https://developer.mozilla.org/en-US/docs/Web/CSS/color). This is generated code.
 color :: String -> Style
-color val = Style [ SPair "color" val ]
+color = mkPair "color"
 
 -- | [CSS column-count property](https://developer.mozilla.org/en-US/docs/Web/CSS/column-count). This is generated code.
 columnCount :: String -> Style
-columnCount val = Style [ SPair "column-count" val ]
+columnCount = mkPair "column-count"
 
 -- | [CSS column-fill property](https://developer.mozilla.org/en-US/docs/Web/CSS/column-fill). This is generated code.
 columnFill :: String -> Style
-columnFill val = Style [ SPair "column-fill" val ]
+columnFill = mkPair "column-fill"
 
 -- | [CSS column-gap property](https://developer.mozilla.org/en-US/docs/Web/CSS/column-gap). This is generated code.
 columnGap :: String -> Style
-columnGap val = Style [ SPair "column-gap" val ]
+columnGap = mkPair "column-gap"
 
 -- | [CSS column-rule property](https://developer.mozilla.org/en-US/docs/Web/CSS/column-rule). This is generated code.
 columnRule :: String -> Style
-columnRule val = Style [ SPair "column-rule" val ]
+columnRule = mkPair "column-rule"
 
 -- | [CSS column-rule-color property](https://developer.mozilla.org/en-US/docs/Web/CSS/column-rule-color). This is generated code.
 columnRuleColor :: String -> Style
-columnRuleColor val = Style [ SPair "column-rule-color" val ]
+columnRuleColor = mkPair "column-rule-color"
 
 -- | [CSS column-rule-style property](https://developer.mozilla.org/en-US/docs/Web/CSS/column-rule-style). This is generated code.
 columnRuleStyle :: String -> Style
-columnRuleStyle val = Style [ SPair "column-rule-style" val ]
+columnRuleStyle = mkPair "column-rule-style"
 
 -- | [CSS column-rule-width property](https://developer.mozilla.org/en-US/docs/Web/CSS/column-rule-width). This is generated code.
 columnRuleWidth :: String -> Style
-columnRuleWidth val = Style [ SPair "column-rule-width" val ]
+columnRuleWidth = mkPair "column-rule-width"
 
 -- | [CSS column-span property](https://developer.mozilla.org/en-US/docs/Web/CSS/column-span). This is generated code.
 columnSpan :: String -> Style
-columnSpan val = Style [ SPair "column-span" val ]
+columnSpan = mkPair "column-span"
 
 -- | [CSS column-width property](https://developer.mozilla.org/en-US/docs/Web/CSS/column-width). This is generated code.
 columnWidth :: String -> Style
-columnWidth val = Style [ SPair "column-width" val ]
+columnWidth = mkPair "column-width"
 
 -- | [CSS columns property](https://developer.mozilla.org/en-US/docs/Web/CSS/columns). This is generated code.
 columns :: String -> Style
-columns val = Style [ SPair "columns" val ]
+columns = mkPair "columns"
 
 -- | [CSS content property](https://developer.mozilla.org/en-US/docs/Web/CSS/content). This is generated code.
 content :: String -> Style
-content val = Style [ SPair "content" val ]
+content = mkPair "content"
 
 -- | [CSS counter-increment property](https://developer.mozilla.org/en-US/docs/Web/CSS/counter-increment). This is generated code.
 counterIncrement :: String -> Style
-counterIncrement val = Style [ SPair "counter-increment" val ]
+counterIncrement = mkPair "counter-increment"
 
 -- | [CSS counter-reset property](https://developer.mozilla.org/en-US/docs/Web/CSS/counter-reset). This is generated code.
 counterReset :: String -> Style
-counterReset val = Style [ SPair "counter-reset" val ]
+counterReset = mkPair "counter-reset"
 
 -- | [CSS cursor property](https://developer.mozilla.org/en-US/docs/Web/CSS/cursor). This is generated code.
 cursor :: String -> Style
-cursor val = Style [ SPair "cursor" val ]
+cursor = mkPair "cursor"
 
 -- | [CSS direction property](https://developer.mozilla.org/en-US/docs/Web/CSS/direction). This is generated code.
 direction :: String -> Style
-direction val = Style [ SPair "direction" val ]
+direction = mkPair "direction"
 
 -- | [CSS display property](https://developer.mozilla.org/en-US/docs/Web/CSS/display). This is generated code.
 display :: String -> Style
-display val = Style [ SPair "display" val ]
+display = mkPair "display"
 
 -- | [CSS empty-cells property](https://developer.mozilla.org/en-US/docs/Web/CSS/empty-cells). This is generated code.
 emptyCells :: String -> Style
-emptyCells val = Style [ SPair "empty-cells" val ]
+emptyCells = mkPair "empty-cells"
 
 -- | [CSS filter property](https://developer.mozilla.org/en-US/docs/Web/CSS/filter). This is generated code.
 filter :: String -> Style
-filter val = Style [ SPair "filter" val ]
+filter = mkPair "filter"
 
 -- | [CSS flex property](https://developer.mozilla.org/en-US/docs/Web/CSS/flex). This is generated code.
 flex :: String -> Style
-flex val = Style [ SPair "flex" val ]
+flex = mkPair "flex"
 
 -- | [CSS flex-basis property](https://developer.mozilla.org/en-US/docs/Web/CSS/flex-basis). This is generated code.
 flexBasis :: String -> Style
-flexBasis val = Style [ SPair "flex-basis" val ]
+flexBasis = mkPair "flex-basis"
 
 -- | [CSS flex-direction property](https://developer.mozilla.org/en-US/docs/Web/CSS/flex-direction). This is generated code.
 flexDirection :: String -> Style
-flexDirection val = Style [ SPair "flex-direction" val ]
+flexDirection = mkPair "flex-direction"
 
 -- | [CSS flex-flow property](https://developer.mozilla.org/en-US/docs/Web/CSS/flex-flow). This is generated code.
 flexFlow :: String -> Style
-flexFlow val = Style [ SPair "flex-flow" val ]
+flexFlow = mkPair "flex-flow"
 
 -- | [CSS flex-grow property](https://developer.mozilla.org/en-US/docs/Web/CSS/flex-grow). This is generated code.
 flexGrow :: String -> Style
-flexGrow val = Style [ SPair "flex-grow" val ]
+flexGrow = mkPair "flex-grow"
 
 -- | [CSS flex-shrink property](https://developer.mozilla.org/en-US/docs/Web/CSS/flex-shrink). This is generated code.
 flexShrink :: String -> Style
-flexShrink val = Style [ SPair "flex-shrink" val ]
+flexShrink = mkPair "flex-shrink"
 
 -- | [CSS flex-wrap property](https://developer.mozilla.org/en-US/docs/Web/CSS/flex-wrap). This is generated code.
 flexWrap :: String -> Style
-flexWrap val = Style [ SPair "flex-wrap" val ]
+flexWrap = mkPair "flex-wrap"
 
 -- | [CSS float property](https://developer.mozilla.org/en-US/docs/Web/CSS/float). This is generated code.
 float :: String -> Style
-float val = Style [ SPair "float" val ]
+float = mkPair "float"
 
 -- | [CSS font property](https://developer.mozilla.org/en-US/docs/Web/CSS/font). This is generated code.
 font :: String -> Style
-font val = Style [ SPair "font" val ]
+font = mkPair "font"
 
 -- | [CSS font-family property](https://developer.mozilla.org/en-US/docs/Web/CSS/font-family). This is generated code.
 fontFamily :: String -> Style
-fontFamily val = Style [ SPair "font-family" val ]
+fontFamily = mkPair "font-family"
 
 -- | [CSS font-kerning property](https://developer.mozilla.org/en-US/docs/Web/CSS/font-kerning). This is generated code.
 fontKerning :: String -> Style
-fontKerning val = Style [ SPair "font-kerning" val ]
+fontKerning = mkPair "font-kerning"
 
 -- | [CSS font-size property](https://developer.mozilla.org/en-US/docs/Web/CSS/font-size). This is generated code.
 fontSize :: String -> Style
-fontSize val = Style [ SPair "font-size" val ]
+fontSize = mkPair "font-size"
 
 -- | [CSS font-size-adjust property](https://developer.mozilla.org/en-US/docs/Web/CSS/font-size-adjust). This is generated code.
 fontSizeAdjust :: String -> Style
-fontSizeAdjust val = Style [ SPair "font-size-adjust" val ]
+fontSizeAdjust = mkPair "font-size-adjust"
 
 -- | [CSS font-stretch property](https://developer.mozilla.org/en-US/docs/Web/CSS/font-stretch). This is generated code.
 fontStretch :: String -> Style
-fontStretch val = Style [ SPair "font-stretch" val ]
+fontStretch = mkPair "font-stretch"
 
 -- | [CSS font-style property](https://developer.mozilla.org/en-US/docs/Web/CSS/font-style). This is generated code.
 fontStyle :: String -> Style
-fontStyle val = Style [ SPair "font-style" val ]
+fontStyle = mkPair "font-style"
 
 -- | [CSS font-variant property](https://developer.mozilla.org/en-US/docs/Web/CSS/font-variant). This is generated code.
 fontVariant :: String -> Style
-fontVariant val = Style [ SPair "font-variant" val ]
+fontVariant = mkPair "font-variant"
 
 -- | [CSS font-weight property](https://developer.mozilla.org/en-US/docs/Web/CSS/font-weight). This is generated code.
 fontWeight :: String -> Style
-fontWeight val = Style [ SPair "font-weight" val ]
+fontWeight = mkPair "font-weight"
 
 -- | [CSS gap property](https://developer.mozilla.org/en-US/docs/Web/CSS/gap). This is generated code.
 gap :: String -> Style
-gap val = Style [ SPair "gap" val ]
+gap = mkPair "gap"
 
 -- | [CSS grid property](https://developer.mozilla.org/en-US/docs/Web/CSS/grid). This is generated code.
 grid :: String -> Style
-grid val = Style [ SPair "grid" val ]
+grid = mkPair "grid"
 
 -- | [CSS grid-area property](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-area). This is generated code.
 gridArea :: String -> Style
-gridArea val = Style [ SPair "grid-area" val ]
+gridArea = mkPair "grid-area"
 
 -- | [CSS grid-auto-columns property](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-auto-columns). This is generated code.
 gridAutoColumns :: String -> Style
-gridAutoColumns val = Style [ SPair "grid-auto-columns" val ]
+gridAutoColumns = mkPair "grid-auto-columns"
 
 -- | [CSS grid-auto-flow property](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-auto-flow). This is generated code.
 gridAutoFlow :: String -> Style
-gridAutoFlow val = Style [ SPair "grid-auto-flow" val ]
+gridAutoFlow = mkPair "grid-auto-flow"
 
 -- | [CSS grid-auto-rows property](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-auto-rows). This is generated code.
 gridAutoRows :: String -> Style
-gridAutoRows val = Style [ SPair "grid-auto-rows" val ]
+gridAutoRows = mkPair "grid-auto-rows"
 
 -- | [CSS grid-column property](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-column). This is generated code.
 gridColumn :: String -> Style
-gridColumn val = Style [ SPair "grid-column" val ]
+gridColumn = mkPair "grid-column"
 
 -- | [CSS grid-column-end property](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-column-end). This is generated code.
 gridColumnEnd :: String -> Style
-gridColumnEnd val = Style [ SPair "grid-column-end" val ]
+gridColumnEnd = mkPair "grid-column-end"
 
 -- | [CSS grid-column-gap property](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-column-gap). This is generated code.
 gridColumnGap :: String -> Style
-gridColumnGap val = Style [ SPair "grid-column-gap" val ]
+gridColumnGap = mkPair "grid-column-gap"
 
 -- | [CSS grid-column-start property](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-column-start). This is generated code.
 gridColumnStart :: String -> Style
-gridColumnStart val = Style [ SPair "grid-column-start" val ]
+gridColumnStart = mkPair "grid-column-start"
 
 -- | [CSS grid-gap property](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-gap). This is generated code.
 gridGap :: String -> Style
-gridGap val = Style [ SPair "grid-gap" val ]
+gridGap = mkPair "grid-gap"
 
 -- | [CSS grid-row property](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-row). This is generated code.
 gridRow :: String -> Style
-gridRow val = Style [ SPair "grid-row" val ]
+gridRow = mkPair "grid-row"
 
 -- | [CSS grid-row-end property](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-row-end). This is generated code.
 gridRowEnd :: String -> Style
-gridRowEnd val = Style [ SPair "grid-row-end" val ]
+gridRowEnd = mkPair "grid-row-end"
 
 -- | [CSS grid-row-gap property](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-row-gap). This is generated code.
 gridRowGap :: String -> Style
-gridRowGap val = Style [ SPair "grid-row-gap" val ]
+gridRowGap = mkPair "grid-row-gap"
 
 -- | [CSS grid-row-start property](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-row-start). This is generated code.
 gridRowStart :: String -> Style
-gridRowStart val = Style [ SPair "grid-row-start" val ]
+gridRowStart = mkPair "grid-row-start"
 
 -- | [CSS grid-template property](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-template). This is generated code.
 gridTemplate :: String -> Style
-gridTemplate val = Style [ SPair "grid-template" val ]
+gridTemplate = mkPair "grid-template"
 
 -- | [CSS grid-template-areas property](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-template-areas). This is generated code.
 gridTemplateAreas :: String -> Style
-gridTemplateAreas val = Style [ SPair "grid-template-areas" val ]
+gridTemplateAreas = mkPair "grid-template-areas"
 
 -- | [CSS grid-template-columns property](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-template-columns). This is generated code.
 gridTemplateColumns :: String -> Style
-gridTemplateColumns val = Style [ SPair "grid-template-columns" val ]
+gridTemplateColumns = mkPair "grid-template-columns"
 
 -- | [CSS grid-template-rows property](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-template-rows). This is generated code.
 gridTemplateRows :: String -> Style
-gridTemplateRows val = Style [ SPair "grid-template-rows" val ]
+gridTemplateRows = mkPair "grid-template-rows"
 
 -- | [CSS height property](https://developer.mozilla.org/en-US/docs/Web/CSS/height). This is generated code.
 height :: String -> Style
-height val = Style [ SPair "height" val ]
+height = mkPair "height"
 
 -- | [CSS hyphens property](https://developer.mozilla.org/en-US/docs/Web/CSS/hyphens). This is generated code.
 hyphens :: String -> Style
-hyphens val = Style [ SPair "hyphens" val ]
+hyphens = mkPair "hyphens"
 
 -- | [CSS justify-content property](https://developer.mozilla.org/en-US/docs/Web/CSS/justify-content). This is generated code.
 justifyContent :: String -> Style
-justifyContent val = Style [ SPair "justify-content" val ]
+justifyContent = mkPair "justify-content"
 
 -- | [CSS left property](https://developer.mozilla.org/en-US/docs/Web/CSS/left). This is generated code.
 left :: String -> Style
-left val = Style [ SPair "left" val ]
+left = mkPair "left"
 
 -- | [CSS letter-spacing property](https://developer.mozilla.org/en-US/docs/Web/CSS/letter-spacing). This is generated code.
 letterSpacing :: String -> Style
-letterSpacing val = Style [ SPair "letter-spacing" val ]
+letterSpacing = mkPair "letter-spacing"
 
 -- | [CSS line-height property](https://developer.mozilla.org/en-US/docs/Web/CSS/line-height). This is generated code.
 lineHeight :: String -> Style
-lineHeight val = Style [ SPair "line-height" val ]
+lineHeight = mkPair "line-height"
 
 -- | [CSS list-style property](https://developer.mozilla.org/en-US/docs/Web/CSS/list-style). This is generated code.
 listStyle :: String -> Style
-listStyle val = Style [ SPair "list-style" val ]
+listStyle = mkPair "list-style"
 
 -- | [CSS list-style-image property](https://developer.mozilla.org/en-US/docs/Web/CSS/list-style-image). This is generated code.
 listStyleImage :: String -> Style
-listStyleImage val = Style [ SPair "list-style-image" val ]
+listStyleImage = mkPair "list-style-image"
 
 -- | [CSS list-style-position property](https://developer.mozilla.org/en-US/docs/Web/CSS/list-style-position). This is generated code.
 listStylePosition :: String -> Style
-listStylePosition val = Style [ SPair "list-style-position" val ]
+listStylePosition = mkPair "list-style-position"
 
 -- | [CSS list-style-type property](https://developer.mozilla.org/en-US/docs/Web/CSS/list-style-type). This is generated code.
 listStyleType :: String -> Style
-listStyleType val = Style [ SPair "list-style-type" val ]
+listStyleType = mkPair "list-style-type"
 
 -- | [CSS margin property](https://developer.mozilla.org/en-US/docs/Web/CSS/margin). This is generated code.
 margin :: String -> Style
-margin val = Style [ SPair "margin" val ]
+margin = mkPair "margin"
 
 -- | [CSS margin-bottom property](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-bottom). This is generated code.
 marginBottom :: String -> Style
-marginBottom val = Style [ SPair "margin-bottom" val ]
+marginBottom = mkPair "margin-bottom"
 
 -- | [CSS margin-left property](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-left). This is generated code.
 marginLeft :: String -> Style
-marginLeft val = Style [ SPair "margin-left" val ]
+marginLeft = mkPair "margin-left"
 
 -- | [CSS margin-right property](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-right). This is generated code.
 marginRight :: String -> Style
-marginRight val = Style [ SPair "margin-right" val ]
+marginRight = mkPair "margin-right"
 
 -- | [CSS margin-top property](https://developer.mozilla.org/en-US/docs/Web/CSS/margin-top). This is generated code.
 marginTop :: String -> Style
-marginTop val = Style [ SPair "margin-top" val ]
+marginTop = mkPair "margin-top"
 
 -- | [CSS max-height property](https://developer.mozilla.org/en-US/docs/Web/CSS/max-height). This is generated code.
 maxHeight :: String -> Style
-maxHeight val = Style [ SPair "max-height" val ]
+maxHeight = mkPair "max-height"
 
 -- | [CSS max-width property](https://developer.mozilla.org/en-US/docs/Web/CSS/max-width). This is generated code.
 maxWidth :: String -> Style
-maxWidth val = Style [ SPair "max-width" val ]
+maxWidth = mkPair "max-width"
 
 -- | [CSS min-height property](https://developer.mozilla.org/en-US/docs/Web/CSS/min-height). This is generated code.
 minHeight :: String -> Style
-minHeight val = Style [ SPair "min-height" val ]
+minHeight = mkPair "min-height"
 
 -- | [CSS min-width property](https://developer.mozilla.org/en-US/docs/Web/CSS/min-width). This is generated code.
 minWidth :: String -> Style
-minWidth val = Style [ SPair "min-width" val ]
+minWidth = mkPair "min-width"
 
 -- | [CSS object-fit property](https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit). This is generated code.
 objectFit :: String -> Style
-objectFit val = Style [ SPair "object-fit" val ]
+objectFit = mkPair "object-fit"
 
 -- | [CSS object-position property](https://developer.mozilla.org/en-US/docs/Web/CSS/object-position). This is generated code.
 objectPosition :: String -> Style
-objectPosition val = Style [ SPair "object-position" val ]
+objectPosition = mkPair "object-position"
 
 -- | [CSS opacity property](https://developer.mozilla.org/en-US/docs/Web/CSS/opacity). This is generated code.
 opacity :: String -> Style
-opacity val = Style [ SPair "opacity" val ]
+opacity = mkPair "opacity"
 
 -- | [CSS order property](https://developer.mozilla.org/en-US/docs/Web/CSS/order). This is generated code.
 order :: String -> Style
-order val = Style [ SPair "order" val ]
+order = mkPair "order"
 
 -- | [CSS outline property](https://developer.mozilla.org/en-US/docs/Web/CSS/outline). This is generated code.
 outline :: String -> Style
-outline val = Style [ SPair "outline" val ]
+outline = mkPair "outline"
 
 -- | [CSS outline-color property](https://developer.mozilla.org/en-US/docs/Web/CSS/outline-color). This is generated code.
 outlineColor :: String -> Style
-outlineColor val = Style [ SPair "outline-color" val ]
+outlineColor = mkPair "outline-color"
 
 -- | [CSS outline-offset property](https://developer.mozilla.org/en-US/docs/Web/CSS/outline-offset). This is generated code.
 outlineOffset :: String -> Style
-outlineOffset val = Style [ SPair "outline-offset" val ]
+outlineOffset = mkPair "outline-offset"
 
 -- | [CSS outline-style property](https://developer.mozilla.org/en-US/docs/Web/CSS/outline-style). This is generated code.
 outlineStyle :: String -> Style
-outlineStyle val = Style [ SPair "outline-style" val ]
+outlineStyle = mkPair "outline-style"
 
 -- | [CSS outline-width property](https://developer.mozilla.org/en-US/docs/Web/CSS/outline-width). This is generated code.
 outlineWidth :: String -> Style
-outlineWidth val = Style [ SPair "outline-width" val ]
+outlineWidth = mkPair "outline-width"
 
 -- | [CSS overflow property](https://developer.mozilla.org/en-US/docs/Web/CSS/overflow). This is generated code.
 overflow :: String -> Style
-overflow val = Style [ SPair "overflow" val ]
+overflow = mkPair "overflow"
 
 -- | [CSS overflow-x property](https://developer.mozilla.org/en-US/docs/Web/CSS/overflow-x). This is generated code.
 overflowX :: String -> Style
-overflowX val = Style [ SPair "overflow-x" val ]
+overflowX = mkPair "overflow-x"
 
 -- | [CSS overflow-y property](https://developer.mozilla.org/en-US/docs/Web/CSS/overflow-y). This is generated code.
 overflowY :: String -> Style
-overflowY val = Style [ SPair "overflow-y" val ]
+overflowY = mkPair "overflow-y"
 
 -- | [CSS padding property](https://developer.mozilla.org/en-US/docs/Web/CSS/padding). This is generated code.
 padding :: String -> Style
-padding val = Style [ SPair "padding" val ]
+padding = mkPair "padding"
 
 -- | [CSS padding-bottom property](https://developer.mozilla.org/en-US/docs/Web/CSS/padding-bottom). This is generated code.
 paddingBottom :: String -> Style
-paddingBottom val = Style [ SPair "padding-bottom" val ]
+paddingBottom = mkPair "padding-bottom"
 
 -- | [CSS padding-left property](https://developer.mozilla.org/en-US/docs/Web/CSS/padding-left). This is generated code.
 paddingLeft :: String -> Style
-paddingLeft val = Style [ SPair "padding-left" val ]
+paddingLeft = mkPair "padding-left"
 
 -- | [CSS padding-right property](https://developer.mozilla.org/en-US/docs/Web/CSS/padding-right). This is generated code.
 paddingRight :: String -> Style
-paddingRight val = Style [ SPair "padding-right" val ]
+paddingRight = mkPair "padding-right"
 
 -- | [CSS padding-top property](https://developer.mozilla.org/en-US/docs/Web/CSS/padding-top). This is generated code.
 paddingTop :: String -> Style
-paddingTop val = Style [ SPair "padding-top" val ]
+paddingTop = mkPair "padding-top"
 
 -- | [CSS page-break-after property](https://developer.mozilla.org/en-US/docs/Web/CSS/page-break-after). This is generated code.
 pageBreakAfter :: String -> Style
-pageBreakAfter val = Style [ SPair "page-break-after" val ]
+pageBreakAfter = mkPair "page-break-after"
 
 -- | [CSS page-break-before property](https://developer.mozilla.org/en-US/docs/Web/CSS/page-break-before). This is generated code.
 pageBreakBefore :: String -> Style
-pageBreakBefore val = Style [ SPair "page-break-before" val ]
+pageBreakBefore = mkPair "page-break-before"
 
 -- | [CSS page-break-inside property](https://developer.mozilla.org/en-US/docs/Web/CSS/page-break-inside). This is generated code.
 pageBreakInside :: String -> Style
-pageBreakInside val = Style [ SPair "page-break-inside" val ]
+pageBreakInside = mkPair "page-break-inside"
 
 -- | [CSS perspective property](https://developer.mozilla.org/en-US/docs/Web/CSS/perspective). This is generated code.
 perspective :: String -> Style
-perspective val = Style [ SPair "perspective" val ]
+perspective = mkPair "perspective"
 
 -- | [CSS perspective-origin property](https://developer.mozilla.org/en-US/docs/Web/CSS/perspective-origin). This is generated code.
 perspectiveOrigin :: String -> Style
-perspectiveOrigin val = Style [ SPair "perspective-origin" val ]
+perspectiveOrigin = mkPair "perspective-origin"
 
 -- | [CSS pointer-events property](https://developer.mozilla.org/en-US/docs/Web/CSS/pointer-events). This is generated code.
 pointerEvents :: String -> Style
-pointerEvents val = Style [ SPair "pointer-events" val ]
+pointerEvents = mkPair "pointer-events"
 
 -- | [CSS position property](https://developer.mozilla.org/en-US/docs/Web/CSS/position). This is generated code.
 position :: String -> Style
-position val = Style [ SPair "position" val ]
+position = mkPair "position"
 
 -- | [CSS quotes property](https://developer.mozilla.org/en-US/docs/Web/CSS/quotes). This is generated code.
 quotes :: String -> Style
-quotes val = Style [ SPair "quotes" val ]
+quotes = mkPair "quotes"
 
 -- | [CSS right property](https://developer.mozilla.org/en-US/docs/Web/CSS/right). This is generated code.
 right :: String -> Style
-right val = Style [ SPair "right" val ]
+right = mkPair "right"
 
 -- | [CSS scroll-behavior property](https://developer.mozilla.org/en-US/docs/Web/CSS/scroll-behavior). This is generated code.
 scrollBehavior :: String -> Style
-scrollBehavior val = Style [ SPair "scroll-behavior" val ]
+scrollBehavior = mkPair "scroll-behavior"
 
 -- | [CSS table-layout property](https://developer.mozilla.org/en-US/docs/Web/CSS/table-layout). This is generated code.
 tableLayout :: String -> Style
-tableLayout val = Style [ SPair "table-layout" val ]
+tableLayout = mkPair "table-layout"
 
 -- | [CSS text-align property](https://developer.mozilla.org/en-US/docs/Web/CSS/text-align). This is generated code.
 textAlign :: String -> Style
-textAlign val = Style [ SPair "text-align" val ]
+textAlign = mkPair "text-align"
 
 -- | [CSS text-align-last property](https://developer.mozilla.org/en-US/docs/Web/CSS/text-align-last). This is generated code.
 textAlignLast :: String -> Style
-textAlignLast val = Style [ SPair "text-align-last" val ]
+textAlignLast = mkPair "text-align-last"
 
 -- | [CSS text-decoration property](https://developer.mozilla.org/en-US/docs/Web/CSS/text-decoration). This is generated code.
 textDecoration :: String -> Style
-textDecoration val = Style [ SPair "text-decoration" val ]
+textDecoration = mkPair "text-decoration"
 
 -- | [CSS text-decoration-color property](https://developer.mozilla.org/en-US/docs/Web/CSS/text-decoration-color). This is generated code.
 textDecorationColor :: String -> Style
-textDecorationColor val = Style [ SPair "text-decoration-color" val ]
+textDecorationColor = mkPair "text-decoration-color"
 
 -- | [CSS text-decoration-line property](https://developer.mozilla.org/en-US/docs/Web/CSS/text-decoration-line). This is generated code.
 textDecorationLine :: String -> Style
-textDecorationLine val = Style [ SPair "text-decoration-line" val ]
+textDecorationLine = mkPair "text-decoration-line"
 
 -- | [CSS text-decoration-style property](https://developer.mozilla.org/en-US/docs/Web/CSS/text-decoration-style). This is generated code.
 textDecorationStyle :: String -> Style
-textDecorationStyle val = Style [ SPair "text-decoration-style" val ]
+textDecorationStyle = mkPair "text-decoration-style"
 
 -- | [CSS text-indent property](https://developer.mozilla.org/en-US/docs/Web/CSS/text-indent). This is generated code.
 textIndent :: String -> Style
-textIndent val = Style [ SPair "text-indent" val ]
+textIndent = mkPair "text-indent"
 
 -- | [CSS text-justify property](https://developer.mozilla.org/en-US/docs/Web/CSS/text-justify). This is generated code.
 textJustify :: String -> Style
-textJustify val = Style [ SPair "text-justify" val ]
+textJustify = mkPair "text-justify"
 
 -- | [CSS text-overflow property](https://developer.mozilla.org/en-US/docs/Web/CSS/text-overflow). This is generated code.
 textOverflow :: String -> Style
-textOverflow val = Style [ SPair "text-overflow" val ]
+textOverflow = mkPair "text-overflow"
 
 -- | [CSS text-shadow property](https://developer.mozilla.org/en-US/docs/Web/CSS/text-shadow). This is generated code.
 textShadow :: String -> Style
-textShadow val = Style [ SPair "text-shadow" val ]
+textShadow = mkPair "text-shadow"
 
 -- | [CSS text-transform property](https://developer.mozilla.org/en-US/docs/Web/CSS/text-transform). This is generated code.
 textTransform :: String -> Style
-textTransform val = Style [ SPair "text-transform" val ]
+textTransform = mkPair "text-transform"
 
 -- | [CSS top property](https://developer.mozilla.org/en-US/docs/Web/CSS/top). This is generated code.
 top :: String -> Style
-top val = Style [ SPair "top" val ]
+top = mkPair "top"
 
 -- | [CSS transform property](https://developer.mozilla.org/en-US/docs/Web/CSS/transform). This is generated code.
 transform :: String -> Style
-transform val = Style [ SPair "transform" val ]
+transform = mkPair "transform"
 
 -- | [CSS transform-origin property](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-origin). This is generated code.
 transformOrigin :: String -> Style
-transformOrigin val = Style [ SPair "transform-origin" val ]
+transformOrigin = mkPair "transform-origin"
 
 -- | [CSS transform-style property](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-style). This is generated code.
 transformStyle :: String -> Style
-transformStyle val = Style [ SPair "transform-style" val ]
+transformStyle = mkPair "transform-style"
 
 -- | [CSS transition property](https://developer.mozilla.org/en-US/docs/Web/CSS/transition). This is generated code.
 transition :: String -> Style
-transition val = Style [ SPair "transition" val ]
+transition = mkPair "transition"
 
 -- | [CSS transition-delay property](https://developer.mozilla.org/en-US/docs/Web/CSS/transition-delay). This is generated code.
 transitionDelay :: String -> Style
-transitionDelay val = Style [ SPair "transition-delay" val ]
+transitionDelay = mkPair "transition-delay"
 
 -- | [CSS transition-duration property](https://developer.mozilla.org/en-US/docs/Web/CSS/transition-duration). This is generated code.
 transitionDuration :: String -> Style
-transitionDuration val = Style [ SPair "transition-duration" val ]
+transitionDuration = mkPair "transition-duration"
 
 -- | [CSS transition-property property](https://developer.mozilla.org/en-US/docs/Web/CSS/transition-property). This is generated code.
 transitionProperty :: String -> Style
-transitionProperty val = Style [ SPair "transition-property" val ]
+transitionProperty = mkPair "transition-property"
 
 -- | [CSS transition-timing-function property](https://developer.mozilla.org/en-US/docs/Web/CSS/transition-timing-function). This is generated code.
 transitionTimingFunction :: String -> Style
-transitionTimingFunction val = Style [ SPair "transition-timing-function" val ]
+transitionTimingFunction = mkPair "transition-timing-function"
 
 -- | [CSS user-select property](https://developer.mozilla.org/en-US/docs/Web/CSS/user-select). This is generated code.
 userSelect :: String -> Style
-userSelect val = Style [ SPair "user-select" val ]
+userSelect = mkPair "user-select"
 
 -- | [CSS vertical-align property](https://developer.mozilla.org/en-US/docs/Web/CSS/vertical-align). This is generated code.
 verticalAlign :: String -> Style
-verticalAlign val = Style [ SPair "vertical-align" val ]
+verticalAlign = mkPair "vertical-align"
 
 -- | [CSS visibility property](https://developer.mozilla.org/en-US/docs/Web/CSS/visibility). This is generated code.
 visibility :: String -> Style
-visibility val = Style [ SPair "visibility" val ]
+visibility = mkPair "visibility"
 
 -- | [CSS white-space property](https://developer.mozilla.org/en-US/docs/Web/CSS/white-space). This is generated code.
 whiteSpace :: String -> Style
-whiteSpace val = Style [ SPair "white-space" val ]
+whiteSpace = mkPair "white-space"
 
 -- | [CSS width property](https://developer.mozilla.org/en-US/docs/Web/CSS/width). This is generated code.
 width :: String -> Style
-width val = Style [ SPair "width" val ]
+width = mkPair "width"
 
 -- | [CSS word-break property](https://developer.mozilla.org/en-US/docs/Web/CSS/word-break). This is generated code.
 wordBreak :: String -> Style
-wordBreak val = Style [ SPair "word-break" val ]
+wordBreak = mkPair "word-break"
 
 -- | [CSS word-spacing property](https://developer.mozilla.org/en-US/docs/Web/CSS/word-spacing). This is generated code.
 wordSpacing :: String -> Style
-wordSpacing val = Style [ SPair "word-spacing" val ]
+wordSpacing = mkPair "word-spacing"
 
 -- | [CSS word-wrap property](https://developer.mozilla.org/en-US/docs/Web/CSS/word-wrap). This is generated code.
 wordWrap :: String -> Style
-wordWrap val = Style [ SPair "word-wrap" val ]
+wordWrap = mkPair "word-wrap"
 
 -- | [CSS writing-mode property](https://developer.mozilla.org/en-US/docs/Web/CSS/writing-mode). This is generated code.
 writingMode :: String -> Style
-writingMode val = Style [ SPair "writing-mode" val ]
+writingMode = mkPair "writing-mode"
 
 -- | [CSS z-index property](https://developer.mozilla.org/en-US/docs/Web/CSS/z-index). This is generated code.
 zIndex :: String -> Style
-zIndex val = Style [ SPair "z-index" val ]
+zIndex = mkPair "z-index"
 

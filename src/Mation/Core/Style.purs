@@ -5,9 +5,10 @@ import Mation.Core.Prelude
 import Data.Hashable (class Hashable, hash)
 import Data.Array as Array
 
-import Mation.Core.Html (Prop, mkPair, mkFixup)
+import Mation.Core.Prop (Prop, mkPair, mkFixup)
 import Mation.Core.Dom (DomNode)
-import Mation.Core.Util.FreeMonoid (class FreeMonoid, float)
+import Mation.Core.Util.FreeMonoid (class FreeMonoid)
+import Mation.Core.Util.FreeMonoid as FM
 import Mation.Core.Util.PuncturedFold (PuncturedFold)
 import Mation.Core.Util.PuncturedFold as PF
 
@@ -130,13 +131,12 @@ toProp1 style =
 foreign import putCss :: { css :: String, forClass :: String } -> Effect (Effect Unit)
 foreign import putClass :: DomNode -> String -> Effect (Effect Unit)
 
-
-
 runEndo :: forall c a. Endo c a -> c a a
 runEndo (Endo f) = f
 
 
 
+-- | Represents some style to place on an `Html` node
 newtype Style = Style (Array (Style1 PuncturedFold))
 
 instance FreeMonoid Style (Style1 PuncturedFold)
@@ -145,6 +145,15 @@ derive instance Newtype Style _
 derive newtype instance Semigroup Style
 derive newtype instance Monoid Style
 
+mkPair :: String -> String -> Style
+mkPair k v = FM.singleton $ SPair k v
+
+mkScopedSelector :: (PuncturedFold String) -> Style -> Style
+mkScopedSelector scope (Style styles) = FM.singleton $ SScopeASelector scope (SConcat styles)
+
+mkScopedBlock :: String -> Style -> Style
+mkScopedBlock scope (Style styles) = FM.singleton $ SScopeABlock scope (SConcat styles)
+
 
 toProp :: forall m s. Array Style -> Prop m s
-toProp = float >>> foldMap toProp1
+toProp = FM.float >>> foldMap toProp1

@@ -48,7 +48,8 @@ function * tags() {
   yield '';
   yield 'module Mation.Gen.Tags where';
   yield '';
-  yield 'import Mation.Core.Html (Prop, Html, mkElement)';
+  yield 'import Mation.Core.Html (Html)';
+  yield 'import Mation.Core.Prop (Prop, mkElement)';
   yield '';
   yield '';
 
@@ -74,7 +75,8 @@ function * attributes() {
   yield 'module Mation.Gen.Attributes where';
   yield '';
   yield 'import Prelude';
-  yield 'import Mation.Core.Html (Prop, mkPair, mkNoop)';
+  yield 'import Mation.Core.Html (Html)';
+  yield 'import Mation.Core.Prop (Prop, mkPair, mkNoop)';
   yield '';
   yield '';
 
@@ -102,7 +104,7 @@ function * events() {
   yield 'import Prelude';
   yield 'import Mation.Core.Mation (Mation)';
   yield 'import Mation.Core.Dom (DomEvent)';
-  yield 'import Mation.Core.Html (Prop, mkListener)';
+  yield 'import Mation.Core.Prop (Prop, mkListener)';
   yield '';
   yield '';
 
@@ -123,8 +125,7 @@ function * styles() {
   yield 'module Mation.Gen.Styles where';
   yield '';
   yield 'import Prelude';
-  yield 'import Mation.Core.Style (Style (..), Style1 (..))';
-  yield 'import Mation.Core.Util.PuncturedFold (PuncturedFold)';
+  yield 'import Mation.Core.Style (Style (..), mkPair)';
   yield '';
   yield '';
 
@@ -134,7 +135,7 @@ function * styles() {
 
     yield `-- | [CSS ${style.name} property](https://developer.mozilla.org/en-US/docs/Web/CSS/${encodeURIComponent(style.name)}). This is generated code.`;
     yield `${ident} :: String -> Style`;
-    yield `${ident} val = Style [ SPair "${style.name}" val ]`
+    yield `${ident} = mkPair "${style.name}"`
     yield '';
   }
 }
@@ -146,8 +147,7 @@ function * pseudoClasses() {
   yield '';
   yield 'import Mation.Core.Prelude';
   yield '';
-  yield 'import Mation.Core.Style (Style)';
-  yield 'import Mation.Core.Style as S';
+  yield 'import Mation.Core.Style (Style, mkScopedSelector)';
   yield 'import Mation.Core.Util.FreeMonoid as FM';
   yield 'import Mation.Core.Util.PuncturedFold as PF';
   yield '';
@@ -163,7 +163,7 @@ function * pseudoClasses() {
 
     yield `-- | [CSS :${pcls.name} pseudo-class](https://developer.mozilla.org/en-US/docs/Web/CSS/:${pcls.name}). This is generated code.`;
     yield `${ident} :: ${argTypes} Array Style -> Style`
-    yield `${ident} ${args} styles = FM.singleton $ S.SScopeASelector (PF.PF [ PF.Hole, PF.Elem $ ":${pcls.name}${argsCall}" ]) (S.SConcat $ FM.float styles)`;
+    yield `${ident} ${args} styles = mkScopedSelector (PF.PF [ PF.Hole, PF.Elem $ ":${pcls.name}${argsCall}" ]) (fold styles)`;
     yield '';
   }
 }
