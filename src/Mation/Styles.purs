@@ -15,5 +15,5 @@ import Mation.Core.Util.FreeMonoid as FM
 onChildren :: Array S.Style -> S.Style
 onChildren styles = FM.singleton $
   S.SScopeASelector
-    (PF.PF [ PF.Hole, PF.Elem "> *" ])
+    (PF.PF [ PF.Hole, PF.Elem " > *" ])
     (S.SConcat $ FM.float styles)

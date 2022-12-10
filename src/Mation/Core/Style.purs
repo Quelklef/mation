@@ -28,8 +28,8 @@ import Mation.Core.Util.Hashable (class Hashable, hash)
 data Style1 :: (Type -> Type) -> Type
 data Style1 endo
 
-    -- | K-v pair, eg `SPair "position" "fixed"`
-  = SPair String String
+    -- | K-v pair, eg `SInline "position: fixed; top: 0"`
+  = SInline String
 
     -- | Scope a style with some selector combinator, eg
     -- |
@@ -56,7 +56,7 @@ data Style1 endo
 
 
 instance Eq (endo String) => Eq (Style1 endo) where
-  eq (SPair k v) (SPair k' v') = k == k' && v == v'
+  eq (SInline s) (SInline s') = s == s'
   eq (SScopeASelector sco sty) (SScopeASelector sco' sty') = sco == sco' && sty == sty'
   eq (SScopeABlock sco sty) (SScopeABlock sco' sty') = sco == sco' && sty == sty'
   eq (SConcat xs) (SConcat ys) = xs == ys
@@ -64,14 +64,14 @@ instance Eq (endo String) => Eq (Style1 endo) where
 
 instance Hashable (endo String) => Hashable (Style1 endo) where
   hash = case _ of
-    SPair a b -> hash $ 1 /\ a /\ b
+    SInline s -> hash $ 1 /\ s
     SScopeASelector s a -> hash $ 2 /\ s /\ a
     SScopeABlock s a -> hash $ 3 /\ s /\ a
     SConcat xs -> hash $ 4 /\ xs
 
 mapStyle1 :: forall endo endo'. (endo String -> endo' String) -> (Style1 endo -> Style1 endo')
 mapStyle1 f = case _ of
-  SPair k v -> SPair k v
+  SInline s -> SInline s
   SScopeASelector sco sty -> SScopeASelector (f sco) (mapStyle1 f sty)
   SScopeABlock sco sty -> SScopeABlock sco (mapStyle1 f sty)
   SConcat xs -> SConcat (map (mapStyle1 f) xs)
@@ -79,12 +79,30 @@ mapStyle1 f = case _ of
 
 -- | Given a target selector (eg `"#my-element"`), render a `Style1` to CSS targeting that selector
 toCss :: String -> Style1 (Endo (->)) -> String
-toCss selec0 = linearize >>> emit
+toCss selec0 = collate >>> linearize >>> emit
 
   where
 
-  -- Not particularly efficient, but it'll do for now
+  -- | Combine unscoped styles
+  collate :: forall endo. Style1 endo -> Style1 endo
+  collate = case _ of
+    SInline s -> SInline s
+    SConcat styles ->
+      let
+        bigInline =
+          styles # foldMap case _ of
+            SInline s -> s <> "; "
+            other -> ""
+        rest = styles # Array.filter case _ of
+            SInline _ -> false
+            other -> true
+      in
+        SConcat $ [ SInline bigInline ] <> rest
 
+    other -> other
+
+  -- | Turn a style into an array of CSS styles (eg, `color: red; font-weight: bold`) contextualized
+  -- | by selector and block scopes.
   linearize ::
        Style1 (Endo (->))
     -> Array
@@ -93,8 +111,8 @@ toCss selec0 = linearize >>> emit
          , blockScope :: Endo' String
          }
   linearize = case _ of
-    SPair k v ->
-        [ { css: k <> ": " <> v <> ";"
+    SInline s ->
+        [ { css: s
           , selectorScope: mempty
           , blockScope: mempty
           }
@@ -106,11 +124,13 @@ toCss selec0 = linearize >>> emit
       in linearize style # map (_blockScope %~ (endo <> _))
     SConcat xs -> xs >>= linearize
 
+
+  -- | Return the result of `linearize` into a CSS string (eg, to be placed into a <style> tag)
   emit :: Array { css :: String, selectorScope :: Endo' String, blockScope :: Endo' String } -> String
   emit = foldMap emit1
 
   emit1 { css, selectorScope, blockScope } =
-      runEndo blockScope $ runEndo selectorScope selec0 <> " { " <> css <> " } "
+      (runEndo blockScope $ runEndo selectorScope selec0 <> " { " <> css <> " } ") <> "\n"
 
   _blockScope = prop (Proxy :: Proxy "blockScope")
   _selectorScope = prop (Proxy :: Proxy "selectorScope")
@@ -146,7 +166,7 @@ derive newtype instance Semigroup Style
 derive newtype instance Monoid Style
 
 mkPair :: String -> String -> Style
-mkPair k v = FM.singleton $ SPair k v
+mkPair k v = FM.singleton $ SInline (k <> ": " <> v)
 
 mkScopedSelector :: (PuncturedFold String) -> Style -> Style
 mkScopedSelector scope (Style styles) = FM.singleton $ SScopeASelector scope (SConcat styles)
@@ -156,4 +176,4 @@ mkScopedBlock scope (Style styles) = FM.singleton $ SScopeABlock scope (SConcat 
 
 
 toProp :: forall m s. Array Style -> Prop m s
-toProp = FM.float >>> foldMap toProp1
+toProp = FM.float >>> SConcat >>> toProp1
