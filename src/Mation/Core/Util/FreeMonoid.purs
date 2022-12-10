@@ -1,4 +1,4 @@
-module Mation.Core.Many where
+module Mation.Core.Util.FreeMonoid where
 
 import Mation.Core.Prelude
 
@@ -36,33 +36,35 @@ import Data.Array as Array
 -- | ```
 -- | 
 -- | 
--- | The `Many` typeclass (below) is intended to act as a focal point for this pattern.
--- | An instance of the pattern using types `Thing` and `Thing1` should instantiate `Many` as
+-- | The `FreeMonoid` typeclass (below) is intended to act as a focal point for this pattern.
+-- | An instance of the pattern using types `Thing` and `Thing1` should
+-- | instantiate `FreeMonoid` as
 -- |
 -- | ```purs
--- | instance Many Thing Thing1
+-- | instance FreeMonoid Thing Thing1
 -- | ```
 -- | 
--- | The typeclass `Many` does not contain much logic. The value is more in providing
--- | a name for the pattern (`Many`), a single place to talk about it (this module),
+-- | The typeclass `FreeMonoid` does not contain much logic. The value is more in providing
+-- | a name for the pattern (`FreeMonoid`), a single place to talk about it (this module),
 -- | as well a place to put any logic there does happen to be.
 -- | 
 -- | 
--- | One may wonder why we use a `Many` class instead of defining a datatype
+-- | One may wonder why we use a `FreeMonoid` class instead of defining a datatype
 -- |
 -- | ```purs
--- | newtype Many a = Many (Array a)
+-- | newtype FreeMonoid a = FreeMonoid (Array a)
 -- | ```
 -- | 
 -- | and then write e.g.
 -- |
 -- | ```purs
--- | type Style a = Many (Style1 a)
+-- | type Style a = FreeMonoid (Style1 a)
 -- | ```
 -- | 
 -- | The reason for this is that, in this codebase, most such "many types" (eg `Style`)
 -- | are exported and exposed to the user. Preferring a datatype over a type alias
--- | means that the user does not have to worry about (or even know!) what a '`Many`' is.
+-- | means that the user does not have to worry about (or even know!) what
+-- | a '`FreeMonoid`' is.
 class
     -- | Should be compiler-derived
   ( Newtype t (Array t1)
@@ -71,7 +73,7 @@ class
     -- | Should be newtype-derived
   , Monoid t
   ) <=
-    Many t t1
+    FreeMonoid t t1
   | t -> t1
 
 
@@ -79,8 +81,9 @@ class
 -- |
 -- | Since a `t` is an array of `t1`, then a `Array t` is actually
 -- | an `Array (Array t1)`. This turns it into an `Array t1`.
-float :: forall t t1. Many t t1 => Array t -> Array t1
+float :: forall t t1. FreeMonoid t t1 => Array t -> Array t1
 float arr = arr >>= coerce
 
-singleton :: forall t t1. Many t t1 => t1 -> t
+-- | Inject
+singleton :: forall t t1. FreeMonoid t t1 => t1 -> t
 singleton = Array.singleton >>> coerce

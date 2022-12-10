@@ -10,7 +10,7 @@ import Mation.Core.Prelude
 
 import Mation.Core.Style as S
 import Mation.Core.Util.PuncturedFold as PF
-import Mation.Core.Many as FM
+import Mation.Core.Util.FreeMonoid as FM
 
 onChildren :: Array S.Style -> S.Style
 onChildren styles = FM.singleton $

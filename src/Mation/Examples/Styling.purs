@@ -8,7 +8,7 @@ import Mation.Props as P
 import Mation.Styles as S
 import Mation.Core.Style as CS
 import Mation.Core.Util.PuncturedFold (PuncturedFold (PF), Elem (..))
-import Mation.Core.Many as FM
+import Mation.Core.Util.FreeMonoid as FM
 
 type Model = Unit
 

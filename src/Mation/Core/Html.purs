@@ -10,7 +10,7 @@ import Mation.Core.Mation as Mation
 import Mation.Core.Util.Assoc (Assoc)
 import Mation.Core.Util.Assoc as Assoc
 import Mation.Core.Dom (DomNode, DomEvent)
-import Mation.Core.Many (class Many, float)
+import Mation.Core.Util.FreeMonoid (class FreeMonoid, float)
 
 
 -- | One virtual node, parameterized by listener result
@@ -75,7 +75,7 @@ caseVNode vnode vRawNode vRawHtml vText vTag =
 -- | This can be very handy when constructing `Html` values!
 newtype Html m s = Html (Array (VNode (Mation m s)))
 
-instance Many (Html m s) (VNode (Mation m s))
+instance FreeMonoid (Html m s) (VNode (Mation m s))
 
 derive instance Newtype (Html m s) _
 derive newtype instance Semigroup (Html m s)
@@ -140,7 +140,7 @@ data Prop1 m s
 -- | This can be very handy when constructing `Html` values!
 newtype Prop m s = Prop (Array (Prop1 m s))
 
-instance Many (Prop m s) (Prop1 m s)
+instance FreeMonoid (Prop m s) (Prop1 m s)
 
 derive instance Newtype (Prop m s) _
 derive newtype instance Semigroup (Prop m s)

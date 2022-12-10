@@ -148,7 +148,7 @@ function * pseudoClasses() {
   yield '';
   yield 'import Mation.Core.Style (Style)';
   yield 'import Mation.Core.Style as S';
-  yield 'import Mation.Core.Many as FM';
+  yield 'import Mation.Core.Util.FreeMonoid as FM';
   yield 'import Mation.Core.Util.PuncturedFold as PF';
   yield '';
   yield '';

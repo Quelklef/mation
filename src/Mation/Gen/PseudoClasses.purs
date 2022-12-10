@@ -8,7 +8,7 @@ import Mation.Core.Prelude
 
 import Mation.Core.Style (Style)
 import Mation.Core.Style as S
-import Mation.Core.Many as FM
+import Mation.Core.Util.FreeMonoid as FM
 import Mation.Core.Util.PuncturedFold as PF
 
 

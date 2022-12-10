@@ -7,7 +7,7 @@ import Data.Array as Array
 
 import Mation.Core.Html (Prop, mkPair, mkFixup)
 import Mation.Core.Dom (DomNode)
-import Mation.Core.Many (class Many, float)
+import Mation.Core.Util.FreeMonoid (class FreeMonoid, float)
 import Mation.Core.Util.PuncturedFold (PuncturedFold)
 import Mation.Core.Util.PuncturedFold as PF
 
@@ -139,7 +139,7 @@ runEndo (Endo f) = f
 
 newtype Style = Style (Array (Style1 PuncturedFold))
 
-instance Many Style (Style1 PuncturedFold)
+instance FreeMonoid Style (Style1 PuncturedFold)
 
 derive instance Newtype Style _
 derive newtype instance Semigroup Style
