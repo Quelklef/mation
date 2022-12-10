@@ -2,6 +2,8 @@ module Mation.Core.Mation where
 
 import Mation.Core.Prelude
 
+import Effect.Ref as Ref
+
 
 -- | A `Mation m s` is a computation within `m` with the ability to update some
 -- | state value of type `s` as it pleases.
@@ -49,6 +51,33 @@ type Step s = forall n. MonadEffect n => (s -> s) -> n Unit
 -- | many such state updates as they like, at whatever time they like.
 mkCont :: forall m s. (Step s -> m Unit) -> Mation m s
 mkCont = Mation
+
+-- | Convenience wrapper around `mkCont` which creates a mation able
+-- | to buffer its state updates before applying them. The application
+-- | will not re-render until the buffered updates are applied.
+-- |
+-- | Not only does buffering an update not cause a re-render, it doesn't
+-- | even cause a model update. All buffered updates are totally invisible
+-- | to the application until they are applied.
+mkStaged :: forall m s.
+  MonadEffect m =>
+     -- | Add a state update to the buffer
+  ({ stage :: (s -> s) -> m Unit
+     -- | Apply all staged updates to the model
+   , apply :: m Unit
+   } -> m Unit
+  ) -> Mation m s
+mkStaged f =
+  mkCont \step -> do
+    buf <- liftEffect do
+      Ref.new (identity :: s -> s)
+    f
+      { stage: \g -> liftEffect do
+          Ref.modify_ (_ >>> g) buf
+      , apply: liftEffect do
+          Ref.read buf >>= step
+          Ref.write identity buf
+      }
 
 -- | Apply some known state update
 mkPure :: forall m s. MonadEffect m => (s -> s) -> Mation m s

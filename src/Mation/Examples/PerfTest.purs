@@ -105,11 +105,13 @@ tree n =
     ]
 
 doBench :: M.Mation Effect Model
-doBench = M.mkCont \step -> do
-  step (_benchmarks .~ [])
+doBench = M.mkStaged \{ stage, apply } -> do
+  stage (_benchmarks .~ [])
   nTimes 10 do
-    ms <- timeMe (step identity)
-    step (_benchmarks %~ (_ <> [ms]))
+    stage identity
+    ms <- timeMe apply
+    stage (_benchmarks %~ (_ <> [ms]))
+  apply
 
   where
 
