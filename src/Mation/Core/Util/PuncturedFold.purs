@@ -2,7 +2,7 @@ module Mation.Core.Util.PuncturedFold where
 
 import Mation.Core.Prelude
 
-import Data.Hashable (class Hashable, hash)
+import Mation.Core.Util.Hashable (class Hashable, hash)
 
 
 -- | Given a type `A` instantiating `Monoid`, we are occasionally

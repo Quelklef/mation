@@ -2,7 +2,6 @@ module Mation.Core.Style where
 
 import Mation.Core.Prelude
 
-import Data.Hashable (class Hashable, hash)
 import Data.Array as Array
 
 import Mation.Core.Prop (Prop, mkPair, mkFixup)
@@ -11,6 +10,7 @@ import Mation.Core.Util.FreeMonoid (class FreeMonoid)
 import Mation.Core.Util.FreeMonoid as FM
 import Mation.Core.Util.PuncturedFold (PuncturedFold)
 import Mation.Core.Util.PuncturedFold as PF
+import Mation.Core.Util.Hashable (class Hashable, hash)
 
 
 -- | Represents a bunch of styles
@@ -120,7 +120,7 @@ toCss selec0 = linearize >>> emit
 toProp1 :: forall m s. Style1 PuncturedFold -> Prop m s
 toProp1 style =
   let
-    className = "_mationcss-" <> show (hash style)
+    className = "mation-style-" <> hash style
     selector = "." <> className
     css = toCss selector (mapStyle1 PF.toEndoCom style)
   in mkFixup \node -> do

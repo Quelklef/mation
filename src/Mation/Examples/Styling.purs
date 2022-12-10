@@ -35,7 +35,6 @@ render model =
   , mkExample
       "I style my children when they are hovered"
       (S.onChildren >>> singleton >>> S.onHover)
-        -- FIXME: this one^ is broken and I think it's due to a hash collision
 
   , mkExample
       "I style my children when I am hovered"
