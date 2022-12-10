@@ -4,24 +4,43 @@ node => className => () => {
   node.classList.add(className);
 
   const restore = () => node.classList.remove(className);
-  return restore;
+  return { restore };
 };
 
 export const putCss =
-({ css, forClass }) => () => {
-  const $sheet = document.createElement('style');
-  $sheet.innerText = css;
+({ getCss, hash }) => () => {
+  const $hangout = getHangout();
 
-  const hangoutId = '_mation-stylesheet-hangout';
+  // refcounting :)
+  const refs = ($hangout._refs ??= {});
+  refs[hash] ??= { elem: null, count: 0 };
+
+  if (!refs[hash].count) {
+    const $sheet = document.createElement('style');
+    $sheet.innerText = getCss();
+    $hangout.append($sheet);
+    refs[hash].elem = $sheet;
+  }
+  refs[hash].count++;
+
+  const restore = () => {
+    refs[hash].count--;
+    if (!refs[hash].count) {
+      refs[hash].elem.remove();
+      refs[hash].elem = null;
+    }
+  }
+
+  return { restore };
+};
+
+function getHangout() {
+  const hangoutId = 'mation-stylesheet-hangout';
   let $hangout = document.getElementById(hangoutId);
   if (!$hangout) {
     $hangout = document.createElement('div');
     $hangout.id = hangoutId;
     document.head.append($hangout);
   }
-
-  $hangout.append($sheet);
-
-  const restore = () => $sheet.remove();
-  return restore;
-};
+  return $hangout;
+}

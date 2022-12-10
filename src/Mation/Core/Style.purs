@@ -120,16 +120,16 @@ toCss selec0 = linearize >>> emit
 toProp1 :: forall m s. Style1 PuncturedFold -> Prop m s
 toProp1 style =
   let
-    className = "mation-style-" <> hash style
-    selector = "." <> className
-    css = toCss selector (mapStyle1 PF.toEndoCom style)
+    styleHash = hash style
+    className = "mation-style-" <> styleHash
+    getCss _ = toCss ("." <> className) (mapStyle1 PF.toEndoCom style)
   in mkFixup \node -> do
-    restoreCss <- putCss { css, forClass: className }
+    restoreCss <- putCss { getCss, hash: styleHash }
     restoreClass <- putClass node className
-    pure $ { restore: restoreCss *> restoreClass }
+    pure (restoreCss <> restoreClass)
 
-foreign import putCss :: { css :: String, forClass :: String } -> Effect (Effect Unit)
-foreign import putClass :: DomNode -> String -> Effect (Effect Unit)
+foreign import putCss :: { getCss :: Unit -> String, hash :: String } -> Effect { restore :: Effect Unit }
+foreign import putClass :: DomNode -> String -> Effect { restore :: Effect Unit }
 
 runEndo :: forall c a. Endo c a -> c a a
 runEndo (Endo f) = f
