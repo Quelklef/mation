@@ -1,7 +1,7 @@
 
 -- | Functions for creating and modifying `Prop`erties
 
-module Mation.Props (module X, style', onInput', fixup, mkPair, mkListener) where
+module Mation.Props (module X, style', onInput', fixup, mkPair, mkListener, showUpdates) where
   
 import Mation.Core.Prop (Prop) as X
 import Mation.Gen.Attributes as X
@@ -41,3 +41,10 @@ mkPair = Prop.mkPair
 mkListener :: forall m s. String -> (DomEvent -> Mation m s) -> Prop m s
 mkListener = Prop.mkListener
 
+
+-- | Gives the node a red border whenever they are updated
+-- | This is intended for debugging only
+showUpdates :: forall m s. Prop m s
+showUpdates = fixup showUpdates_f
+
+foreign import showUpdates_f :: DomNode -> Effect { restore :: Effect Unit }

@@ -42,13 +42,11 @@ onDouble render model =
     , S.padding ".2em"
     , S.margin ".2em"
     ]
-  , P.fixup prepare
+  , P.showUpdates
   ]
   [ E.prune Nothing (\n -> E.enroot _1 $ render n) (model ^. _1)
   , E.prune Nothing (\n -> E.enroot _2 $ render n) (model ^. _2)
   ]
-
-foreign import prepare :: M.DomNode -> Effect { restore :: Effect Unit }
 
 
 render :: Model -> E.Html' Model
