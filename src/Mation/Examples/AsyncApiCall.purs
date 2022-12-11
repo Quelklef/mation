@@ -20,15 +20,12 @@ import Mation.Styles as S
 type Model =
   { input :: String
   , requestStatus :: RequestStatus
-
   , spinnerTick :: Int
-  , spinnerSize :: Number
   }
 
 _input = prop (Proxy :: Proxy "input")
 _requestStatus = prop (Proxy :: Proxy "requestStatus")
 _spinnerTick = prop (Proxy :: Proxy "spinnerTick")
-_spinnerSize = prop (Proxy :: Proxy "spinnerSize")
 
 data RequestStatus
   = NotStarted
@@ -47,7 +44,6 @@ initial =
   { input: "some string"
   , requestStatus: NotStarted
   , spinnerTick: 0
-  , spinnerSize: 15.0
   }
 
 render :: Model -> E.Html Effect Model
@@ -56,59 +52,10 @@ render model =
   [ P.style'
     [ S.display "flex"
     , S.gap "1em"
+    , S.fontFamily "sans-serif"
     ]
   ]
   [ renderStringReverse model
-  , renderSpinner model
-  ]
-
-renderSpinner :: Model -> E.Html Effect Model
-renderSpinner model =
-  E.div
-  [ P.style "flex: 1"
-  ]
-  [ E.h3 [] [ E.text "Spinner" ]
-  , E.p [] [ E.text "To demonstrate that the app is still responsive while the API call occurs." ]
-  , E.p
-    []
-    [ E.text "Spinner size: "
-    , E.input
-      [ P.type_ "range"
-      , P.min "1"
-      , P.max "100"
-      , P.onInput' \new -> case Number.fromString new of
-            Nothing -> M.mkNoop
-            Just n -> M.mkPure (_spinnerSize .~ n)
-      , P.value (show model.spinnerSize)
-      , P.style "vertical-align: middle"
-      ]
-    ]
-  , E.br []
-  , let spinnerContainerSize = 85.0
-    in E.div
-    [ P.style'
-      [ S.height $ show spinnerContainerSize <> "px"
-      , S.width $ show spinnerContainerSize <> "px"
-      , S.backgroundColor "rgb(230, 230, 230)"
-      , S.borderRadius "100%"
-      , S.position "relative"
-      , S.transform $ "rotate(" <> show model.spinnerTick <> "deg)"
-      ]
-    ]
-    [ E.div
-      [ P.style'
-        [ S.display "inline-block"
-        , S.background "black"
-        , S.width $ show model.spinnerSize <> "px"
-        , S.height $ show model.spinnerSize <> "px"
-        , S.borderRadius "100%"
-        , S.position "absolute"
-        , S.left $ show (negate $ model.spinnerSize / 2.0) <> "px"
-        , S.top $ show ((spinnerContainerSize - model.spinnerSize) / 2.0) <> "px"
-        ]
-      ]
-      []
-    ]
   ]
 
 renderStringReverse :: Model -> E.Html Effect Model
@@ -137,6 +84,8 @@ renderStringReverse model =
     , fold $ case model.requestStatus of
         InProgress { cancel } ->
           [ E.text " "
+          , renderSpinner model.spinnerTick
+          , E.text " "
           , E.button
             [ P.onClick \_ -> M.mkEff do
                   cancel
@@ -165,6 +114,38 @@ renderStringReverse model =
           ]
 
         _ -> mempty
+  ]
+
+renderSpinner :: forall m s. Int -> E.Html m s
+renderSpinner tick =
+  let spinnerContainerSize = 30.0
+      spinnerSize = 10.0
+  in E.span
+  [ P.style'
+    [ S.display "inline-block"
+    , S.verticalAlign "middle"
+    , S.margin $ "0 " <> show (spinnerContainerSize / 2.0) <> "px"
+    , S.height $ show spinnerContainerSize <> "px"
+    , S.width $ show spinnerContainerSize <> "px"
+    , S.backgroundColor "rgb(230, 230, 230)"
+    , S.borderRadius "100%"
+    , S.position "relative"
+    , S.transform $ "rotate(" <> show tick <> "deg)"
+    ]
+  ]
+  [ E.div
+    [ P.style'
+      [ S.display "inline-block"
+      , S.background "black"
+      , S.width $ show spinnerSize <> "px"
+      , S.height $ show spinnerSize <> "px"
+      , S.borderRadius "100%"
+      , S.position "absolute"
+      , S.left "0"
+      , S.top $ show ((spinnerContainerSize - spinnerSize) / 2.0) <> "px"
+      ]
+    ]
+    []
   ]
 
 

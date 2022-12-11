@@ -5,6 +5,7 @@ import Effect (Effect)
 import Type.Proxy (Proxy (..))
 import Data.Lens (Lens')
 import Data.Lens.Record (prop)
+import Data.String.Common (toUpper)
 
 import Mation as M
 import Mation.Elems as E
@@ -37,7 +38,7 @@ renderTextbox model =
     ]
   , E.p
     []
-    [ E.text $ "The textbox value is: " <> model
+    [ E.text $ "Capitalized: " <> toUpper model
     ]
   ]
 
@@ -54,11 +55,13 @@ renderCheckbox model =
       [ P.onInput' \_ -> M.mkPure not
       , P.checked model
       , P.type_ "checkbox"
+      , P.id "the-checkbox"
       ]
-    ]
-  , E.p
-    []
-    [ E.text $ "The box is currently " <> if model then "checked" else "not checked"
+    , E.label
+      [ P.for "the-checkbox"
+      ]
+      [ E.text $ " The box is " <> if model then "checked" else "not checked"
+      ]
     ]
   ]
 
@@ -80,31 +83,44 @@ render model =
   [ P.style'
     [ S.display "flex"
     , S.gap "1em"
-    , S.flexDirection "column"
     , S.alignItems "flex-start"
     ]
   ]
-  [ E.div
+  [ stylesheet
+  , E.div
     [ componentStyle ]
-    [ E.text "Textbox component"
-    , E.hr []
+    [ E.p [] [ E.text "Textbox component" ]
+    , E.hr [ hrStyle ]
     , E.enroot _textbox (renderTextbox model.textbox)
     ]
   , E.div
     [ componentStyle ]
-    [ E.text "Checkbox component"
-    , E.hr []
+    [ E.p [] [ E.text "Checkbox component" ]
+    , E.hr [ hrStyle ]
     , E.enroot _checkbox (renderCheckbox model.checkbox)
     ]
   ]
 
   where
 
-  componentStyle :: P.Prop Effect Model
+  stylesheet :: forall m s. E.Html m s
+  stylesheet =
+    E.style
+    []
+    [ E.text "p { margin: .5em 0; }"
+    ]
+
+  componentStyle :: forall m s. P.Prop m s
   componentStyle =
     P.style'
     [ S.border "1px solid black"
     , S.padding "1em"
+    ]
+
+  hrStyle :: forall m s. P.Prop m s
+  hrStyle =
+    P.style'
+    [ S.margin ".5em 0 1em 0"
     ]
 
   _textbox :: Lens' Model TextboxModel
