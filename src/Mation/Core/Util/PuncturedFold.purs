@@ -14,15 +14,13 @@ import Mation.Core.Util.Hashable (class Hashable, hash)
 -- |   = \x -> fold [ a1, x, a2, a3, x ]
 -- | ```
 -- |
--- | The type `PuncturedFold A` gives a concrete representation to
--- | exactly such functions. That is, the type `PuncturedFold A` is
--- | a subscture of `A -> A` (relative to both composition and
--- | concatenation; see the functions later on) for which we have nice
--- | properties like the ability to write an `Eq` instance.
+-- | We think of these functions as calls to `fold`, but where
+-- | one value has been "punced out" of the `fold`.
 -- |
--- | We think of these functions as calls to `fold` awaiting a single
--- | value to complete. That value has been "punched out" of the `fold`,
--- | hence the name `PuncturedFold`.
+-- | The type `PuncturedFold A` gives a concrete representation to the
+-- | collection of such functions, considered as a substructure
+-- | of `A -> A`. This concrete representation exhibits desirable features
+-- | like existince of a well-formed `Eq` instance.
 -- |
 -- | A `PuncturedFold A` is represented as an array of elemens, each of
 -- | which is either an element of `A` or a `Hole`, which represents
@@ -67,13 +65,12 @@ toEndoCom = toEndoCat >>> Endo
 -- | Same as `toEndo` but without the `Endo` newtype
 -- |
 -- | Note that `a -> a` and `Endo (->) a` have different monoid
--- | instances. Hence, `toEndoCom` and `toEndoCat`, differing
--- | only in `newtype`s, are different monoid-injections
+-- | instances. The functions `toEndoCom` and `toEndoCat`, which
+-- | differ only by `newtype`, are different monoid-injections
 -- | from `PuncturedFold a` into `a -> a`.
 -- |
--- | Namely, `toEndoCom` is the injection which takes `<>`
--- | to function composition, and `toEndoCat` is the inection
--- | which takes `<>` to function-result-concatenation.
+-- | Specifically, `toEndoCom` takes `<>` to function composition,
+-- | and `toEndoCat` takes `<>` to function-result-concatenation.
 -- |
 -- | For instance, if we let
 -- |
@@ -86,9 +83,9 @@ toEndoCom = toEndoCat >>> Endo
 -- |
 -- | ```
 -- | (let Endo f = toEndoCom brace <> toEndoCom brack in f "😄")
--- | = "{[😄]} "
+-- | == "{[😄]}"
 -- | (let Endo f = toEndoCat brace <> toEndoCat brack in f "😄")
--- | = "{😄}[😄]"
+-- | == "{😄}[😄]"
 -- | ```
 toEndoCat :: forall a. Monoid a => PuncturedFold a -> (a -> a)
 toEndoCat (PF elems) =

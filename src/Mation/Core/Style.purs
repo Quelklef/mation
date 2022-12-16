@@ -17,18 +17,18 @@ import Mation.Core.Util.Hashable (class Hashable, hash)
 -- |
 -- | This type has one parameter named `endo`. The expectation is
 -- | that `endo` be some substructure of `Endo`. In particular, we expect
--- | that there be some function `f` so
--- | that `(endo String, f) ↪ (Endo String, <>)` as a monid. I don't think
+-- | that there be some function `f` so that `(endo String, f)` embeds
+-- | into `(Endo String, <>)` as a monoid. I don't think
 -- | we use this fact outright, but it's good for illustration.
 -- |
--- | Despite the name `Style1`, this type does represent a *bunch* of styles.
+-- | Despite the name `Style1`, this type represents a *collection* of CSS styles.
 -- | The reason for the `-1` suffix is that we still form a monoid closure
 -- | over it with `Style` since turning `Style1` into a lawful monoid
 -- | directly would not be easy.
 data Style1 :: (Type -> Type) -> Type
 data Style1 endo
 
-    -- | K-v pair, eg `SInline "position: fixed; top: 0"`
+    -- | Raw inline style, eg `SInline "position: fixed; top: 0"`
   = SInline String
 
     -- | Scope a style with some selector combinator, eg

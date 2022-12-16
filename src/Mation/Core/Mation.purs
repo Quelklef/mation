@@ -11,7 +11,7 @@ import Effect.Ref as Ref
 -- | 
 -- | The most common form of mation are those which perform a single state update
 -- | in a synchronous manner and then terminate. Most event handlers will fall
--- | into this category. For instance, an onClick handler may increment a UI model
+-- | into this category. For instance, an `onClick` handler may increment a UI model
 -- | and then terminate.
 -- | 
 -- | However, mations in general can be far more complex. A mation may be a
@@ -37,7 +37,6 @@ import Effect.Ref as Ref
 -- | (nb. I'm sorry to say I don't have any concrete examples or a pointed
 -- | explanation of why it would indeed be bad for an event handler to be able to
 -- | read the model state. All I have is an intuition, and I'm going with it!)
-
 newtype Mation m s = Mation (Step s -> m Unit)
 
 -- | Applies a single state update
@@ -45,32 +44,27 @@ type Step s = forall n. MonadEffect n => (s -> s) -> n Unit
 
 
 -- | The most powerful form of mation. Callsites to this function
--- | are supplied a function `apply :: Step s -> m Unit`. The apply
+-- | are supplied a function `apply :: Step s -> m Unit`. The `apply`
 -- | function accepts some state update `s -> s` and applies it
--- | to the state. Callsites to `mkCont` may supply `apply` with as
--- | many such state updates as they like, at whatever time they like.
+-- | to the current state. Callsites to `mkCont` may supply `apply` with
+-- | as many such state updates as they like, at whatever time they like.
 mkCont :: forall m s. (Step s -> m Unit) -> Mation m s
 mkCont = Mation
 
 -- | Convenience wrapper around `mkCont` which creates a mation able
--- | to buffer its state updates before applying them. The application
--- | will not re-render until the buffered updates are applied.
--- |
--- | Not only does buffering an update not cause a re-render, it doesn't
--- | even cause a model update. All buffered updates are totally invisible
--- | to the application until they are applied.
+-- | to buffer its state updates before applying them. The underlying
+-- | state is completely unaffected until the buffer is flushed.
 mkStaged :: forall m s.
   MonadEffect m =>
      -- | Add a state update to the buffer
   ({ stage :: (s -> s) -> m Unit
-     -- | Apply all staged updates to the model
+     -- | Apply all staged updates to the state
    , apply :: m Unit
    } -> m Unit
   ) -> Mation m s
 mkStaged f =
   mkCont \step -> do
-    buf <- liftEffect do
-      Ref.new (identity :: s -> s)
+    buf <- liftEffect $ Ref.new identity
     f
       { stage: \g -> liftEffect do
           Ref.modify_ (_ >>> g) buf
@@ -79,19 +73,20 @@ mkStaged f =
           Ref.write identity buf
       }
 
--- | Apply some known state update
+-- | Create a mation which applies some given state update
 mkPure :: forall m s. MonadEffect m => (s -> s) -> Mation m s
 mkPure endo = Mation \step -> liftEffect (step endo)
 
--- | Do nothing
+-- | Create a mation which does nothing
 mkNoop :: forall m s. Applicative m => Mation m s
 mkNoop = Mation \_step -> pure unit
 
--- | Perform an effect and apply the resultant state update
+-- | Create a mation which effectfully computes a state update and then applies it
 mkEff :: forall m s. MonadEffect m => m (s -> s) -> Mation m s
 mkEff getEndo = Mation \step -> getEndo >>= \endo -> liftEffect (step endo)
 
 
+-- | `Mation` destructor
 runMation :: forall m s. Mation m s -> ((s -> s) -> Effect Unit) -> m Unit
 runMation (Mation f) step = f (step >>> liftEffect)
 
