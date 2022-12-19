@@ -13,7 +13,6 @@ function replaceNode(target, replacement) {
   }
 }
 
-
 export const patch_f =
 ({ caseMaybe
  , caseUnsure
@@ -79,26 +78,30 @@ export const patch_f =
     // Injectively fold the pruning key path into a single string
     const key = vPrune.keyPath.map(k => k.replace(/,/g, ',,')).join(',;');
 
-    // Compute an existing DOM node to re-use for this node, as per pruning rules
-    // Returns `null` if the prune node needs be recomputed
-    const reuse = iife(() => {
-      const info = pruneMap[key];
-      if (!info) return null;
-      const unsureEq = vPrune.unsureEq;
-      const paramsEqual = caseUnsure(unsureEq(vPrune.params)(info.params))(x => x)(false);
-      return paramsEqual ? info.node : null;
-    });
-
-    if (reuse) {
-      root.replaceWith(reuse);
-      return reuse;
+    const info = lookupPrune(pruneMap, vPrune);
+    if (info) {
+      root.replaceWith(info.node);
+      return info.node;
     } else {
       const newVNode = vPrune.render(vPrune.params);
       const node = patch(root, mOldVNode, newVNode);
-      pruneMap[key] = { params: vPrune.params, node };
+      pruneMap[key] = { params: vPrune.params, node, vNode: newVNode };
       return node;
     }
 
+  }
+
+  // Lookup a vPrune node in the prune map
+  // Returns either null or the prune map data object
+  function lookupPrune(pruneMap, vPrune) {
+    // Injectively fold the pruning key path into a single string
+    const key = vPrune.keyPath.map(k => k.replace(/,/g, ',,')).join(',;');
+
+    const info = pruneMap[key];
+    if (!info) return null;
+    const unsureEq = vPrune.unsureEq;
+    const paramsEqual = caseUnsure(unsureEq(vPrune.params)(info.params))(x => x)(false);
+    return paramsEqual ? info : null;
   }
 
   function tagCase(root, mOldVNode, newVTag) {
@@ -116,11 +119,7 @@ export const patch_f =
         (html => true)
         (text => true)
         (oldVTag => oldVTag.tag !== newVTag.tag)
-        (vPrune => {
-          const forced = vPrune.render(vPrune.params);  // FIXME: does this mean VPrune might be computed more than once?
-          const oldVTag = caseVNode(forced)(_ => null)(_ => null)(_ => null)(x => x)(_ => null);  // FIXME
-          return oldVTag.tag !== newVTag.tag;
-        })
+        (vPrune => newVTag.tag !== 'span')
     );
     if (shouldReplace) {
       const newRoot = document.createElement(newVTag.tag);
@@ -138,9 +137,15 @@ export const patch_f =
         (text => empty)
         (oldVTag => oldVTag)
         (vPrune => {
-          const forced = vPrune.render(vPrune.params);  // FIXME: does this mean VPrune might be computed more than once?;
-          const oldVTag = caseVNode(forced)(_ => null)(_ => null)(_ => null)(x => x)(_ => null);  // FIXME
-          return oldVTag;
+          const info = lookupPrune(pruneMap, vPrune);
+
+          // The prune was rendered last frame, so it must be in the prune map
+          console.assert(!!info, `[mation] prune missing from map`);
+
+          // You and I have magic knowledge that all VPrune nodes render to VTag nodes
+          const vTag = caseVNode(info.vNode)(_ => null)(_ => null)(_ => null)(x => x)(_ => null);
+
+          return vTag;
         })
     );
 

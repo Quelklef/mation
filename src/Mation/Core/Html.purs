@@ -190,6 +190,7 @@ mkPrune key render params =
 
   -- FIXME: We treat VPrune nodes as being a <span style="display: contents"> over
   --        their children. This makes diffing easier but is fundamentally a hack.
+  --        Note that the diffing algorithm directly uses knowledge of this hack.
   wrap :: forall n t. Html n t -> VNode (Mation n t)
   wrap html = VTag
     { tag: "span"
