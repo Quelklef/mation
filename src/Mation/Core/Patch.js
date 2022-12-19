@@ -16,7 +16,6 @@ function replaceNode(target, replacement) {
 
 export const patch_f =
 ({ caseMaybe
- , casePair
  , caseUnsure
  , caseVNode
  , mPruneMap
@@ -157,15 +156,13 @@ export const patch_f =
 
   function patchAttrs(root, oldAttrs, newAttrs) {
     // Add new attrs + modify changed attrs
-    for (const attr of newAttrs) {
-      const [name, value] = casePair(attr)(a => b => [a, b]);
+    for (const [name, value] of newAttrs) {
       root.setAttribute(name, value);
     }
 
     // Remove old attrs
-    const newAttrNames = new Set(newAttrs.map(attr => casePair(attr)(name => _ => name)));
-    for (const attr of oldAttrs) {
-      const [name, _] = casePair(attr)(a => b => [a, b]);
+    const newAttrNames = new Set(newAttrs.map(([name, _]) => name));
+    for (const [name, _] of oldAttrs) {
       if (!newAttrNames.has(name)) {
         root.removeAttribute(name);
       }
@@ -178,16 +175,14 @@ export const patch_f =
     // Remove old listeners
     // Read listeners from oldListeners instead of from root._listeners so that
     // we don't remove listeners added by other code
-    for (const listener of oldListeners) {
-      const [name, _] = casePair(listener)(a => b => [a, b]);
+    for (const [name, _] of oldListeners) {
       const map = root._listeners ?? {};
       root.removeEventListener(name, map[name]);
     }
 
     // Add new listeners
     root._listeners = {};
-    for (const listener of newListeners) {
-      const [name, f] = casePair(listener)(a => b => [a, b]);
+    for (const [name, f] of newListeners) {
       const domHandler = ev => f(ev)();
       root.addEventListener(name, domHandler);
       root._listeners[name] = domHandler;

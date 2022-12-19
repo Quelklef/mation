@@ -193,8 +193,8 @@ mkPrune key render params =
   wrap :: forall n t. Html n t -> VNode (Mation n t)
   wrap html = VTag
     { tag: "span"
-    , attrs: Assoc [ "style" /\ "display: contents" ]
-    , listeners: Assoc []
+    , attrs: Assoc.fromFoldable [ "style" /\ "display: contents" ]
+    , listeners: Assoc.fromFoldable []
     , fixup: mempty
     , children: FM.unwrap html
     }

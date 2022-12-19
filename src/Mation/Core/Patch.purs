@@ -2,13 +2,11 @@ module Mation.Core.Patch where
 
 import Mation.Core.Prelude
 
-import Mation.Core.Util.Assoc as Assoc
 import Mation.Core.Mation (Mation)
 import Mation.Core.Html (VNode (..), CaseVNode, caseVNode)
 import Mation.Core.Dom (DomNode, DomEvent)
 import Mation.Core.Util.UnsureEq (Unsure (..))
 import Mation.Core.Util.FreeMonoid as FM
-import Mation.Core.Util.Assoc (Assoc (..))
 
 
 -- | Reference to an object holding runtime information necessary to
@@ -41,7 +39,6 @@ patchOnto ::
 patchOnto { mOldVNode, newVNode, mPruneMap } =
   patch_f
     { caseMaybe
-    , casePair
     , caseUnsure
     , caseVNode
     , mPruneMap
@@ -53,7 +50,6 @@ patchOnto { mOldVNode, newVNode, mPruneMap } =
 
 foreign import patch_f ::
    { caseMaybe :: CaseMaybe
-   , casePair :: CasePair
    , caseUnsure :: CaseUnsure
    , caseVNode :: CaseVNode
    , mPruneMap :: Maybe PruneMapRef
@@ -74,13 +70,6 @@ caseMaybe maybe nothing just =
   case maybe of
     Nothing -> nothing
     Just a -> just a
-
-
-type CasePair =
-  forall a b r. (a /\ b) -> (a -> b -> r) -> r
-
-casePair :: CasePair
-casePair (a /\ b) f = f a b
 
 
 type CaseUnsure =
