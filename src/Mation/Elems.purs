@@ -42,7 +42,7 @@ mkTag = Prop.mkElement
 
 
 -- | Embed one `Html` within another
-enroot :: forall m large small. Lens' large small -> Html m small -> Html m large
+enroot :: forall m large small. Setter' large small -> Html m small -> Html m large
 enroot = Html.enroot
 
 -- | Marks a node for "pruning", meaning that its `Html` will only be re-computed

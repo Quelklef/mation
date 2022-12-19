@@ -202,7 +202,6 @@ mkPrune key render params =
 
 
 -- | Embed one `Html` within another
--- FIXME: won't accept changing `Lens'` to `Setter'` for some reason?
-enroot :: forall m large small. Lens' large small -> Html m small -> Html m large
+enroot :: forall m large small. Setter' large small -> Html m small -> Html m large
 enroot len (Html arr) = Html $ map (map (Mation.enroot len)) arr
 
