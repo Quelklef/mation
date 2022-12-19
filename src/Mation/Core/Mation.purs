@@ -37,18 +37,18 @@ import Effect.Ref as Ref
 -- | (nb. I'm sorry to say I don't have any concrete examples or a pointed
 -- | explanation of why it would indeed be bad for an event handler to be able to
 -- | read the model state. All I have is an intuition, and I'm going with it!)
-newtype Mation m s = Mation (Step s -> m Unit)
+newtype Mation m s = Mation (Step m s -> m Unit)
 
 -- | Applies a single state update
-type Step s = forall n. MonadEffect n => (s -> s) -> n Unit
+type Step m s = (s -> s) -> m Unit
 
 
 -- | The most powerful form of mation. Callsites to this function
--- | are supplied a function `apply :: Step s -> m Unit`. The `apply`
+-- | are supplied a function `apply :: Step m s -> m Unit`. The `apply`
 -- | function accepts some state update `s -> s` and applies it
 -- | to the current state. Callsites to `mkCont` may supply `apply` with
 -- | as many such state updates as they like, at whatever time they like.
-mkCont :: forall m s. (Step s -> m Unit) -> Mation m s
+mkCont :: forall m s. (Step m s -> m Unit) -> Mation m s
 mkCont = Mation
 
 -- | Convenience wrapper around `mkCont` which creates a mation able
@@ -68,27 +68,27 @@ mkStaged f =
     f
       { stage: \g -> liftEffect do
           Ref.modify_ (_ >>> g) buf
-      , apply: liftEffect do
-          Ref.read buf >>= step
-          Ref.write identity buf
+      , apply: do
+          liftEffect (Ref.read buf) >>= step
+          liftEffect $ Ref.write identity buf
       }
 
 -- | Create a mation which applies some given state update
-mkPure :: forall m s. MonadEffect m => (s -> s) -> Mation m s
-mkPure endo = Mation \step -> liftEffect (step endo)
+mkPure :: forall m s. (s -> s) -> Mation m s
+mkPure endo = Mation \step -> step endo
 
 -- | Create a mation which does nothing
 mkNoop :: forall m s. Applicative m => Mation m s
 mkNoop = Mation \_step -> pure unit
 
 -- | Create a mation which effectfully computes a state update and then applies it
-mkEff :: forall m s. MonadEffect m => m (s -> s) -> Mation m s
-mkEff getEndo = Mation \step -> getEndo >>= \endo -> liftEffect (step endo)
+mkEff :: forall m s. Bind m => m (s -> s) -> Mation m s
+mkEff getEndo = Mation \step -> getEndo >>= \endo -> step endo
 
 
 -- | `Mation` destructor
-runMation :: forall m s. Mation m s -> ((s -> s) -> Effect Unit) -> m Unit
-runMation (Mation f) step = f (step >>> liftEffect)
+runMation :: forall m s. Mation m s -> Step m s -> m Unit
+runMation (Mation f) = f
 
 
 -- | Given a witness `Setter'` to `small` being contained within `large`, we

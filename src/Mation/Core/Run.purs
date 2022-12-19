@@ -117,7 +117,7 @@ runApp args = do
     execMation :: Mation m s -> Effect Unit
     execMation mat = do
       step <- Ref.read stepRef
-      args.toEffect $ Mation.runMation mat step
+      args.toEffect $ Mation.runMation mat (step >>> liftEffect)
 
   -- Render for the first time
   model /\ vNode /\ pruneMap <- do
