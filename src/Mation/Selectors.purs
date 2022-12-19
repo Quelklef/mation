@@ -53,19 +53,19 @@ following sel = Scope $ S.mkSelectorScope $ PF.PF [ PF.Hole, PF.Elem " ~ ", PF.E
 -- | writing `media "max-width: 500px"`. This is because not all
 -- | valid `@media` conditions have enclosing parentheses.
 media :: String -> Scope
-media s = Scope $ S.mkBlockScope $ "@media " <> s
+media s = Scope $ S.mkBlockScope $ PF.PF [ PF.Elem "@media ", PF.Elem s, PF.Elem " { ", PF.Hole, PF.Elem " } " ]
 
 -- | CSS `@supports` at-rule
 -- |
 -- | Any necessary parentheses need to be passed in by you. (see `media`)
 supports :: String -> Scope
-supports s = Scope $ S.mkBlockScope $ "@supports " <> s
+supports s = Scope $ S.mkBlockScope $ PF.PF [ PF.Elem "@supports ", PF.Elem s, PF.Elem " { ", PF.Hole, PF.Elem " } " ]
 
 -- | CSS `@document` at-rule
 -- |
 -- | Any necessary parentheses need to be passed in by you. (see `media`)
 document :: String -> Scope
-document s = Scope $ S.mkBlockScope $ "@document " <> s
+document s = Scope $ S.mkBlockScope $ PF.PF [ PF.Elem "@document ", PF.Elem s, PF.Elem " { ", PF.Hole, PF.Elem " } " ]
 
 
 -- | Performs scope composition. On selector-level scopes this works as one might expect: the

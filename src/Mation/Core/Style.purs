@@ -59,22 +59,14 @@ data Style1 endo
 -- | ```
 newtype StyleScope endo = StyleScope
 
-    -- | Scope a style with some selector combinator, eg
-    -- |
-    -- | ```
-    -- | SScoped (ScopeASelector (_ <> ":focus")) (SInline "color: red")
-    -- | ```
+    -- | Scope a style with some selector combinator, eg `_ <> ":focus"`
     -- |
     -- | Note that using `const` as the selector *can* be used to
     -- | generate global styles. Not recommended, though.
   { selector :: endo String
 
-    -- | Scope a style by some block combinator, eg
-    -- |
-    -- | ```
-    -- | SScoped (ScopeABlock "@media (max-width: 500px)") (SInline "color: blue")
-    -- | ```
-  , block :: Array String
+    -- | Scope a style by some block combinator, eg `\css -> "@media print { " <> css <> " }"`
+  , block :: endo String
   }
 
 derive newtype instance Semigroup (endo String) => Semigroup (StyleScope endo)
@@ -84,11 +76,11 @@ derive newtype instance Eq (endo String) => Eq (StyleScope endo)
 instance Hashable (endo String) => Hashable (StyleScope endo) where
   hash (StyleScope { selector, block }) = hash $ selector /\ block
 
-mkSelectorScope :: forall endo. endo String -> StyleScope endo
-mkSelectorScope scope = StyleScope { selector: scope, block: [] }
+mkSelectorScope :: forall endo. Monoid (endo String) => endo String -> StyleScope endo
+mkSelectorScope scope = StyleScope { selector: scope, block: mempty }
 
-mkBlockScope :: forall endo. Monoid (endo String) => String -> StyleScope endo
-mkBlockScope scope = StyleScope { selector: mempty, block: [scope] }
+mkBlockScope :: forall endo. Monoid (endo String) => endo String -> StyleScope endo
+mkBlockScope scope = StyleScope { selector: mempty, block: scope }
 
 
 derive instance Eq (endo String) => Eq (Style1 endo)
@@ -103,7 +95,7 @@ mapStyle1 :: forall endo endo'. (endo String -> endo' String) -> (Style1 endo ->
 mapStyle1 f = case _ of
   SInline s -> SInline s
   SScoped (StyleScope { selector, block }) sty ->
-    SScoped (StyleScope { block, selector: f selector }) (mapStyle1 f sty)
+    SScoped (StyleScope { block: f block, selector: f selector }) (mapStyle1 f sty)
   SConcat xs -> SConcat (map (mapStyle1 f) xs)
 
 
@@ -118,53 +110,34 @@ toCss selec0 = collate >>> linearize >>> emit
   collate = case _ of
     SInline s -> SInline s
     SConcat styles ->
-      let
-        bigInline =
-          styles # foldMap case _ of
-            SInline s -> s <> "; "
-            _other -> ""
-        rest = styles # Array.filter case _ of
-            SInline _ -> false
-            _other -> true
+      let bigInline = styles # foldMap case _ of
+              SInline s -> s <> "; "
+              _other -> ""
+          rest = styles # Array.filter case _ of
+              SInline _ -> false
+              _other -> true
       in
         SConcat $ [ SInline bigInline ] <> rest
 
     other -> other
 
-  -- | Turn a style into an array of CSS styles (eg, `color: red; font-weight: bold`) contextualized
-  -- | by selector and block scopes.
-  -- FIXME: pretty sure this can be re-written much shorter now that StyleScope is a Monoid
-  linearize ::
-       Style1 (Endo (->))
-    -> Array
-         { css :: String
-         , selectorScope :: Endo' String
-         , blockScope :: Endo' String
-         }
+  -- | Turn a `Style` into an array of inline styles (eg, `color: red; flex: 1`) contextualized by scope
+  linearize :: Style1 (Endo (->)) -> Array { css :: String, scope :: StyleScope (Endo (->)) }
   linearize = case _ of
-    SInline s ->
-        [ { css: s
-          , selectorScope: mempty
-          , blockScope: mempty
-          }
-        ]
-    SScoped (StyleScope sco) style ->
-      let blockEndo = sco.block # foldMap (\s -> Endo \block -> s <> " { " <> block <> " } ")
-          selectorEndo = sco.selector
-      in linearize style # map (_blockScope %~ (blockEndo <> _))
-                         # map (_selectorScope %~ (selectorEndo <> _))
+    SInline s -> [ { css: s, scope: mempty } ]
+    SScoped sco style -> linearize style # map (_scope %~ (sco <> _))
     SConcat xs -> xs >>= linearize
 
 
   -- | Return the result of `linearize` into a CSS string (eg, to be placed into a <style> tag)
-  emit :: Array { css :: String, selectorScope :: Endo' String, blockScope :: Endo' String } -> String
+  emit :: Array { css :: String, scope :: StyleScope (Endo (->)) } -> String
   emit = foldMap emit1
 
-  emit1 { css, selectorScope, blockScope } =
-      (runEndo blockScope $ runEndo selectorScope selec0 <> " { " <> css <> " } ") <> "\n"
+  emit1 :: { css :: String, scope :: StyleScope (Endo (->)) } -> String
+  emit1 { css, scope: StyleScope scope } =
+      (runEndo scope.block $ runEndo scope.selector selec0 <> " { " <> css <> " } ") <> "\n"
 
-  _blockScope = prop (Proxy :: Proxy "blockScope")
-  _selectorScope = prop (Proxy :: Proxy "selectorScope")
+  _scope = prop (Proxy :: Proxy "scope")
 
 
 
