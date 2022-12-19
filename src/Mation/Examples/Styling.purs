@@ -6,6 +6,8 @@ import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
+import Mation.Selectors as Sel
+import Mation.Selectors ((>>))
 import Mation.Core.Style as CS
 import Mation.Core.Util.PuncturedFold (PuncturedFold (PF), Elem (..))
 import Mation.Core.Util.FreeMonoid as FM
@@ -25,29 +27,31 @@ render model =
   ]
   [ mkExample
       "I style on hover"
-      S.onHover
+      (S.on Sel.hover)
 
   , mkExample
-      "I style when the page is ≤500px tall"
-      (\styles -> FM.singleton $ CS.SScopeABlock "@media (max-height: 500px)" $ CS.SConcat $ FM.float $ styles)
+      "I style when the page is ≤800px tall"
+      (S.on $ Sel.media "(max-height: 800px)")
 
   , mkExample
       "I style my children"
-      S.onChildren
+      (S.on Sel.children)
 
   , mkExample
       "I style my children when they are hovered"
-      (S.onChildren >>> singleton >>> S.onHover)
+      (S.on $ Sel.children >> Sel.hover)
 
   , mkExample
       "I style my children when I am hovered"
-      (S.onHover >>> singleton >>> S.onChildren)
+      (S.on $ Sel.hover >> Sel.children)
+
+  , mkExample
+      "I style my children when the page is ≤800px tall"
+      (S.on $ Sel.children >> Sel.media "(max-height: 800px)")
       
   ]
 
   where
-
-  singleton x = [x]
 
   mkExample text condition =
     E.div

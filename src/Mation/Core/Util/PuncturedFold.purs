@@ -104,10 +104,25 @@ concat (PF xs) (PF ys) = PF (xs <> ys)
 
 -- | Compose two punctured folds
 -- |
+-- | This composition is left-to-right!
+-- |
 -- | This is the preimage of `<>` under `toEndoCom`.
 -- | That is, ``toEndoCom (pf1 `compose` pf2) = toEndoCom pf1 <> toEndoCom pf2``
 compose :: forall a. PuncturedFold a -> PuncturedFold a -> PuncturedFold a
 compose (PF xs) (PF ys) = PF $
-  ys >>= case _ of
-    Hole -> xs
-    Elem y -> [ Elem y ]
+  xs >>= case _ of
+    Hole -> ys
+    Elem x -> [ Elem x ]
+
+
+-- | Semigroup under `compose`
+-- |
+-- | `PuncturedFold` also forms a semigroup under `concat`, but it is more useful to
+-- | us to have the `Semigroup` instance be for `compose`, because usually we're
+-- | considering `PuncturedFold` as a subtructure of `Endo`.
+instance Semigroup (PuncturedFold a) where
+  append = compose
+
+-- | Monoid under `compose`
+instance Monoid (PuncturedFold a) where
+  mempty = PF [ Hole ]

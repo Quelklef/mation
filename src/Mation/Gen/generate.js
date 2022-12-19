@@ -30,7 +30,7 @@ function toIdent(str) {
   );
 
   // Ensure not a Purescript identifier
-  const psKeywords = new Set(['class', 'data', 'type']);
+  const psKeywords = new Set(['class', 'data', 'type', 'where']);
   if (psKeywords.has(ident))
     ident += '_';
 
@@ -147,7 +147,8 @@ function * pseudoClasses() {
   yield '';
   yield 'import Mation.Core.Prelude';
   yield '';
-  yield 'import Mation.Core.Style (Style, mkScopedSelector)';
+  yield 'import Mation.Core.Style (mkSelectorScope)';
+  yield 'import Mation.Styles (Scope (..))';
   yield 'import Mation.Core.Util.FreeMonoid as FM';
   yield 'import Mation.Core.Util.PuncturedFold as PF';
   yield '';
@@ -155,15 +156,15 @@ function * pseudoClasses() {
 
   const { pseudoClasses } = require('./data/pseudo-classes.js');
   for (const pcls of pseudoClasses) {
-    const ident = 'on' + capitalize(toIdent(pcls.name));
+    const ident = toIdent(pcls.name);
 
-    const args = range(pcls.arity).map(n => `x${n+1}`).join(' ');
+    const args = range(pcls.arity).map(n => `x${n+1} `).join('');
     const argsCall = pcls.arity === 0 ? '' : ('(' + range(pcls.arity).map(n => `" <> x${n+1} <> "`).join(', ') + ')');
     const argTypes = range(pcls.arity).map(_ => `String -> `).join('');
 
     yield `-- | [CSS :${pcls.name} pseudo-class](https://developer.mozilla.org/en-US/docs/Web/CSS/:${pcls.name}). This is generated code.`;
-    yield `${ident} :: ${argTypes} Array Style -> Style`
-    yield `${ident} ${args} styles = mkScopedSelector (PF.PF [ PF.Hole, PF.Elem $ ":${pcls.name}${argsCall}" ]) (fold styles)`;
+    yield `${ident} :: ${argTypes}Scope`
+    yield `${ident} ${args}= Scope $ mkSelectorScope $ PF.PF [ PF.Hole, PF.Elem $ ":${pcls.name}${argsCall}" ]`;
     yield '';
   }
 }
