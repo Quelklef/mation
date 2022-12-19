@@ -3,7 +3,6 @@ module Mation.Examples.PerfTest where
 import Mation.Core.Prelude
 
 import Data.Number as Number
-import Data.Lens.Lens.Tuple (_2)
 
 import Mation as M
 import Mation.Elems as E

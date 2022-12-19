@@ -7,18 +7,12 @@ import Mation.Gen.Tags as X
 import Mation.Core.Html (Html (..)) as X
 
 import Mation.Core.Prelude
-import Effect (Effect)
-import Data.Map as Map
-import Data.Map (Map)
 
 import Mation.Core.Html as Html
 import Mation.Core.Html (Html)
-import Mation.Core.Mation (Mation)
-import Mation.Core.Dom (DomNode, DomEvent)
+import Mation.Core.Dom (DomNode)
 import Mation.Core.Prop (Prop)
 import Mation.Core.Prop as Prop
-import Mation.Core.Util.Assoc (Assoc (..))
-import Mation.Core.Util.FreeMonoid as FM
 import Mation.Core.Util.UnsureEq (class UnsureEq)
 
 

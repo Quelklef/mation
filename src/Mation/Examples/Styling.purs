@@ -2,15 +2,11 @@ module Mation.Examples.Styling where
 
 import Mation.Core.Prelude
 
-import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
 import Mation.Selectors as Sel
 import Mation.Selectors ((>>))
-import Mation.Core.Style as CS
-import Mation.Core.Util.PuncturedFold (PuncturedFold (PF), Elem (..))
-import Mation.Core.Util.FreeMonoid as FM
 
 type Model = Unit
 
@@ -18,7 +14,7 @@ initial :: Model
 initial = unit
 
 render :: forall m. Model -> E.Html m Model
-render model =
+render _model =
   E.div
   [ P.style "display: flex; flex-direction: column; gap: 1em;"
   ]

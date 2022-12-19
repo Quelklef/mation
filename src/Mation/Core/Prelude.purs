@@ -16,7 +16,6 @@ import Safe.Coerce (coerce) as X
 import Data.Generic.Rep (class Generic) as X
 import Data.Show.Generic (genericShow) as X
 import Data.Foldable (class Foldable, fold, foldMap, intercalate, elem) as X
-import Data.Unit (Unit, unit) as X
 import Data.Tuple.Nested ((/\), type (/\)) as X
 import Data.Either (Either (..)) as X
 import Data.Maybe (Maybe (..), fromMaybe) as X
@@ -25,10 +24,9 @@ import Data.Monoid (power) as X
 import Data.Monoid.Endo (Endo (..)) as X
 import Data.Lens.Types (Getter') as X
 import Data.Lens.Lens (Lens') as X
-import Data.Lens.Setter (Setter') as X
+import Data.Lens.Setter (Setter', (.~), (%~)) as X
 import Data.Lens.Getter ((^.)) as X
 import Data.Lens.Record (prop) as X
-import Data.Lens.Setter ((.~), (%~)) as X
 import Data.Newtype (class Newtype) as X
 
 type Endo' a = X.Endo (->) a

@@ -4,8 +4,6 @@
 
 module Mation.Gen.Attributes where
 
-import Prelude
-import Mation.Core.Html (Html)
 import Mation.Core.Prop (Prop, mkPair, mkNoop)
 
 

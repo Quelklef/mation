@@ -7,13 +7,13 @@ import Mation.Core.Prelude
 
 import Mation.Core.Mation (Mation)
 import Mation.Core.Mation as Mation
-import Mation.Core.Util.Assoc (Assoc (..))
+import Mation.Core.Util.Assoc (Assoc)
 import Mation.Core.Util.Assoc as Assoc
 import Mation.Core.Dom (DomNode, DomEvent)
 import Mation.Core.Util.FreeMonoid (class FreeMonoid)
 import Mation.Core.Util.FreeMonoid as FM
-import Mation.Core.Util.UnsureEq (class UnsureEq, unsureEq, Unsure (..))
-import Mation.Core.Util.Exists (Exists, mkExists, runExists, mapExists)
+import Mation.Core.Util.UnsureEq (class UnsureEq, unsureEq, Unsure)
+import Mation.Core.Util.Exists (Exists, mkExists, mapExists)
 
 
 -- | A single Virtual Node. Type is parameterized by listener result.

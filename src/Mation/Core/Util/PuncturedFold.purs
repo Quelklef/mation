@@ -1,6 +1,6 @@
 module Mation.Core.Util.PuncturedFold where
 
-import Mation.Core.Prelude
+import Mation.Core.Prelude hiding (compose)
 
 import Mation.Core.Util.Hashable (class Hashable, hash)
 

@@ -2,7 +2,6 @@ module Mation.Examples.Pruning where
 
 import Mation.Core.Prelude
 
-import Data.Number as Number
 import Data.Lens.Lens.Tuple (_1, _2)
 
 import Mation as M
@@ -20,8 +19,6 @@ type Model =
   { vals :: Vals
   }
 
-_vals = prop (Proxy :: Proxy "vals")
-
 initial :: Model
 initial =
   { vals: double (double (double (double 0)))
@@ -34,11 +31,11 @@ initial =
 
 
 onDouble :: forall a. UnsureEq a => (a -> E.Html' a) -> (Double a -> E.Html' (Double a))
-onDouble render model =
+onDouble renderOne model =
   E.div
   []
-  [ box $ E.prune "1" (\n -> E.enroot _1 $ render n) (model ^. _1)
-  , box $ E.prune "2" (\n -> E.enroot _2 $ render n) (model ^. _2)
+  [ box $ E.prune "1" (\n -> E.enroot _1 $ renderOne n) (model ^. _1)
+  , box $ E.prune "2" (\n -> E.enroot _2 $ renderOne n) (model ^. _2)
   ]
 
   where
@@ -62,7 +59,7 @@ render model =
 
   E.div
   []
-  [ E.enroot _vals (renderVals model.vals)
+  [ E.enroot (prop (Proxy :: Proxy "vals")) (renderVals model.vals)
   ]
 
   where

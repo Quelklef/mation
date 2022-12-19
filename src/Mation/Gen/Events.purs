@@ -4,7 +4,6 @@
 
 module Mation.Gen.Events where
 
-import Prelude
 import Mation.Core.Mation (Mation)
 import Mation.Core.Dom (DomEvent)
 import Mation.Core.Prop (Prop, mkListener)

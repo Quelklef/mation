@@ -3,7 +3,6 @@ module Mation.Examples.AllExamples where
 import Mation.Core.Prelude
 
 import Mation as M
-import Mation.Core.Mation as MM
 import Mation.Elems as E
 import Mation.Styles as S
 import Mation.Props as P
@@ -100,18 +99,6 @@ type Model =
   , pruning :: Pruning.Model
   }
 
-_page = prop (Proxy :: Proxy "page")
-
-_welcome = prop (Proxy :: Proxy "welcome")
-_counter = prop (Proxy :: Proxy "counter")
-_components = prop (Proxy :: Proxy "components")
-_lensProduct = prop (Proxy :: Proxy "lensProduct")
-_asyncApiCall = prop (Proxy :: Proxy "asyncApiCall")
-_styling = prop (Proxy :: Proxy "styling")
-_testing = prop (Proxy :: Proxy "testing")
-_perfTest = prop (Proxy :: Proxy "perfTest")
-_pruning = prop (Proxy :: Proxy "pruning")
-
 
 render :: Model -> E.Html' Model
 render model =
@@ -122,15 +109,15 @@ render model =
   , E.div
     [ P.style' [ S.padding "1em" ] ]
     [ case model.page of
-        Welcome -> E.enroot _welcome (Welcome.render model.welcome)
-        Counter -> E.enroot _counter (Counter.render model.counter)
-        Components -> E.enroot _components (Components.render model.components)
-        TestingZone -> E.enroot _testing (TestingZone.render model.testing)
-        LensProduct -> E.enroot _lensProduct (LensProduct.render model.lensProduct)
-        AsyncApiCall -> E.enroot _asyncApiCall (AsyncApiCall.render model.asyncApiCall)
-        Styling -> E.enroot _styling (Styling.render model.styling)
-        PerfTest -> E.enroot _perfTest (PerfTest.render model.perfTest)
-        Pruning -> E.enroot _pruning (Pruning.render model.pruning)
+        Welcome -> E.enroot (prop (Proxy :: Proxy "welcome")) (Welcome.render model.welcome)
+        Counter -> E.enroot (prop (Proxy :: Proxy "counter")) (Counter.render model.counter)
+        Components -> E.enroot (prop (Proxy :: Proxy "components")) (Components.render model.components)
+        TestingZone -> E.enroot (prop (Proxy :: Proxy "testing")) (TestingZone.render model.testing)
+        LensProduct -> E.enroot (prop (Proxy :: Proxy "lensProduct")) (LensProduct.render model.lensProduct)
+        AsyncApiCall -> E.enroot (prop (Proxy :: Proxy "asyncApiCall")) (AsyncApiCall.render model.asyncApiCall)
+        Styling -> E.enroot (prop (Proxy :: Proxy "styling")) (Styling.render model.styling)
+        PerfTest -> E.enroot (prop (Proxy :: Proxy "perfTest")) (PerfTest.render model.perfTest)
+        Pruning -> E.enroot (prop (Proxy :: Proxy "pruning")) (Pruning.render model.pruning)
     ]
   ]
 
@@ -158,7 +145,7 @@ render model =
             , S.padding "1em 0"
             , if isCurrent then S.textDecoration "underline" else mempty
             ]
-          , P.onClick \_ -> M.mkPure (_page .~ page)
+          , P.onClick \_ -> M.mkPure (prop (Proxy :: Proxy "page") .~ page)
           ]
           [ E.text (pretty page)
           ]

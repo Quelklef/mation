@@ -74,8 +74,6 @@ function * attributes() {
   yield '';
   yield 'module Mation.Gen.Attributes where';
   yield '';
-  yield 'import Prelude';
-  yield 'import Mation.Core.Html (Html)';
   yield 'import Mation.Core.Prop (Prop, mkPair, mkNoop)';
   yield '';
   yield '';
@@ -101,7 +99,6 @@ function * events() {
   yield '';
   yield 'module Mation.Gen.Events where';
   yield '';
-  yield 'import Prelude';
   yield 'import Mation.Core.Mation (Mation)';
   yield 'import Mation.Core.Dom (DomEvent)';
   yield 'import Mation.Core.Prop (Prop, mkListener)';
@@ -124,8 +121,7 @@ function * styles() {
   yield '';
   yield 'module Mation.Gen.Styles where';
   yield '';
-  yield 'import Prelude';
-  yield 'import Mation.Core.Style (Style (..), mkPair)';
+  yield 'import Mation.Core.Style (Style, mkPair)';
   yield '';
   yield '';
 
@@ -149,7 +145,6 @@ function * pseudoClasses() {
   yield '';
   yield 'import Mation.Core.Style (mkSelectorScope)';
   yield 'import Mation.Styles (Scope (..))';
-  yield 'import Mation.Core.Util.FreeMonoid as FM';
   yield 'import Mation.Core.Util.PuncturedFold as PF';
   yield '';
   yield '';

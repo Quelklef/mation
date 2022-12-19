@@ -8,7 +8,6 @@ import Mation.Core.Prelude
 import Mation.Core.Style as S
 import Mation.Styles (Scope (..))
 import Mation.Core.Util.PuncturedFold as PF
-import Mation.Core.Util.FreeMonoid as FM
 
 
 -- | Represents a CSS selector, such as `#my-element > *:first-child`

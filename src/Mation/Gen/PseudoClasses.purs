@@ -8,7 +8,6 @@ import Mation.Core.Prelude
 
 import Mation.Core.Style (mkSelectorScope)
 import Mation.Styles (Scope (..))
-import Mation.Core.Util.FreeMonoid as FM
 import Mation.Core.Util.PuncturedFold as PF
 
 

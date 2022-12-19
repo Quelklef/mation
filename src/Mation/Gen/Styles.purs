@@ -4,8 +4,7 @@
 
 module Mation.Gen.Styles where
 
-import Prelude
-import Mation.Core.Style (Style (..), mkPair)
+import Mation.Core.Style (Style, mkPair)
 
 
 -- | [CSS align-content property](https://developer.mozilla.org/en-US/docs/Web/CSS/align-content). This is generated code.

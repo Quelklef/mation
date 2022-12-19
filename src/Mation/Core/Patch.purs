@@ -2,11 +2,9 @@ module Mation.Core.Patch where
 
 import Mation.Core.Prelude
 
-import Mation.Core.Mation (Mation)
-import Mation.Core.Html (VNode (..), CaseVNode, caseVNode)
-import Mation.Core.Dom (DomNode, DomEvent)
+import Mation.Core.Html (VNode, CaseVNode, caseVNode)
+import Mation.Core.Dom (DomNode)
 import Mation.Core.Util.UnsureEq (Unsure (..))
-import Mation.Core.Util.FreeMonoid as FM
 
 
 -- | Reference to an object holding runtime information necessary to

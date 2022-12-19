@@ -2,10 +2,9 @@ module Mation.Core.Style where
 
 import Mation.Core.Prelude
 
-import Data.Array as Array
 import Data.String.Common (joinWith)
 
-import Mation.Core.Prop (Prop, mkPair, mkFixup)
+import Mation.Core.Prop (Prop, mkFixup)
 import Mation.Core.Dom (DomNode)
 import Mation.Core.Util.FreeMonoid (class FreeMonoid)
 import Mation.Core.Util.FreeMonoid as FM

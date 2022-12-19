@@ -5,8 +5,6 @@ import Prelude
 import Effect (Effect)
 import Effect.Ref as Ref
 import Type.Proxy (Proxy (..))
-import Data.Number as Number
-import Data.Maybe (Maybe (..))
 import Data.Foldable (fold)
 import Data.Lens.Record (prop)
 import Data.Lens.Setter ((%~), (.~))
@@ -22,10 +20,6 @@ type Model =
   , requestStatus :: RequestStatus
   , spinnerTick :: Int
   }
-
-_input = prop (Proxy :: Proxy "input")
-_requestStatus = prop (Proxy :: Proxy "requestStatus")
-_spinnerTick = prop (Proxy :: Proxy "spinnerTick")
 
 data RequestStatus
   = NotStarted
@@ -69,7 +63,7 @@ renderStringReverse model =
     [ E.text "Some input string: "
     , E.input
       [ P.value model.input
-      , P.onInput' $ (_input .~ _) >>> M.mkPure
+      , P.onInput' $ ((prop (Proxy :: Proxy "input")) .~ _) >>> M.mkPure
       , P.disabled $ isInProgress model.requestStatus
       ]
     ]
@@ -89,7 +83,7 @@ renderStringReverse model =
           , E.button
             [ P.onClick \_ -> M.mkEff do
                   cancel
-                  pure (_requestStatus .~ NotStarted)
+                  pure (prop (Proxy :: Proxy "requestStatus") .~ NotStarted)
             ]
             [ E.text "Cancel"
             ]
@@ -156,20 +150,20 @@ doReverse string =
     let fps = 60.0
     { cancel: cancelSpinner } <-
       everyNSeconds (1.0 / fps) do
-        step (_spinnerTick %~ (_ + 6))
+        step (prop (Proxy :: Proxy "spinnerTick") %~ (_ + 6))
 
     { cancel: cancelApi } <-
       launchApiCall
         { onSuccess: \result -> do
             cancelSpinner
-            step (_requestStatus .~ Success { result })
+            step (prop (Proxy :: Proxy "requestStatus") .~ Success { result })
         , onFailure: \reason -> do
             cancelSpinner
-            step (_requestStatus .~ Failure { reason })
+            step (prop (Proxy :: Proxy "requestStatus") .~ Failure { reason })
         , input: string
         }
 
-    step (_requestStatus .~ InProgress { cancel: cancelSpinner *> cancelApi })
+    step (prop (Proxy :: Proxy "requestStatus") .~ InProgress { cancel: cancelSpinner *> cancelApi })
 
 
 -- Imagine that this is some genuine asynchronous API

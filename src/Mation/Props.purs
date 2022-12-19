@@ -12,9 +12,8 @@ import Mation.Core.Mation (Mation)
 import Mation.Core.Prop (Prop)
 import Mation.Core.Prop as Prop
 import Mation.Core.Dom (DomEvent, DomNode)
-import Mation.Core.Style (Style (..))
+import Mation.Core.Style (Style)
 import Mation.Core.Style as Style
-import Mation.Core.Util.PuncturedFold (PuncturedFold)
 
 -- | From a collection of `Style` values, produce a `Prop` for the `style` attribute on an `Html` node
 style' :: forall m s. Array Style -> Prop m s

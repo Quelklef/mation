@@ -14,7 +14,7 @@ initialize :: Effect Model
 initialize = pure unit
 
 render :: Model -> E.Html' Model
-render model =
+render _model =
   E.div
   [ P.style'
     [ S.maxWidth "600px"
