@@ -3,6 +3,7 @@ module Mation.Core.Style where
 import Mation.Core.Prelude
 
 import Data.Array as Array
+import Data.String.Common (joinWith)
 
 import Mation.Core.Prop (Prop, mkPair, mkFixup)
 import Mation.Core.Dom (DomNode)
@@ -110,14 +111,11 @@ toCss selec0 = collate >>> linearize >>> emit
   collate = case _ of
     SInline s -> SInline s
     SConcat styles ->
-      let bigInline = styles # foldMap case _ of
-              SInline s -> s <> "; "
-              _other -> ""
-          rest = styles # Array.filter case _ of
-              SInline _ -> false
-              _other -> true
+      let inlines /\ others = styles # partitionWith case _ of
+            SInline s -> Left s
+            other -> Right other
       in
-        SConcat $ [ SInline bigInline ] <> rest
+        SConcat $ [ SInline $ joinWith "; " inlines ] <> others
 
     other -> other
 
@@ -138,6 +136,10 @@ toCss selec0 = collate >>> linearize >>> emit
       (runEndo scope.block $ runEndo scope.selector selec0 <> " { " <> css <> " } ") <> "\n"
 
   _scope = prop (Proxy :: Proxy "scope")
+
+  partitionWith :: forall a x y. (a -> Either x y) -> Array a -> Array x /\ Array y
+  partitionWith f = foldMap $ f >>> case _ of Left a -> [a] /\ []
+                                              Right a -> [] /\ [a]
 
 
 
