@@ -3,6 +3,17 @@ function iife(f) {
   return f();
 }
 
+function replaceNode(target, replacement) {
+  if (target instanceof Element) {
+    target.replaceWith(replacement);
+  } else if (target.parentNode) {
+    target.parentNode.replaceChild(replacement, target);
+  } else {
+    throw Error("Your DOM consists of a single node which isn't an Element?");
+  }
+}
+
+
 export const patch_f =
 ({ caseMaybe
  , casePair
@@ -29,18 +40,21 @@ export const patch_f =
 
     // Perform patch
     const result = (
-      caseVNode(newVNode)  // FIXME: do these .replaceWith() and .innerHTML= calls make assumptions?
+      caseVNode(newVNode)
         (domNode => {
-          root.replaceWith(domNode)
+          replaceNode(root, domNode);
           return domNode;
         })
         (html => {
-          root.innerHTML = html
-          return root;
+          const $div = document.createElement('div');
+          $div.style.display = 'contents';
+          replaceNode(root, $div);
+          $div.innerHtml = html;
+          return $div;
         })
         (text => {
           const node = document.createTextNode(text);
-          root.replaceWith(node);
+          replaceNode(root, node);
           return node;
         })
         (newVTag => {
