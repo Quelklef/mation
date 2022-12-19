@@ -11,6 +11,11 @@ import Mation.Core.Util.FreeMonoid as FM
 import Mation.Core.Util.Assoc (Assoc (..))
 
 
+-- | Reference to an object holding runtime information necessary to
+-- | correctly handle `VPrune` nodes
+foreign import data PruneMapRef :: Type
+
+
 -- | Instead of patching onto a DOM Node directly, we diff the old and new state
 -- | to generate a patch function which is then applied to a DOM node.
 -- |
@@ -30,14 +35,16 @@ import Mation.Core.Util.Assoc (Assoc (..))
 patchOnto ::
   { mOldVNode :: Maybe (VNode (Effect Unit))
   , newVNode :: VNode (Effect Unit)
+  , mPruneMap :: Maybe PruneMapRef
   }
-  -> DomNode -> Effect Unit
-patchOnto { mOldVNode, newVNode } =
+  -> DomNode -> Effect PruneMapRef
+patchOnto { mOldVNode, newVNode, mPruneMap } =
   patch_f
     { caseMaybe
     , casePair
     , caseUnsure
     , caseVNode
+    , mPruneMap
     }
     { mOldVNode
     , newVNode
@@ -48,12 +55,13 @@ foreign import patch_f ::
    { caseMaybe :: CaseMaybe
    , casePair :: CasePair
    , caseUnsure :: CaseUnsure
-   , caseVNode ::CaseVNode
+   , caseVNode :: CaseVNode
+   , mPruneMap :: Maybe PruneMapRef
    } ->
    { mOldVNode :: Maybe (VNode (Effect Unit))
    , newVNode :: VNode (Effect Unit)
    }
-  -> (DomNode -> Effect Unit)
+  -> (DomNode -> Effect PruneMapRef)
 
 
 

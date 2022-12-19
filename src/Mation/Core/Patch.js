@@ -1,14 +1,22 @@
 
+function iife(f) {
+  return f();
+}
+
 export const patch_f =
 ({ caseMaybe
  , casePair
  , caseUnsure
  , caseVNode
+ , mPruneMap
 }) => {
+
+  const pruneMap = caseMaybe(mPruneMap)({})(x => x);
 
   return ({ mOldVNode, newVNode }) => root => () => {
     const mOldVNode_ = caseMaybe(mOldVNode)(undefined)(x => x);
     patch(root, mOldVNode_, newVNode);
+    return pruneMap;
   };
 
   // Create an empty VTag
@@ -16,15 +24,32 @@ export const patch_f =
     return { tag, attrs: [], listeners: [], children: [], fixup: () => {} };
   }
 
+  // Mutatively patches the given root node AND returns the new root node
   function patch(root, mOldVNode, newVNode) {
 
     // Perform patch
-    caseVNode(newVNode)
-      (domNode => root.replaceWith(domNode))
-      (html => root.innerHTML = html)
-      (text => root.replaceWith(text))
-      (newVTag => tagCase(root, mOldVNode, newVTag))
-      (vPrune => pruneCase(root, mOldVNode, vPrune))
+    const result = (
+      caseVNode(newVNode)  // FIXME: do these .replaceWith() and .innerHTML= calls make assumptions?
+        (domNode => {
+          root.replaceWith(domNode)
+          return domNode;
+        })
+        (html => {
+          root.innerHTML = html
+          return root;
+        })
+        (text => {
+          const node = document.createTextNode(text);
+          root.replaceWith(node);
+          return node;
+        })
+        (newVTag => {
+          return tagCase(root, mOldVNode, newVTag)
+        })
+        (vPrune => {
+          return pruneCase(root, mOldVNode, vPrune)
+        })
+    );
 
     // Let node know that we've visited it
     // This is undocumented and only exists for use in one of the test cases
@@ -32,40 +57,35 @@ export const patch_f =
     if (root._touch)
       root._touch();
 
+    return result;
+
   }
 
   function pruneCase(root, mOldVNode, vPrune) {
-    if (!mOldVNode) {
-      patch(root, mOldVNode, vPrune.render(vPrune.params));
+
+    // Injectively fold the pruning key path into a single string
+    const key = vPrune.keyPath.map(k => k.replace(/,/g, ',,')).join(',;');
+
+    // Compute an existing DOM node to re-use for this node, as per pruning rules
+    // Returns `null` if the prune node needs be recomputed
+    const reuse = iife(() => {
+      const info = pruneMap[key];
+      if (!info) return null;
+      const unsureEq = vPrune.unsureEq;
+      const paramsEqual = caseUnsure(unsureEq(vPrune.params)(info.params))(x => x)(false);
+      return paramsEqual ? info.node : null;
+    });
+
+    if (reuse) {
+      root.replaceWith(reuse);
+      return reuse;
     } else {
-      const oldVNode = mOldVNode;
-      caseVNode(oldVNode)
-        (domNode => patch(root, oldVNode, vPrune.render(vPrune.params)))
-        (html =>    patch(root, oldVNode, vPrune.render(vPrune.params)))
-        (text =>    patch(root, oldVNode, vPrune.render(vPrune.params)))
-        (vTag =>    patch(root, oldVNode, vPrune.render(vPrune.params)))
-        (vPrune2 => {
-          // Both nodes are VPrune
-
-          const oldVPrune = vPrune2;
-          const newVPrune = vPrune;
-
-          const oldKey = caseMaybe(oldVPrune.mKey)(null)(x => x);
-          const newKey = caseMaybe(newVPrune.mKey)(null)(x => x);
-          const keysWantPatch = (
-            (oldKey === null) !== (newKey === null)
-            || (oldKey !== null && oldKey !== newKey)
-          );
-
-          const unsureEq = newVPrune.unsureEq;  // should be same as oldVPrune.unsureEq
-          const paramsMaybeDiffer = caseUnsure(unsureEq(newVPrune.params)(oldVPrune.params))(x => !x)(true);
-
-          const shouldPatch = keysWantPatch || paramsMaybeDiffer;
-
-          if (shouldPatch)
-            patch(root, oldVPrune.render(oldVPrune.params), newVPrune.render(newVPrune.params));
-        });
+      const newVNode = vPrune.render(vPrune.params);
+      const node = patch(root, mOldVNode, newVNode);
+      pruneMap[key] = { params: vPrune.params, node };
+      return node;
     }
+
   }
 
   function tagCase(root, mOldVNode, newVTag) {
@@ -116,6 +136,8 @@ export const patch_f =
 
     const { restore } = newVTag.fixup(root)();
     root._fixupRestore = restore;
+
+    return root;
   }
 
   function patchAttrs(root, oldAttrs, newAttrs) {

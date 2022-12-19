@@ -42,67 +42,39 @@ data VNode msg
       , children :: Array (VNode msg)
       }
 
-
-    -- | Request for the runtime to entirely skip diffing this node if possible
+    -- | The user can "prune" a virtual node by supplying, instead of an actual
+    -- | virtual node, a value of type `param` and a function that can turn it
+    -- | into a virtual node. In other words, a deferred computation for a virtual
+    -- | node. The user also must supply an `UnsureEq` instance for `param` as well
+    -- | as a so-called "key" for the pruned node.
     -- |
-    -- | The type of data contained in `VPrune` is essentially
+    -- | By considering the keys of all pruned nodes in an entire virtual dom, we
+    -- | may assign pruned nodes with a so-called "key path", which is the sequence
+    -- | of pruned keys from the VDOM root down to the given pruned node.
     -- |
-    -- | ```purs
-    -- | exists p. UnsureEq p ∧∧ (Maybe String /\ p /\ (p -> VNode msg))
-    -- | ```
+    -- | The user is required to ensure that, over the lifetime of a Mation
+    -- | application, whenever two virtual nodes have the same key paths, then
+    -- | they also have the same `param` type and computation function.
     -- |
-    -- | Where by `∧∧` I mean the existential counterpart to `=>`; that is, the
-    -- | type `exists a. C a ∧∧ T a` is a value of type `T a` for some unknown
-    -- | type `a` which *is* known to satisfy the constraint `C`
-    -- |
-    -- | A `VPrune` can be thought of as containing a deferred computation for
-    -- | another VNode: if we were going to create a node as `node = f p`, we might
-    -- | choose instead to construct a `VPrune` node containing both `f` and `p`.
-    -- |
-    -- | The idea is that by deferring the computation `node = f p` we might be able
-    -- | to skip it entirely. If we are diffing two `VPrune` nodes respectively
-    -- | deferring `node = f p` and `node' = f' p'` and we notice that `f = f'` and
-    -- | that `p = p'`, then we know `node' = node`. Since `node` is the "old" node
-    -- | already in the DOM, then we can skip diffing entirely.
-    -- |
-    -- | The trouble with this is that functions aren't generally comparable. So while
-    -- | we can perhaps test if `p = p'` by checking the value of `p == p'`, there's
-    -- | no comparable way to check if `f = f'`. Our solution to this is to ignore it:
-    -- | it is the job of whomever is creating the `VPrune` node to ensure that
-    -- | whenever it is diffed with another `VPrune` node, they have the same `f`.
-    -- |
-    -- | This can be a tall order, to so mitigate the issue a little bit `VPrune` nodes
-    -- | also hold onto a `Maybe String` value called their "key", which is supposed
-    -- | to act as a kind of identity for the node. If two `VPrune` nodes are being
-    -- | diffed and have different keys, it is assumed that their respective contained
-    -- | functions of type `p -> VNode msg` are different and hence diffing should not
-    -- | be skipped.
-    -- |
-    -- | To summarize, the diffing algorithm for `VPrune` nodes looks roughly like
-    -- | the following.
-    -- |
-    -- | - Let `prune` and `prune'` respectively denote the old and new `VPrune` nodes
-    -- |   for the diffing algorithm. Let them respectively defer
-    -- |   computations `node = f p` and `node' = f' p'`, and let `key` and `key'`
-    -- |   respectively be their keys.
-    -- | - If `key` and `key'` are both non-`Nothing` and inequal, or if one is `Nothing`
-    -- |   but the other is not, then compute `node` and `node'` and diff them.
-    -- | - Otherwise, compute `unsureEq p p'`; if the result is `Certainly true`, then
-    -- |   terminate (ie, do not diff). If there is any other result, compute `node`
-    -- |   and `node'` and diff them.
+    -- | The punchline to all this is as follows. When we perform VDOM diffing,
+    -- | we build up a mapping from pruning keypaths to parameter values. The
+    -- | next time we diff and we reach a pruned node, we check that mapping,
+    -- | using the prune key path to fetch the parameter value fromt the previous
+    -- | frame. If the parameter values match, then--since the computation
+    -- | function is not allowed to change--we know that the deferred comptuations
+    -- | are exactly equal, and we skip diffing entirely by just re-using the
+    -- | DOM node from last frame.
   | VPrune (Exists (PruneE msg))
 
 
 newtype PruneE msg p = PruneE
-  { mKey :: Maybe String
+  { keyPath :: Array String
   , params :: p
   , unsureEq :: p -> p -> Unsure Boolean
     -- ^ Typeclass instance. Manually managed because Purescript doesn't have
     --   native support for existentials (not to mention constrained existentials)
   , render :: p -> VNode msg
   }
-  -- FIXME: without a `Typeable p` instance we might be applying `unsureEq` to two
-  --        different types during diffing. This can cause a runtime exception!
 
 
 instance Functor VNode where
@@ -115,9 +87,24 @@ instance Functor VNode where
            , listeners: listeners # map (map f)
            , children: children # map (map f)
            }
-    VPrune e -> VPrune $ e # mapExists \(PruneE { mKey, params, unsureEq, render }) ->
-      PruneE { mKey, params, unsureEq, render: render >>> map f }
+    VPrune e -> VPrune $ e # mapExists \(PruneE { keyPath, params, unsureEq, render }) ->
+      PruneE { keyPath, params, unsureEq, render: render >>> map f }
 
+
+pruneScope :: forall msg. String -> VNode msg -> VNode msg
+pruneScope key = case _ of
+  VRawNode x -> VRawNode x
+  VRawHtml x -> VRawHtml x
+  VText x -> VText x
+  VTag { tag, attrs, listeners, fixup, children } ->
+    VTag { tag, attrs, fixup, listeners
+         , children: children # map (pruneScope key)
+         }
+  VPrune e -> VPrune $ e # mapExists \(PruneE { keyPath, params, unsureEq, render }) ->
+    PruneE { params, unsureEq
+           , keyPath: [key] <> keyPath
+           , render: render >>> pruneScope key
+           }
 
 
 type CaseVNode = forall msg r.
@@ -190,17 +177,13 @@ mkTag info = Html [ VTag info' ]
   info' = info { children = FM.float info.children }
 
 
--- FIXME: Maybe instead of trying to track lenses we can track keys?
---        A call to mkPrune could prepend the `mKey` to all children keys, meaning
---        that we get an entire key path. This could improve the stability
---        of VPrune rendering.
-mkPrune :: forall p s m. UnsureEq p => Maybe String -> (p -> Html m s) -> p -> Html m s
-mkPrune mKey render params =
+mkPrune :: forall p s m. UnsureEq p => String -> (p -> Html m s) -> p -> Html m s
+mkPrune key render params =
   FM.singleton $ VPrune $ mkExists $ PruneE
-    { mKey
+    { keyPath: [key]
     , params
     , unsureEq
-    , render: render >>> wrap
+    , render: render >>> wrap >>> pruneScope key
     }
 
   where
@@ -222,3 +205,4 @@ mkPrune mKey render params =
 -- FIXME: won't accept changing `Lens'` to `Setter'` for some reason?
 enroot :: forall m large small. Lens' large small -> Html m small -> Html m large
 enroot len (Html arr) = Html $ map (map (Mation.enroot len)) arr
+

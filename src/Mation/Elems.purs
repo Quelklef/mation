@@ -45,78 +45,22 @@ mkTag = Prop.mkElement
 enroot :: forall m large small. Lens' large small -> Html m small -> Html m large
 enroot = Html.enroot
 
--- | A call to `prune` represents a request for the runtime to skip re-rendering
--- | a part of an application when the relevant part of the model doesn't change.
+-- | Marks a node for "pruning", meaning that its `Html` will only be re-computed
+-- | when its model actually changes.
 -- |
--- | Please **note that `prune` is not an entirely safe operation**; in specific
--- | circumstances `prune` will exhibit undesirable behaviour. Using `prune` in a
--- | way that *guarantees* correctness is subtle. Thankfully, it is also usually
--- | not necessary: in most applications, `prune` will "just work" with minimal
--- | care.
+-- | The `prune` function accepts three arguments: a parameter value of type `p`,
+-- | a function `p -> Html m s` that can render it, and a so-called "key" of type
+-- | `String`. Mation will hold onto the parameter value between frames and only
+-- | recompute the `Html` value when the parameter changes.
 -- |
--- | Basic usage of `prune` is simple: in callsites where you are generating
--- | an `Html` value like
+-- | The runtime knows which parameter to look for based on the given key. It
+-- | computes the so-called "key path" for the pruned node, which is the sequence
+-- | of pruning keys starting at the VDOM root and going down to the pruned node.
+-- | It uses this key path to find the parameter value from the previous frame.
 -- |
--- | ```
--- | html = f x
--- | ```
--- |
--- | You can replace this with
--- |
--- | ```
--- | html = prune Nothing f x
--- | ```
--- |
--- | And when the application is re-rendered, `html` will be skipped if `x` has not
--- | changed since the previous render.
--- |
--- | That means that **for `prune` to work correctly, `f` must never change**. For
--- | instance, this is not acceptable:
--- |
--- | ```
--- | html = prune Nothing (mkHtml a b) c
--- | ```
--- |
--- | and must instead be written as:
--- |
--- | ```
--- | html = prune Nothing (\(a /\ b /\ c) -> mkHtml a b c) (a /\ b /\ c)
--- | ```
--- |
--- | Here ends the documentation for basic `prune` usage. The rest of this text
--- | talks about the edge-cases of `prune` and how to avoid them.
--- |
--- | ***
--- |
--- | The way that `prune` works is as follows.
--- |
--- | Say the application is performing a
--- | re-render and is trying to diff two `Html` values which have both been `prune`d.
--- | Let one be the result of `prune f x` and the other the result of `prune f' x'`.
--- |
--- | In order to perform that diff, the runtime will compare the values `x` and `x'`.
--- | If they are equal then, since we've required of the user that that `f` not change,
--- | we know that `f x` and `f' x'` are the same. Hence, no diff need be performed.
--- |
--- | Even though we require of the user that the function given to `prune` never change,
--- | this strategy can actually still fail. Say, for instance, that our model contains,
--- | among other things, values of type `A` and `B`. And say we render our model to
--- | a `<div>` which contains two children, one a `<span>` containing the render
--- | for the `A` value, and one a `<span>` containing the render for the `B` value. And
--- | say that we `prune` both of these renders, and say that on one frame we choose
--- | to swap the order of the `<span>`s within their parent `<div>`.
--- |
--- | Then when we try to render, the `prune`d node for the `A` value will be matched up
--- | with the `prune`d node for the `B` value. In short, this will trip up the runtime
--- | and cause improper rendering. (And at the time of writing can even cause a
--- | Javascript exception! This is a known issue -- FIXME)
--- |
--- | This is an extremely unlikely scenario but not impossible. In case you need,
--- | for whatever reason, to insure against the possibility that this happens, you
--- | can pass a non-`Nothing` value as the first argument to `prune`. These values (when
--- | not `Nothing`) will be used as "keys" for the pruned node, providing them with
--- | a notion of identity: when diffing two pruned nodes, if they have different
--- | keys, the runtime will immediately know not to skip the diff.
-prune :: forall m p s. UnsureEq p => Maybe String -> (p -> Html m s) -> p -> Html m s
-prune mKey render param = Html.mkPrune mKey render param
+-- | For pruning to work correctly, **the user must guarantee** that between two
+-- | frames if two pruned nodes have the same key path then they also have
+-- | the same type `p` and render function `p -> Html m s`.
+prune :: forall m p s. UnsureEq p => String -> (p -> Html m s) -> p -> Html m s
+prune key render param = Html.mkPrune key render param
 

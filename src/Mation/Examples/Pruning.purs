@@ -36,17 +36,25 @@ initial =
 onDouble :: forall a. UnsureEq a => (a -> E.Html' a) -> (Double a -> E.Html' (Double a))
 onDouble render model =
   E.div
-  [ P.style'
-    [ S.display "inline-block"
-    , S.border "1px solid lightgrey"
-    , S.padding ".2em"
-    , S.margin ".2em"
+  []
+  [ box $ E.prune "1" (\n -> E.enroot _1 $ render n) (model ^. _1)
+  , box $ E.prune "2" (\n -> E.enroot _2 $ render n) (model ^. _2)
+  ]
+
+  where
+
+  box el =
+    E.div
+    [ P.style'
+      [ S.display "inline-block"
+      , S.border "1px solid lightgrey"
+      , S.padding ".2em"
+      , S.margin ".2em"
+      ]
+    , P.showUpdates
     ]
-  , P.showUpdates
-  ]
-  [ E.prune Nothing (\n -> E.enroot _1 $ render n) (model ^. _1)
-  , E.prune Nothing (\n -> E.enroot _2 $ render n) (model ^. _2)
-  ]
+    [ el
+    ]
 
 
 render :: Model -> E.Html' Model
@@ -54,9 +62,7 @@ render model =
 
   E.div
   []
-  [ E.p [] [ E.text "Test page for the (WIP) FastEnroot API, which allows for true partial updates in a Mation application: the Virtual DOM won't even be recomputed unless the relevant part of the model changes. In this demo when the application re-renders it will light up the parts of the DOM which were touched during the diffing process, visualizing what work is and is not being done." ]
-  , E.hr []
-  , E.enroot _vals (renderVals model.vals)
+  [ E.enroot _vals (renderVals model.vals)
   ]
 
   where

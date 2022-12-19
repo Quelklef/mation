@@ -114,33 +114,35 @@ runApp args = do
       args.toEffect $ Mation.runMation mat step
 
   -- Render for the first time
-  model /\ vNode <- do
+  model /\ vNode /\ pruneMap <- do
     let model = args.initial
     vNode <- renderTo1 model
     let patch = Patch.patchOnto
                   { mOldVNode: Nothing
                   , newVNode: execMation <$> vNode
+                  , mPruneMap: Nothing
                   }
-    args.root >>= patch
+    pruneMap <- args.root >>= patch
     args.listen model
-    pure $ model /\ vNode
+    pure $ model /\ vNode /\ pruneMap
 
-  -- Holds current model & rendered HTML
-  ref <- Ref.new (model /\ vNode)
+  -- Holds current state
+  ref <- Ref.new (model /\ vNode /\ pruneMap)
 
   let
     -- This is the actual step function
     step :: (s -> s) -> Effect Unit
     step endo = do
-      oldModel /\ oldVNode <- Ref.read ref
+      oldModel /\ oldVNode /\ oldPruneMap <- Ref.read ref
       let newModel = endo oldModel
       newVNode <- renderTo1 newModel
-      Ref.write (newModel /\ newVNode) ref
       let patch = Patch.patchOnto
                     { mOldVNode: Just (execMation <$> oldVNode)
                     , newVNode: execMation <$> newVNode
+                    , mPruneMap: Just oldPruneMap
                     }
-      args.root >>= patch
+      newPruneMap <- args.root >>= patch
+      Ref.write (newModel /\ newVNode /\ newPruneMap) ref
       args.listen newModel
 
   -- Populate the stepRef with the correct value
