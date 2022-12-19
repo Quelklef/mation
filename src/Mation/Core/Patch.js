@@ -127,6 +127,7 @@ export const patch_f =
       const newRoot = document.createElement(newVTag.tag);
       root.replaceWith(newRoot)
       root = newRoot;
+      mOldVNode = null;  // Need to diff afresh
     }
 
     const empty = mkEmptyVTag(newVTag.tag);
