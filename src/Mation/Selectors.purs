@@ -69,7 +69,7 @@ document s = Scope $ S.mkBlockScope $ PF.PF [ PF.Elem "@document ", PF.Elem s, P
 
 
 -- | Performs scope composition. On selector-level scopes this works as one might expect: the
--- | composition `children >> firstChild` corresponds to the CSS `> *:first-child`, and the
+-- | composition `children >> firstChild` corresponds to `> *:first-child`, and the
 -- | composition `firstChild >> children` corresponds to `:first-child > *`.
 -- |
 -- | Composing with a block-level scope adds a static condition to the selector. For instance,
@@ -83,14 +83,6 @@ document s = Scope $ S.mkBlockScope $ PF.PF [ PF.Elem "@document ", PF.Elem s, P
 -- | children >> firstChild >> media "print"
 -- | children >> media "print" >> firstChild
 -- | media "print" >> children >> firstChild
--- | ```
--- |
--- | As it so happens, the generated CSS will always put block-level selectors on the "outside".
--- | The above scopes will all produce the same CSS when applied to the selector `#my-elem` and
--- | styles `color: blue`; namely, this CSS is
--- |
--- | ```
--- | @media print { #my-elem > *:first-child { color: blue; } }
 -- | ```
 -- |
 -- | ***
@@ -142,15 +134,15 @@ document s = Scope $ S.mkBlockScope $ PF.PF [ PF.Elem "@document ", PF.Elem s, P
 -- |
 -- | (Note that this is also exactly `<>` under `Sel' = Page -> Op (Endo (->) (Set DomNode))`
 -- | where `Op` flips `<>`)
-infixl 1 composeSelectorsLTR as >>
+infixl 1 composeScopesLTR as >>
 
 -- | Reverse form of `<<`
-infixl 1 composeSelectorsRTL as <<
+infixl 1 composeScopesRTL as <<
 
 -- | Left-to-right scope composition
-composeSelectorsLTR :: Scope -> Scope -> Scope
-composeSelectorsLTR (Scope a) (Scope b) = Scope (b <> a)
+composeScopesLTR :: Scope -> Scope -> Scope
+composeScopesLTR (Scope a) (Scope b) = Scope (b <> a)
 
 -- | Right-to-left scope composition
-composeSelectorsRTL :: Scope -> Scope -> Scope
-composeSelectorsRTL a b = composeSelectorsLTR b a
+composeScopesRTL :: Scope -> Scope -> Scope
+composeScopesRTL a b = composeScopesLTR b a

@@ -15,7 +15,7 @@ import Mation.Core.Util.Hashable (class Hashable, hash)
 -- | ```
 -- |
 -- | We think of these functions as calls to `fold`, but where
--- | one value has been "punced out" of the `fold`.
+-- | one value has been "punched out" of the `fold`.
 -- |
 -- | The type `PuncturedFold A` gives a concrete representation to the
 -- | collection of such functions, considered as a substructure
@@ -84,7 +84,7 @@ toEndoCom = toEndoCat >>> Endo
 -- | ```
 -- | (let Endo f = toEndoCom brace <> toEndoCom brack in f "😄")
 -- | == "{[😄]}"
--- | (let Endo f = toEndoCat brace <> toEndoCat brack in f "😄")
+-- | (let      f = toEndoCat brace <> toEndoCat brack in f "😄")
 -- | == "{😄}[😄]"
 -- | ```
 toEndoCat :: forall a. Monoid a => PuncturedFold a -> (a -> a)

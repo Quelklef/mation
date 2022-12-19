@@ -12,7 +12,7 @@ import Mation.Core.Util.PuncturedFold as PF
 import Mation.Core.Util.FreeMonoid as FM
 
 
--- | Represents a CSS scoping rule
+-- | Represents a style scope
 -- |
 -- | This includes both block-level scopes like `@media` rules
 -- | as well as selector-level scopes like `:empty`

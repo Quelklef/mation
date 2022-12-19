@@ -12,7 +12,7 @@ import Mation.Core.Html (Html (..), VNode)
 import Mation.Core.Dom (DomNode)
 import Mation.Core.Patch as Patch
 
--- | Simplified version of @runApp@
+-- | Simplified version of `runApp`
 runApp' :: forall s.
 
     -- | Initial model value (ie state)
@@ -50,6 +50,7 @@ runApp :: forall m s. MonadEffect m =>
   { initial :: s
 
     -- | How to display the model value
+    -- FIXME: docstrings on record fields aren't rendering :(
   , render :: s -> Html m s
 
     -- | Where should the application be mounted?

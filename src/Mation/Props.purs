@@ -43,7 +43,8 @@ mkListener = Prop.mkListener
 
 
 -- | Gives the node a red border whenever they are updated
--- | This is intended for debugging only
+-- |
+-- | This is intended for debugging only!
 showUpdates :: forall m s. Prop m s
 showUpdates = fixup showUpdates_f
 
