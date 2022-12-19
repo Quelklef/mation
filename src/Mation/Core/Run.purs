@@ -78,10 +78,15 @@ runApp :: forall m s. MonadEffect m =>
     -- | can be read back out of a running application.
     -- | Usually reading state should not be necessary, and should
     -- | be done with caution.
-  , listen :: s -> Effect Unit
+  , listen :: { old :: Maybe s, new :: s } -> Effect Unit
 
     -- | Turn the custom monad into an Effect
-  , toEffect :: forall a. m a -> Effect a
+    -- |
+    -- | This will be used to run values of type `Mation m s`. Note that
+    -- | you are only required to handle `m Unit` values, not arbitrary
+    -- | `m a` values. This means (among other things) that `toEffect` can
+    -- | be asynchronous.
+ , toEffect :: m Unit -> Effect Unit
 
   } -> Effect Unit
 
@@ -124,7 +129,7 @@ runApp args = do
                   , mPruneMap: Nothing
                   }
     pruneMap <- args.root >>= patch
-    args.listen model
+    args.listen { old: Nothing, new: model }
     pure $ model /\ vNode /\ pruneMap
 
   -- Holds current state
@@ -144,7 +149,7 @@ runApp args = do
                     }
       newPruneMap <- args.root >>= patch
       Ref.write (newModel /\ newVNode /\ newPruneMap) ref
-      args.listen newModel
+      args.listen { old: Just oldModel, new: newModel }
 
   -- Populate the stepRef with the correct value
   Ref.write step stepRef

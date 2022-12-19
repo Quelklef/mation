@@ -205,7 +205,7 @@ main = do
     { initial
     , render
     , root: M.onBody
-    , listen: \model -> syncPageToUrl model.page
+    , listen: \{ new: model } -> syncPageToUrl model.page
     , kickoff: kickoff
     , toEffect: identity
     }
