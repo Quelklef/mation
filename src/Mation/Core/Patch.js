@@ -36,7 +36,8 @@ export const patch_f =
     return { tag, attrs: [], listeners: [], children: [], fixup: () => {} };
   }
 
-  // Mutatively patches the given root node AND returns the new root node
+  // Mutatively patches the given root node (ie, target node to mount on)
+  // Returns the node that was actually mounted on, which may be different
   function patch(root, mOldVNode, newVNode) {
 
     // Perform patch
@@ -83,9 +84,9 @@ export const patch_f =
       return info.node;
     } else {
       const newVNode = vPrune.render(vPrune.params);
-      const node = patch(root, mOldVNode, newVNode);
-      insertPrune(pruneMap, vPrune, { params: vPrune.params, node, vNode: newVNode });
-      return node;
+      const mountedOn = patch(root, mOldVNode, newVNode);
+      insertPrune(pruneMap, vPrune, { params: vPrune.params, node: mountedOn, vNode: newVNode });
+      return mountedOn;
     }
   }
 
