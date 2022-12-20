@@ -4,6 +4,9 @@ function iife(f) {
 }
 
 function replaceNode(target, replacement) {
+  if (replacement === target)
+    return;  // Seems replacement causes a reflow, which is slow; skip if possible
+
   if (target instanceof Element) {
     target.replaceWith(replacement);
   } else if (target.parentNode) {
@@ -76,7 +79,7 @@ export const patch_f =
   function pruneCase(root, mOldVNode, vPrune) {
     const info = lookupPrune(pruneMap, vPrune);
     if (info) {
-      root.replaceWith(info.node);
+      replaceNode(root, info.node);
       return info.node;
     } else {
       const newVNode = vPrune.render(vPrune.params);
@@ -128,7 +131,7 @@ export const patch_f =
     );
     if (shouldReplace) {
       const newRoot = document.createElement(newVTag.tag);
-      root.replaceWith(newRoot)
+      replaceNode(root, newRoot);
       root = newRoot;
       mOldVNode = null;  // Need to diff afresh
     }
