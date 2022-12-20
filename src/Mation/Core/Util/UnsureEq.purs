@@ -4,11 +4,10 @@ import Mation.Core.Prelude
 
 import Data.Array as Array
 import Data.Function (on)
-import Data.Symbol (class IsSymbol)
-import Prim.Row (class Cons, class Nub) as R
+import Data.Symbol (class IsSymbol, reflectSymbol)
+import Prim.Row (class Nub) as R
 import Record.Unsafe (unsafeGet) as R
 import Prim.RowList as RL
-import Data.Symbol (reflectSymbol)
 
 
 data Unsure a = Unsure | Surely a
@@ -25,8 +24,18 @@ instance Bounded (Unsure Boolean) where
   bottom = Surely false
   top = Surely true
 
+perhaps :: Unsure Boolean -> Boolean
+perhaps = case _ of
+  Surely false -> false
+  Unsure -> true
+  Surely true -> true
 
--- FIXME: have instances try reference equality before anything else
+surely :: Unsure Boolean -> Boolean
+surely = case _ of
+  Surely false -> false
+  Unsure -> false
+  Surely true -> true
+
 
 
 -- | Like `Eq`, but allows a type implement partial equality.
@@ -38,22 +47,47 @@ class UnsureEq a where
   unsureEq :: a -> a -> Unsure Boolean
 
 instance UnsureEq Unit where unsureEq _ _ = Surely true
-instance UnsureEq Boolean where unsureEq = viaEq
-instance UnsureEq Int where unsureEq = viaEq
-instance UnsureEq Number where unsureEq = viaEq
-instance UnsureEq Char where unsureEq = viaEq
-instance UnsureEq String where unsureEq = viaEq
+instance UnsureEq Boolean where unsureEq = viaPrim
+instance UnsureEq Int where unsureEq = viaPrim
+instance UnsureEq Number where unsureEq = viaPrim
+instance UnsureEq Char where unsureEq = viaPrim
+instance UnsureEq String where unsureEq = viaPrim
 instance UnsureEq Void where unsureEq _ _ = Surely true
 instance UnsureEq (Proxy s) where unsureEq _ _ = Surely true
 
 instance (UnsureEq a, UnsureEq b) => UnsureEq (a /\ b) where
-  unsureEq (a /\ b) (a' /\ b') = unsureEq a a' `min` unsureEq b b'
+  unsureEq ab xy =
+    if primEq ab xy then top
+    else let a /\ b = ab
+             x /\ y = xy
+         in case unsureEq a x of
+              Surely false -> Surely false
+              other -> other `min` unsureEq b y
 
 instance UnsureEq a => UnsureEq (Array a) where
   unsureEq a b =
-    if Array.length a /= Array.length b
-    then bottom
-    else Array.zipWith unsureEq a b # minimum # fromMaybe top
+    case primEq a b, Array.length a == Array.length b of
+      true, _ -> top
+      _, false -> bottom
+      _, _ -> unsureEqArrayImpl a b
+
+
+-- Short-circuiting implementation for Array
+unsureEqArrayImpl :: forall a. UnsureEq a => Array a -> Array a -> Unsure Boolean
+unsureEqArrayImpl = unsureEqArrayImpl_f
+  { unsureEq
+  , and: min
+  , isSurelyFalse: (_ == bottom)
+  , surelyTrue: top
+  }
+
+foreign import unsureEqArrayImpl_f :: forall a.
+  { unsureEq :: a -> a -> Unsure Boolean
+  , and :: Unsure Boolean -> Unsure Boolean -> Unsure Boolean
+  , isSurelyFalse :: Unsure Boolean -> Boolean
+  , surelyTrue :: Unsure Boolean
+  }
+  -> (Array a -> Array a -> Unsure Boolean)
 
 
 -- The strategy for implementing `UnsureEq` on record types is essentially copied from [1]
@@ -69,6 +103,7 @@ instance UnsureEqFields RL.Nil r where
 
 else instance (IsSymbol lbl, UnsureEq head, UnsureEqFields tail rows) => UnsureEqFields (RL.Cons lbl head tail) rows where
   unsureEqFields _ rec1 rec2 =
+    if primEq rec1 rec2 then top else
     let lbl = reflectSymbol (Proxy :: Proxy lbl)
         head1 = (R.unsafeGet lbl rec1 :: head)
         head2 = (R.unsafeGet lbl rec2 :: head)
@@ -81,9 +116,9 @@ viaEq :: forall a. Eq a => (a -> a -> Unsure Boolean)
 viaEq a b = Surely (a == b)
 
 
--- | Implementation for `unsureEq` via reference equality
-viaRef :: forall a. (a -> a -> Unsure Boolean)
-viaRef a b = case primEq a b of
+-- | Implementation for `unsureEq` via primitive triple-equals equality
+viaPrim :: forall a. (a -> a -> Unsure Boolean)
+viaPrim a b = case primEq a b of
   true -> Surely true
   false -> Unsure
 
