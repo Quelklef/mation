@@ -74,9 +74,11 @@ render model =
       , P.onInput' \_ -> M.mkPure (_fast %~ not)
       , P.id "use-fast"
       ]
+    , E.text " "
     , E.label
       [ P.for "use-fast" ]
-      [ E.text " use fast" ]
+      [ E.text "do pruning"
+      ]
     ]
   , E.div
     [ P.style'
@@ -107,15 +109,11 @@ render model =
         ]
       ]
     ]
+  , E.br []
   , E.hr []
--- TODO: is it possible to parameterize enrootFast? :(
---  , if model.fast
---    then E.enrootFast
---            (\mdl -> mdl.exp /\ mdl.string)
---            (\(a /\ b) -> E.enroot _2 $ tree a b)
---            model
---    else E.enroot _string $ tree model.exp model.string
-  , E.enroot _string $ tree model.exp model.string
+  , E.br []
+  , let calcTree (exp /\ string) = E.enroot _string $ tree exp string
+    in (if model.fast then E.prune "tree" else identity) calcTree (model.exp /\ model.string)
   ]
 
 
