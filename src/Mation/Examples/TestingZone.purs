@@ -69,11 +69,11 @@ renderTextbox str =
   []
   [ E.p
     []
-    [ E.input
-      [ P.type_ "text"
-      , P.value str
-      , P.onInput' \val -> M.mkPure (const val)
-      ]
+    [ E.input [ P.type_ "text", P.value str, P.onInput' \val -> M.mkPure (const val) ]
+    , E.text " "
+    , E.input [ P.type_ "text", P.value str, P.onInput' \val -> M.mkPure (const val) ]
+    , E.text " "
+    , E.input [ P.type_ "text", P.value str, P.onInput' \val -> M.mkPure (const val) ]
     ]
   , E.p [] [ E.text "As text: ", E.text str ]
   , E.p [] [ E.text "As html: ", E.rawHtml str ]
@@ -84,6 +84,7 @@ type Model =
   { counter1 :: Counter
   , counter2 :: Counter
   , textbox :: String
+  , checkbox :: Boolean
   }
 
 initial :: Model
@@ -91,6 +92,7 @@ initial =
   { counter1: { count: 0, streamState: NotStreaming }
   , counter2: { count: 0, streamState: NotStreaming }
   , textbox: "type in me"
+  , checkbox: false
   }
 
 render :: Model -> E.Html' Model
@@ -109,6 +111,13 @@ render model =
     [ flip foldMap (range 1 10) \n ->
         E.p [] [ E.text $ show n <> ": monidal `Html` is great!" ]
     ]
+  , E.hr []
+  , E.enroot _checkbox $ model.checkbox # \checked ->
+      E.div
+      [] $ (_ `power` 20)
+        [ E.input [ P.type_ "checkbox", P.checked      checked , P.onInput \_ -> M.mkPure not ]
+        , E.input [ P.type_ "checkbox", P.checked (not checked), P.onInput \_ -> M.mkPure not ]
+        ]
   ]
 
   where
@@ -116,6 +125,7 @@ render model =
   _counter1 = prop (Proxy :: Proxy "counter1")
   _counter2 = prop (Proxy :: Proxy "counter2")
   _textbox = prop (Proxy :: Proxy "textbox")
+  _checkbox = prop (Proxy :: Proxy "checkbox")
 
 
 main :: Effect Unit
