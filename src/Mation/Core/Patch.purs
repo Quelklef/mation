@@ -76,5 +76,5 @@ type CaseUnsure =
 caseUnsure :: CaseUnsure
 caseUnsure uc certainly uncertain =
   case uc of
-    Certainly x -> certainly x
+    Surely x -> certainly x
     Unsure -> uncertain

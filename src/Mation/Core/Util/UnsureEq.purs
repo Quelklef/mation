@@ -11,20 +11,19 @@ import Prim.RowList as RL
 import Data.Symbol (reflectSymbol)
 
 
-data Unsure a = Unsure | Certainly a
--- FIXME: rename 'Certainly' -> 'Surely' wtf lmao
+data Unsure a = Unsure | Surely a
 
 derive instance Eq a => Eq (Unsure a)
 
 instance Ord (Unsure Boolean) where
   compare = compare `on` case _ of
-    Certainly false -> 0
+    Surely false -> 0
     Unsure -> 1
-    Certainly true -> 2
+    Surely true -> 2
 
 instance Bounded (Unsure Boolean) where
-  bottom = Certainly false
-  top = Certainly true
+  bottom = Surely false
+  top = Surely true
 
 
 -- FIXME: have instances try reference equality before anything else
@@ -87,13 +86,13 @@ instance (IsSymbol label, R.RowToList all all', R.Cons label head tail all, R.La
 
 -- | Implementation for `unsureEq` via `eq`
 viaEq :: forall a. Eq a => (a -> a -> Unsure Boolean)
-viaEq a b = Certainly (a == b)
+viaEq a b = Surely (a == b)
 
 
 -- | Implementation for `unsureEq` via reference equality
 viaRef :: forall a. (a -> a -> Unsure Boolean)
 viaRef a b = case primEq a b of
-  true -> Certainly true
+  true -> Surely true
   false -> Unsure
 
 foreign import primEq :: forall a b. a -> b -> Boolean
