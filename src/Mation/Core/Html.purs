@@ -131,9 +131,6 @@ caseVNode node vRawNode vRawHtml vText vTag vPrune =
     VPrune x -> vPrune x
 
 
--- FIXME: write 'hoist'
-
-
 
 -- | Virtual DOM type
 -- |
@@ -147,6 +144,8 @@ caseVNode node vRawNode vRawHtml vText vTag vPrune =
 -- | - This type can be used with functions like `foldMap` and monoidal `when`,
 -- |   which can be extremeley convenient when constructing `Html` values
 newtype Html m s = Html (Array (VNode (Mation m s)))
+
+-- FIXME: write 'hoist'
 
 instance FreeMonoid (Html m s) (VNode (Mation m s))
 

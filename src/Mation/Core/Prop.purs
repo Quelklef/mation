@@ -39,6 +39,8 @@ data Prop1 m s
 -- | This can be very handy when constructing `Html` values!
 newtype Prop m s = Prop (Array (Prop1 m s))
 
+-- FIXME: Functor instance + hoist
+
 instance FreeMonoid (Prop m s) (Prop1 m s)
 
 derive instance Newtype (Prop m s) _
