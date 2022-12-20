@@ -162,15 +162,38 @@ export const patch_f =
   function patchAttrs(root, oldAttrs, newAttrs) {
     // Add new attrs + modify changed attrs
     for (const [name, value] of newAttrs) {
-      root.setAttribute(name, value);
+      setAttribute(root, name, value);
     }
 
     // Remove old attrs
     const newAttrNames = new Set(newAttrs.map(([name, _]) => name));
     for (const [name, _] of oldAttrs) {
       if (!newAttrNames.has(name)) {
-        root.removeAttribute(name);
+        deleteAttribute(root, name);
       }
+    }
+  }
+
+  function setAttribute(node, name, value) {
+    node.setAttribute(name, value);
+
+    // Some HTML attributes don't get auto-sync'd to the corresponding DOM
+    // node, so we need to do it ourselves.
+    // Also see <https://javascript.info/dom-attributes-and-properties>
+    if (name === 'value') {
+      node.value = value;
+    } else if (name === 'checked') {
+      node.checked = !!value;
+    }
+  }
+
+  function deleteAttribute(node, name) {
+    node.removeAttribute(name);
+
+    if (name === 'value') {
+      node.value = '';  // seems to be the best we can do
+    } else if (name === 'checked') {
+      node.checked = false;
     }
   }
 
