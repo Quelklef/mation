@@ -34,8 +34,8 @@ onDouble :: forall a. UnsureEq a => (a -> E.Html' a) -> (Double a -> E.Html' (Do
 onDouble renderOne model =
   E.div
   []
-  [ box $ E.prune "1" (\n -> E.enroot _1 $ renderOne n) (model ^. _1)
-  , box $ E.prune "2" (\n -> E.enroot _2 $ renderOne n) (model ^. _2)
+  [ E.prune "1" (\n -> box $ E.enroot _1 $ renderOne n) (model ^. _1)
+  , E.prune "2" (\n -> box $ E.enroot _2 $ renderOne n) (model ^. _2)
   ]
 
   where
