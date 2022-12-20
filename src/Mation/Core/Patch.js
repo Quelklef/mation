@@ -66,18 +66,14 @@ export const patch_f =
     // Let node know that we've visited it
     // This is undocumented and only exists for use in one of the test cases
     // This should otherwise never be used
-    if (root._touch)
-      root._touch();
+    root._touch?.();
 
     return result;
 
   }
 
+
   function pruneCase(root, mOldVNode, vPrune) {
-
-    // Injectively fold the pruning key path into a single string
-    const key = vPrune.keyPath.map(k => k.replace(/,/g, ',,')).join(',;');
-
     const info = lookupPrune(pruneMap, vPrune);
     if (info) {
       root.replaceWith(info.node);
@@ -85,24 +81,33 @@ export const patch_f =
     } else {
       const newVNode = vPrune.render(vPrune.params);
       const node = patch(root, mOldVNode, newVNode);
-      pruneMap[key] = { params: vPrune.params, node, vNode: newVNode };
+      insertPrune(pruneMap, vPrune, { params: vPrune.params, node, vNode: newVNode });
       return node;
     }
-
   }
 
   // Lookup a vPrune node in the prune map
   // Returns either null or the prune map data object
   function lookupPrune(pruneMap, vPrune) {
-    // Injectively fold the pruning key path into a single string
-    const key = vPrune.keyPath.map(k => k.replace(/,/g, ',,')).join(',;');
-
+    const key = calcPruneKey(vPrune);
     const info = pruneMap[key];
     if (!info) return null;
     const unsureEq = vPrune.unsureEq;
     const paramsEqual = caseUnsure(unsureEq(vPrune.params)(info.params))(x => x)(false);
     return paramsEqual ? info : null;
   }
+
+  function insertPrune(pruneMap, vPrune, value) {
+    const key = calcPruneKey(vPrune);
+    pruneMap[key] = value;
+  }
+
+  function calcPruneKey(vPrune) {
+    // Injectively fold the pruning key path into a single string
+    const key = vPrune.keyPath.map(k => k.replace(/→/g, '^→')).join(' → ');
+    return key;
+  }
+
 
   function tagCase(root, mOldVNode, newVTag) {
     // mOldVNode may be nully
