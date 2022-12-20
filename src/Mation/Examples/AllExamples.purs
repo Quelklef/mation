@@ -10,7 +10,6 @@ import Mation.Props as P
 import Mation.Examples.Welcome as Welcome
 import Mation.Examples.Counter as Counter
 import Mation.Examples.Components as Components
-import Mation.Examples.LensProduct as LensProduct
 import Mation.Examples.AsyncApiCall as AsyncApiCall
 import Mation.Examples.Styling as Styling
 import Mation.Examples.TestingZone as TestingZone
@@ -26,7 +25,6 @@ data Page
   -- Examples
   | Counter
   | Components
-  | LensProduct
   | AsyncApiCall
   | Styling
 
@@ -39,7 +37,7 @@ separateAfter :: Array Page
 separateAfter = [ Welcome, Styling ]
 
 pages :: Array Page
-pages = [ Welcome, Counter, Components, LensProduct, AsyncApiCall, Styling, TestingZone, PerfTest, Pruning ]
+pages = [ Welcome, Counter, Components, AsyncApiCall, Styling, TestingZone, PerfTest, Pruning ]
   -- Don't want to add a whole dep for Enum for a testing module
 
 derive instance Generic Page _
@@ -52,7 +50,6 @@ pretty = case _ of
   Welcome -> "Welcome"
   Counter -> "Counter"
   Components -> "Components"
-  LensProduct -> "Lens-product"
   AsyncApiCall -> "Async-API-call"
   Styling -> "Styling"
   TestingZone -> "Testing-zone"
@@ -64,7 +61,6 @@ unpretty = case _ of
   "Welcome" -> Just Welcome
   "Counter" -> Just Counter
   "Components" -> Just Components
-  "Lens-product" -> Just LensProduct
   "Testing-zone" -> Just TestingZone
   "Async-API-call" -> Just AsyncApiCall
   "Styling" -> Just Styling
@@ -91,7 +87,6 @@ type Model =
   , welcome :: Welcome.Model
   , counter :: Counter.Model
   , components :: Components.Model
-  , lensProduct :: LensProduct.Model
   , asyncApiCall :: AsyncApiCall.Model
   , styling :: Styling.Model
   , testing :: TestingZone.Model
@@ -113,7 +108,6 @@ render model =
         Counter -> E.enroot (prop (Proxy :: Proxy "counter")) (Counter.render model.counter)
         Components -> E.enroot (prop (Proxy :: Proxy "components")) (Components.render model.components)
         TestingZone -> E.enroot (prop (Proxy :: Proxy "testing")) (TestingZone.render model.testing)
-        LensProduct -> E.enroot (prop (Proxy :: Proxy "lensProduct")) (LensProduct.render model.lensProduct)
         AsyncApiCall -> E.enroot (prop (Proxy :: Proxy "asyncApiCall")) (AsyncApiCall.render model.asyncApiCall)
         Styling -> E.enroot (prop (Proxy :: Proxy "styling")) (Styling.render model.styling)
         PerfTest -> E.enroot (prop (Proxy :: Proxy "perfTest")) (PerfTest.render model.perfTest)
@@ -172,7 +166,6 @@ initialize = do
     , counter: Counter.initial
     , components: Components.initial
     , testing: TestingZone.initial
-    , lensProduct: LensProduct.initial
     , asyncApiCall: AsyncApiCall.initial
     , styling: Styling.initial
     , perfTest: PerfTest.initial
