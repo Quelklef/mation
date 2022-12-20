@@ -37,10 +37,14 @@ instance Bounded (Unsure Boolean) where
 class UnsureEq a where
   unsureEq :: a -> a -> Unsure Boolean
 
-instance UnsureEq Number where unsureEq = viaEq
-instance UnsureEq Int where unsureEq = viaEq
-instance UnsureEq String where unsureEq = viaEq
+instance UnsureEq Unit where unsureEq _ _ = Surely true
 instance UnsureEq Boolean where unsureEq = viaEq
+instance UnsureEq Int where unsureEq = viaEq
+instance UnsureEq Number where unsureEq = viaEq
+instance UnsureEq Char where unsureEq = viaEq
+instance UnsureEq String where unsureEq = viaEq
+instance UnsureEq Void where unsureEq _ _ = Surely true
+instance UnsureEq (Proxy s) where unsureEq _ _ = Surely true
 
 instance (UnsureEq a, UnsureEq b) => UnsureEq (a /\ b) where
   unsureEq (a /\ b) (a' /\ b') = unsureEq a a' `min` unsureEq b b'
@@ -69,18 +73,6 @@ else instance (IsSymbol lbl, UnsureEq head, UnsureEqFields tail rows) => UnsureE
         head1 = (R.unsafeGet lbl rec1 :: head)
         head2 = (R.unsafeGet lbl rec2 :: head)
     in unsureEq head1 head2 `min` unsureEqFields (Proxy :: Proxy tail) rec1 rec2
-
-{-
-instance (IsSymbol label, R.RowToList all all', R.Cons label head tail all, R.Lacks label tail, UnsureEq head, UnsureEq (Record tail)) => UnsureEq (Record all) where
-  unsureEq rec1 rec2 =
-    let lbl = Proxy :: Proxy label
-        head1 = R.get lbl rec1
-        head2 = R.get lbl rec2
-        tail1 = R.delete lbl rec1
-        tail2 = R.delete lbl rec2
-    in
-      unsureEq head1 head2 `min` unsureEq tail1 tail2
--}
 
 
 
