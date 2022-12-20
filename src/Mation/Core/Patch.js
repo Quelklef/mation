@@ -45,9 +45,9 @@ export const patch_f =
         })
         (html => {
           const $div = document.createElement('div');
+          $div.innerHTML = html;
           $div.style.display = 'contents';
           replaceNode(root, $div);
-          $div.innerHtml = html;
           return $div;
         })
         (text => {
