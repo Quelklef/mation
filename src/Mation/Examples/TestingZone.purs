@@ -77,7 +77,55 @@ renderTextbox str =
     ]
   , E.p [] [ E.text "As text: ", E.text str ]
   , E.p [] [ E.text "As html: ", E.rawHtml str ]
+  , E.p [] [ E.text "As placeholder (!): ", E.input [ P.placeholder str ] ]
   ]
+
+
+type PhoneNumber = Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int
+
+renderPhoneNumber :: PhoneNumber -> E.Html' PhoneNumber
+renderPhoneNumber pn =
+  E.div
+  [ P.style'
+    [ S.display "flex"
+    , S.gap "5px"
+    , S.alignItems "center"
+    , S.margin "1em 0"
+    ]
+  ]
+  [ digit _1 pn
+  , digit (_2 <<< _1) pn
+  , digit (_2 <<< _2 <<< _1) pn
+  , dot
+  , digit (_2 <<< _2 <<< _2 <<< _1) pn
+  , digit (_2 <<< _2 <<< _2 <<< _2 <<< _1) pn
+  , digit (_2 <<< _2 <<< _2 <<< _2 <<< _2 <<< _1) pn
+  , dot
+  , digit (_2 <<< _2 <<< _2 <<< _2 <<< _2 <<< _2 <<< _1) pn
+  , digit (_2 <<< _2 <<< _2 <<< _2 <<< _2 <<< _2 <<< _2 <<< _1) pn
+  , digit (_2 <<< _2 <<< _2 <<< _2 <<< _2 <<< _2 <<< _2 <<< _2 <<< _1) pn
+  , digit (_2 <<< _2 <<< _2 <<< _2 <<< _2 <<< _2 <<< _2 <<< _2 <<< _2) pn
+  ]
+
+  where
+
+  dot = E.span [ ] [ E.rawHtml "&bull;" ]
+
+  digit :: Lens' PhoneNumber Int -> PhoneNumber -> E.Html' PhoneNumber
+  digit len pn =
+    E.select
+    [ P.onInput' $ parseInt >>> (len .~ _) >>> M.mkPure
+    ]
+    [ flip foldMap (range 1 9) \n ->
+        E.option
+        [ if n == pn ^. len then P.selected true else mempty
+        -- P.selected $ n == pn ^. len   -- same thing
+        ]
+        [ E.text (show n) ]
+    ]
+
+foreign import parseInt :: String -> Int
+
 
 
 type Model =
@@ -85,6 +133,7 @@ type Model =
   , counter2 :: Counter
   , textbox :: String
   , checkbox :: Boolean
+  , phoneNumber :: PhoneNumber
   }
 
 initial :: Model
@@ -93,22 +142,22 @@ initial =
   , counter2: { count: 0, streamState: NotStreaming }
   , textbox: "type in me"
   , checkbox: false
+  , phoneNumber: 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0
   }
 
 render :: Model -> E.Html' Model
 render model =
   E.div
   []
-  [ E.hr []
-  , M.enroot _counter1 (renderCounter model.counter1)
+  [ M.enroot _counter1 (renderCounter model.counter1)
   , E.br []
   , M.enroot _counter2 (renderCounter model.counter2)
   , E.hr []
   , M.enroot _textbox (renderTextbox model.textbox)
   , E.hr []
   , E.div
-    [ P.style' [ S.fontSize "0.35em" ] ]
-    [ flip foldMap (range 1 10) \n ->
+    [ P.style' [ S.fontSize ".8em" ] ]
+    [ flip foldMap (range 1 5) \n ->
         E.p [] [ E.text $ show n <> ": monidal `Html` is great!" ]
     ]
   , E.hr []
@@ -118,6 +167,9 @@ render model =
         [ E.input [ P.type_ "checkbox", P.checked      checked , P.onInput \_ -> M.mkPure not ]
         , E.input [ P.type_ "checkbox", P.checked (not checked), P.onInput \_ -> M.mkPure not ]
         ]
+  , E.hr []
+  , E.enroot _phoneNumber $ renderPhoneNumber model.phoneNumber
+  , E.enroot _phoneNumber $ renderPhoneNumber model.phoneNumber
   ]
 
   where
@@ -126,6 +178,7 @@ render model =
   _counter2 = prop (Proxy :: Proxy "counter2")
   _textbox = prop (Proxy :: Proxy "textbox")
   _checkbox = prop (Proxy :: Proxy "checkbox")
+  _phoneNumber = prop (Proxy :: Proxy "phoneNumber")
 
 
 main :: Effect Unit

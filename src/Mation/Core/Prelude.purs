@@ -27,6 +27,7 @@ import Data.Lens.Lens (Lens') as X
 import Data.Lens.Setter (Setter', (.~), (%~)) as X
 import Data.Lens.Getter ((^.)) as X
 import Data.Lens.Record (prop) as X
+import Data.Lens.Lens.Tuple (_1, _2) as X
 import Data.Newtype (class Newtype) as X
 
 type Endo' a = X.Endo (->) a
