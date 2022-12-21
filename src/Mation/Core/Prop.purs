@@ -3,6 +3,7 @@ module Mation.Core.Prop where
 import Mation.Core.Prelude
 
 import Mation.Core.Mation (Mation)
+import Mation.Core.Mation as Mation
 import Mation.Core.Dom (DomNode, DomEvent)
 import Mation.Core.Html (Html, mkTag)
 import Mation.Core.Util.FreeMonoid (class FreeMonoid)
@@ -11,13 +12,13 @@ import Mation.Core.Util.Assoc as Assoc
 
 
 -- | A single vnode property
-data Prop1 m s
+data Prop1 msg
 
     -- | Some string HTML attribute, like 'id' or 'style'
   = PPair String String
 
     -- | Event listener
-  | PListener String (DomEvent -> Mation m s)
+  | PListener String (DomEvent -> msg)
 
     -- | Fixup function
     -- |
@@ -30,6 +31,9 @@ data Prop1 m s
     -- | Has no effect
   | PNoop
 
+derive instance Functor Prop1
+
+
 
 -- | Virtual node properties
 -- |
@@ -37,11 +41,13 @@ data Prop1 m s
 -- |
 -- | Since this type instantiates `Monoid`, it can be used with functions like `when` and `foldMap`.
 -- | This can be very handy when constructing `Html` values!
-newtype Prop m s = Prop (Array (Prop1 m s))
+newtype Prop m s = Prop (Array (Prop1 (Mation m s)))
 
--- FIXME: Functor instance + hoist
+-- FIXME: write hoist
+--        Also, is there a good abstraction for the repeated play
+--        between Functor and FreeMonoid and enroot and hoist in both Prop and Html?
 
-instance FreeMonoid (Prop m s) (Prop1 m s)
+instance FreeMonoid (Prop m s) (Prop1 (Mation m s))
 
 derive instance Newtype (Prop m s) _
 derive newtype instance Semigroup (Prop m s)
@@ -60,6 +66,10 @@ mkNoop :: forall m s. Prop m s
 mkNoop = FM.singleton $ PNoop
 
 
+enroot :: forall m large small. Setter' large small -> Prop m small -> Prop m large
+enroot len (Prop arr) = Prop $ arr # map (map (Mation.enroot len))
+
+
 
 -- | Create an element
 mkElement :: forall m s. String -> Array (Prop m s) -> Array (Html m s) -> Html m s
@@ -68,7 +78,7 @@ mkElement tag props children =
 
   where
 
-  flat :: Array (Prop1 m s)
+  flat :: Array (Prop1 (Mation m s))
   flat = FM.float props
 
   attrs = Assoc.fromFoldable $

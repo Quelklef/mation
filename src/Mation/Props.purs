@@ -3,7 +3,7 @@
 
 module Mation.Props (module X, style', onInput', fixup, mkPair, mkListener, showUpdates) where
   
-import Mation.Core.Prop (Prop) as X
+import Mation.Core.Prop (Prop, enroot) as X
 import Mation.Gen.Attributes as X
 import Mation.Gen.Events as X
 
