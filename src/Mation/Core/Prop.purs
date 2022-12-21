@@ -43,10 +43,6 @@ derive instance Functor Prop1
 -- | This can be very handy when constructing `Html` values!
 newtype Prop m s = Prop (Array (Prop1 (Mation m s)))
 
--- FIXME: write hoist
---        Also, is there a good abstraction for the repeated play
---        between Functor and FreeMonoid and enroot and hoist in both Prop and Html?
-
 instance FreeMonoid (Prop m s) (Prop1 (Mation m s))
 
 derive instance Newtype (Prop m s) _
@@ -68,6 +64,13 @@ mkNoop = FM.singleton $ PNoop
 
 enroot :: forall m large small. Setter' large small -> Prop m small -> Prop m large
 enroot len (Prop arr) = Prop $ arr # map (map (Mation.enroot len))
+
+hoist :: forall m n a. (forall b. m b -> n b) -> Prop m a -> Prop n a
+hoist f (Prop arr) = Prop $ arr # map (map (Mation.hoist f))
+
+
+-- FIXME: is there a good abstraction for the repeated play
+--        between Functor and FreeMonoid and enroot and hoist in both Prop and Html?
 
 
 

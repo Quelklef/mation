@@ -145,8 +145,6 @@ caseVNode node vRawNode vRawHtml vText vTag vPrune =
 -- |   which can be extremeley convenient when constructing `Html` values
 newtype Html m s = Html (Array (VNode (Mation m s)))
 
--- FIXME: write 'hoist'
-
 instance FreeMonoid (Html m s) (VNode (Mation m s))
 
 derive instance Newtype (Html m s) _
@@ -205,3 +203,5 @@ mkPrune key render params =
 enroot :: forall m large small. Setter' large small -> Html m small -> Html m large
 enroot len (Html arr) = Html $ map (map (Mation.enroot len)) arr
 
+hoist :: forall m n a. (forall b. m b -> n b) -> Html m a -> Html n a
+hoist f (Html arr) = Html $ arr # map (map (Mation.hoist f))

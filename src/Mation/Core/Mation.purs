@@ -37,18 +37,92 @@ import Effect.Ref as Ref
 -- | (nb. I'm sorry to say I don't have any concrete examples or a pointed
 -- | explanation of why it would indeed be bad for an event handler to be able to
 -- | read the model state. All I have is an intuition, and I'm going with it!)
-newtype Mation m s = Mation (Step m s -> m Unit)
+newtype Mation m s = Mation (Step s -> m Unit)
+
 
 -- | Applies a single state update
-type Step m s = (s -> s) -> m Unit
+-- |
+-- | ***
+-- |
+-- | Note the coupling with `MonadEffect` here.
+-- |
+-- | A `Mation` value is a correspondence between agents that may live in different
+-- | monadic contexts. One agent has access to the state and knows how to apply
+-- | state updates of type `s -> s`. This agent produces a `Step s`. The other agent
+-- | then consumes this `Step s`, invoking it as it pleases.
+-- |
+-- | We would be wrongly coupling these two agents to assume that they perform their
+-- | computations within the same monad. Why should they? Perhaps the stepping agent
+-- | only needs `State` to perform a state update but the consuming agent needs
+-- | to do some I/O in order to produce state updates for the stepping agent to
+-- | consume, and hence the consuming agent lives in `Effect`.
+-- |
+-- | However, it would also be wrong to *completely* decouple the monads of the two
+-- | agents, asserting that they can be any two monads with no restrictions. This
+-- | is wrong because the consuming agent needs to be able to actually perform
+-- | the `Step s` provided by the stepping agent. That is, when the stepping agent
+-- | produces an `(s -> s) -> M Unit` (for some `M`), the consuming agent is going
+-- | to be calling it, meaning it needs to know how to execute an `M` in whatever
+-- | monad it's working in.
+-- |
+-- | Hence, the most correct definition for `Mation` and `Step` would look something
+-- | like this:
+-- |
+-- | ```
+-- | class CanExec sm cm where
+-- |   exec :: forall a. sm a -> cm a
+-- |
+-- | -- `s` is state type; `sm` is stepping agent monad; `cm` is consuming
+-- | -- agent monad
+-- | type Mation sm cm s = Step sm s -> cm Unit
+-- | type Step sm s = (s -> s) -> sm Unit
+-- | ```
+-- |
+-- | However, juggling two monad parameters sounds annoying. So, we use a simplified
+-- | version of this instead.
+-- |
+-- | We know that the stepping agent will be the Mation framework runtime, and that
+-- | that runtime runs in `Effect`. So we fix `sm = Effect` and can swap `CanExec sm`
+-- | out with `MonadEffect`.
+-- |
+-- | ***
+-- |
+-- | To recap. There are at least three options for how to deal with the monads
+-- | relevant to a mation computation. (1) is to conflate the stepping monad `sm`
+-- | with the consuming monad `cm` (ie, assume `sm = cm`). (2) is to decouple them
+-- | the "right" way using two type parameters and `CanExec`. (3) is like (2) but
+-- | we set specifically `sm = Effect` and `CanExec sm = MonadEffect`.
+-- |
+-- | Concretely, two effects of choosing (3) (or (2)) over (1) are as follows:
+-- |
+-- | - Sometimes creating a `Mation m a` will require a `MonadEffect` on the `m`
+-- |   (resp. would require a `CanExec sm`). (See `Mation` constructors elsewhere in
+-- |   this module.) This can be somewhat annoying.
+-- |
+-- | - We can write a `hoist` function for mations with type
+-- |
+-- |   ```
+-- |   hoist :: forall m n a. (forall b. m b -> n b) -> Mation m a -> Mation n a
+-- |   ```
+-- |
+-- |   This hoist function only requires a transformation `m ~> n`. If we had
+-- |   conflated `sm = cm` as in option (1), then writing this hoist function
+-- |   would require something stronger, perhaps even a monad *isomorphism*, which
+-- |   would make it practically useless.
+-- |
+-- |   Having this hoist function is important!
+--
+-- FIXME: Maybe the `CanExec` solution ought to be used after all? Just for the
+--        sake of full generality for the `Mation` type?
+type Step s = forall n. MonadEffect n => (s -> s) -> n Unit
 
 
 -- | The most powerful form of mation. Callsites to this function
--- | are supplied a function `apply :: Step m s -> m Unit`. The `apply`
+-- | are supplied a function `apply :: Step s -> m Unit`. The `apply`
 -- | function accepts some state update `s -> s` and applies it
 -- | to the current state. Callsites to `mkCont` may supply `apply` with
 -- | as many such state updates as they like, at whatever time they like.
-mkCont :: forall m s. (Step m s -> m Unit) -> Mation m s
+mkCont :: forall m s. (Step s -> m Unit) -> Mation m s
 mkCont = Mation
 
 -- | Convenience wrapper around `mkCont` which creates a mation able
@@ -74,7 +148,7 @@ mkStaged f =
       }
 
 -- | Create a mation which applies some given state update
-mkPure :: forall m s. (s -> s) -> Mation m s
+mkPure :: forall m s. MonadEffect m => (s -> s) -> Mation m s
 mkPure endo = Mation \step -> step endo
 
 -- | Create a mation which does nothing
@@ -82,13 +156,21 @@ mkNoop :: forall m s. Applicative m => Mation m s
 mkNoop = Mation \_step -> pure unit
 
 -- | Create a mation which effectfully computes a state update and then applies it
-mkEff :: forall m s. Bind m => m (s -> s) -> Mation m s
+mkEff :: forall m s. MonadEffect m => m (s -> s) -> Mation m s
 mkEff getEndo = Mation \step -> getEndo >>= \endo -> step endo
 
 
 -- | `Mation` destructor
-runMation :: forall m s. Mation m s -> Step m s -> m Unit
+runMation :: forall m s. Mation m s -> Step s -> m Unit
 runMation (Mation f) = f
+
+
+instance Apply m => Semigroup (Mation m s) where
+  append (Mation f) (Mation g) = Mation \step -> f step *> g step
+
+instance Applicative m => Monoid (Mation m s) where
+  mempty = Mation \_step -> pure unit
+
 
 
 -- | Given a witness `Setter'` to `small` being contained within `large`, we
@@ -99,9 +181,6 @@ enroot :: forall m large small. Setter' large small -> Mation m small -> Mation 
 enroot lens (Mation f) =
   Mation \apply -> f \endo -> apply (lens %~ endo)
 
-instance Apply m => Semigroup (Mation m s) where
-  append (Mation f) (Mation g) = Mation \step -> f step *> g step
 
-instance Applicative m => Monoid (Mation m s) where
-  mempty = Mation \_step -> pure unit
-
+hoist :: forall m n a. (forall b. m b -> n b) -> Mation m a -> Mation n a
+hoist f (Mation m) = Mation \step -> f (m step)

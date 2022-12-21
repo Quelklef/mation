@@ -4,7 +4,7 @@
 module Mation.Elems (module X, module Mation.Elems) where
 
 import Mation.Gen.Tags as X
-import Mation.Core.Html (Html (..)) as X
+import Mation.Core.Html (Html (..), hoist) as X
 
 import Mation.Core.Prelude
 
