@@ -36,7 +36,7 @@ runApp' args =
     , render: args.render
     , root: args.root
     , kickoff: Mation.mkNoop
-    , listen: \_ -> pure unit
+    , listen: \_ -> pure Nothing
     , toEffect: identity
     }
 
@@ -74,11 +74,11 @@ runApp :: forall m s. MonadEffect m =>
 
     -- | Called every time the state changes
     -- |
-    -- | This is the ONLY place in the codebase where the state
-    -- | can be read back out of a running application.
-    -- | Usually reading state should not be necessary, and should
-    -- | be done with caution.
-  , listen :: { old :: Maybe s, new :: s } -> Effect Unit
+    -- | This is the only way the state can be read back out of a running
+    -- | application.
+    --
+    -- FIXME: we need a real subscriptions / "parallel agents" api
+  , listen :: { old ::s, new :: s } -> Effect (Maybe (Mation m s))
 
     -- | Turn the custom monad into an Effect
     -- |
@@ -129,7 +129,6 @@ runApp args = do
                   , mPruneMap: Nothing
                   }
     pruneMap <- args.root >>= patch
-    args.listen { old: Nothing, new: model }
     pure $ model /\ vNode /\ pruneMap
 
   -- Holds current state
@@ -149,7 +148,9 @@ runApp args = do
                     }
       newPruneMap <- args.root >>= patch
       Ref.write (newModel /\ newVNode /\ newPruneMap) ref
-      args.listen { old: Just oldModel, new: newModel }
+      args.listen { old: oldModel, new: newModel }
+        >>= case _ of Nothing -> pure unit
+                      Just mat -> execMation mat
 
   -- Populate the stepRef with the correct value
   Ref.write step stepRef

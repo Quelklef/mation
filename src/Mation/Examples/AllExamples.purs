@@ -185,7 +185,7 @@ main = do
     { initial
     , render
     , root: M.onBody
-    , listen: \{ new: model } -> syncPageToUrl model.page
+    , listen: \{ new: model } -> syncPageToUrl model.page $> Nothing
     , kickoff: kickoff
     , toEffect: identity
     }

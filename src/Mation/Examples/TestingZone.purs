@@ -181,14 +181,3 @@ render model =
   _phoneNumber = prop (Proxy :: Proxy "phoneNumber")
 
 
-main :: Effect Unit
-main = do
-  M.runApp
-    { initial
-    , render
-    , kickoff: mempty
-    , listen: \_ -> pure unit
-    , toEffect: identity
-    , root: M.underBody
-    }
-
