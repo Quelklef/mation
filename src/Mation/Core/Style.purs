@@ -43,19 +43,13 @@ data Style1 endo
 
 -- | Represents both block- and selector-level scopings for CSS styles.
 -- |
--- | For instance, the value
+-- | For instance,
 -- |
 -- | ```
--- | StyleScope { selector: (_ <> " > *:nth-child(2)")
--- |            , block: [ "@media (max-width: 500px)", "@print" ]
--- |            }
--- | ```
--- |
--- | Is to be interpreted as the function accepting a value `THE_SELECTOR`
--- | and a value `THE_STYLES` and producing the CSS
--- |
--- | ```
--- | @print { @media (max-width: 500px) { THE_SELECTOR > *:nth-child(2) { THE_STYLES } } }
+-- | StyleScope
+-- |  { selector: \sel -> sel <> " > *:nth-child(2)"
+-- |  , block: \css -> "@media (max-width: 500px) { @print { " <> css <> " }}"
+-- |  }
 -- | ```
 newtype StyleScope endo = StyleScope
 

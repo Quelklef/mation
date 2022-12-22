@@ -13,21 +13,16 @@ import Mation.Core.Dom (DomNode)
 import Mation.Core.Patch as Patch
 
 -- | Simplified version of `runApp`
+-- |
+-- | Accepts a record containing the following fields:
+-- |
+-- | - `initial :: s`: Initial model (ie, state) value
+-- | - `render :: s -> Html m s`: How to display the application
+-- | - `root :: Effect DomNode`: Where to mount the application (see eg `onBody`)
 runApp' :: forall s.
-
-    -- | Initial model value (ie state)
   { initial :: s
-
-    -- | How to display the model
   , render :: s -> Html Effect s
-
-    -- | Where should the application be mounted?
-    -- |
-    -- | Try eg. `onBody` to mount on <body>
-    -- |
-    -- | Note that the supplied DOM node may be replaced on each render
   , root :: Effect DomNode
-
   } -> Effect Unit
 
 runApp' args =
@@ -41,53 +36,66 @@ runApp' args =
     }
 
 
--- | Run an application
+-- | Run an application.
+-- |
+-- | Accepts a record containing the following fields:
+-- |
+-- | - `initial :: s`
+-- |
+-- |    The initial model value. The type variable uses the character `s`
+-- |    for "state"
+-- |
+-- | - `render :: s -> Html m s`
+-- |
+-- |    Specifies how to display the application
+-- |
+-- | - `kickoff :: Mation m s`
+-- |
+-- |    An initial `Mation` to execute
+-- |
+-- | - `listen :: { old :: s, new :: s } -> Effect (Maybe (Mation m s))`
+-- |
+-- |    Called every time the state is updated. Tihs is the only place
+-- |    in the Mation API the state can be read back out of a running
+-- |    application
+--
+-- FIXME: need a real subscriptions / "parallel agents" api
+--
+-- |
+-- | - `root :: Effect DomNode`
+-- |
+-- |    Specifies where the application should be mounted. See `onBody`
+-- |    and others below.
+-- |
+-- |    Remarks:
+-- |
+-- |    - The process of mounting may replace the given `DomNode`. The
+-- |      given `DomNode` only guarantees *where* the mounting occurs in
+-- |      the DOM
+-- |
+-- |    - This is an `Effect DomNode`, meaning that the mountpoint can
+-- |      theoretically change between frames. If you do change the
+-- |      mountpoint, be sure that the new one is equivalent to the old
+-- |      one up to details produced by `render`. For various reasons,
+-- |      the Mation rendering algorithm is sensitive to this.
+-- |
+-- | - `toEffect :: m Unit -> Effect Unit`
+-- |
+-- |   Specifies how to execute the custom monad `m`.
+-- |
+-- |   Note that you are only asked to provide an `m Unit -> Effect Unit`
+-- |   as opposed to, for instance, an `forall a. m a -> Effect a`. This
+-- |   means that, for instance, `toEffect` can be asynchronous. Beware
+-- |   that if `toEffect` *is* async, that means that a mation executed
+-- |   during one frame may still be running and updating the application
+-- |   state despite the application having progressed to a new frame.
 runApp :: forall m s. MonadEffect m =>
-
-    -- | Initial model value
-    -- |
-    -- | The type variable is 's' for 'state'
   { initial :: s
-
-    -- | How to display the model value
-    -- FIXME: docstrings on record fields aren't rendering :(
   , render :: s -> Html m s
-
-    -- | Where should the application be mounted?
-    -- |
-    -- | Try eg. `onBody` to mount on <body>
-    -- |
-    -- | Note that the supplied DOM node may be replaced on each render
-    -- |
-    -- | Note that this is an `Effect`, meaning that the mount point
-    -- | can change. However, the rendering algorithm does not
-    -- | respect arbitrary mountpoint modification. For various reasons,
-    -- | it expects the mountpoint to contain something that looks
-    -- | reasonably close to the result of the previous render.
-    -- | Practically this means that you cannot re-mount a running
-    -- | application to new node DOM node; you either move the DOM node
-    -- | itself or .cloneNode() it.
   , root :: Effect DomNode
-
-    -- | An initial `Mation` to execute
   , kickoff :: Mation m s
-
-    -- | Called every time the state changes
-    -- |
-    -- | This is the only way the state can be read back out of a running
-    -- | application.
-    --
-    -- FIXME: we need a real subscriptions / "parallel agents" api
   , listen :: { old ::s, new :: s } -> Effect (Maybe (Mation m s))
-
-    -- | Turn the custom monad into an Effect
-    -- |
-    -- | This will be used to run values of type `Mation m s`. Note that
-    -- | you are only required to handle `m Unit` values, not arbitrary
-    -- | `m a` values. This means (among other things) that `toEffect` can
-    -- | be asynchronous.
- , toEffect :: m Unit -> Effect Unit
-
+  , toEffect :: m Unit -> Effect Unit
   } -> Effect Unit
 
 runApp args = do

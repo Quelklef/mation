@@ -1,4 +1,15 @@
-module Mation.Core.Util.UnsureEq where
+module Mation.Core.Util.UnsureEq
+  ( Unsure (..)
+  , perhaps
+  , surely
+  , class UnsureEq
+  , unsureEq
+  , class UnsureEqFields
+  , unsureEqFields
+  , viaEq
+  , viaPrim
+  , primEq
+  ) where
 
 import Mation.Core.Prelude
 
@@ -24,12 +35,14 @@ instance Bounded (Unsure Boolean) where
   bottom = Surely false
   top = Surely true
 
+-- | Interprets `Unsure` as `true`
 perhaps :: Unsure Boolean -> Boolean
 perhaps = case _ of
   Surely false -> false
   Unsure -> true
   Surely true -> true
 
+-- | Interprets `Unsure` as `false`
 surely :: Unsure Boolean -> Boolean
 surely = case _ of
   Surely false -> false
@@ -95,6 +108,7 @@ foreign import unsureEqArrayImpl_f :: forall a.
 instance (R.Nub r r, RL.RowToList r rl, UnsureEqFields rl r) => UnsureEq (Record r) where
   unsureEq = unsureEqFields (Proxy :: Proxy rl)
 
+-- | Leaked implementation detail for how `UnsureEq` is implemented on record types
 class UnsureEqFields rl r where
   unsureEqFields :: Proxy rl -> Record r -> Record r -> Unsure Boolean
 
