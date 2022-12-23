@@ -16,6 +16,69 @@ function setNode(target, replacement) {
   }
 }
 
+// An SMap is a mapping whose keys are string arrays
+// Values in an SMap must never be nully
+class SMap {
+  constructor(trie) {
+    this.trie = trie || {};
+  }
+
+  static rose = Symbol();
+
+  get(keys) {
+    let root = this.trie;
+    for (const key of keys)
+      root = root?.[key];
+    return root?.[SMap.rose];
+  }
+
+  set(keys, val) {
+    let root = this.trie;
+    for (const key of keys) {
+      if (!(key in root)) root[key] = {};
+      root = root[key];
+    }
+    root[SMap.rose] = val;
+  }
+
+  *entries() {
+    yield* go([], this.trie);
+    function* go(ks, root) {
+      if (SMap.rose in root)
+        yield [ks, root[SMap.rose]];
+      for (const [k, v] of Object.entries(root))
+        if (k !== SMap.rose)
+          yield* go([...ks, k], v);
+    }
+  }
+
+  *keys() {
+    for (const [ks, v] of this.entries())
+      yield ks;
+  }
+
+  // Merge another SMap into this one
+  merge(other) {
+    // Could be more efficient
+    for (const [ks, v] of other.entries()) {
+      this.set(ks, v);
+    }
+  }
+
+  // Return an SMap consisting of all (keys, value) pairs of
+  // this SMap whose key sequence has the given key sequence
+  // as a prefix
+  filterPrefixedBy(keys) {
+    let root = this.trie;
+    for (const key of keys)
+      root = root?.[key];
+    for (const key of Array.from(keys).reverse())
+      root = { [key]: root };
+    return new SMap(root);
+  }
+}
+
+
 export const patch_f =
 ({ caseMaybe
  , caseUnsure
@@ -23,12 +86,13 @@ export const patch_f =
  , mPruneMap
 }) => {
 
-  const pruneMap = caseMaybe(mPruneMap)({})(x => x);
+  const oldPruneMap = caseMaybe(mPruneMap)(new SMap())(x => x);
+  const newPruneMap = new SMap();
 
   return ({ mOldVNode, newVNode }) => root => () => {
     const mOldVNode_ = caseMaybe(mOldVNode)(undefined)(x => x);
     patch(root, mOldVNode_, newVNode);
-    return pruneMap;
+    return newPruneMap;
   };
 
   // Create an empty VTag
@@ -105,14 +169,15 @@ export const patch_f =
 
 
   function pruneCase(root, mOldVNode, vPrune) {
-    const info = lookupPrune(pruneMap, vPrune);
+    const info = lookupPrune(oldPruneMap, vPrune);
     if (info) {
       setNode(root, info.node);
+      newPruneMap.merge(oldPruneMap.filterPrefixedBy(vPrune.keyPath));
       return info.node;
     } else {
       const newVNode = vPrune.render(vPrune.params);
       const mountedOn = patch(root, mOldVNode, newVNode);
-      insertPrune(pruneMap, vPrune, { params: vPrune.params, node: mountedOn, vNode: newVNode });
+      newPruneMap.set(vPrune.keyPath, { params: vPrune.params, node: mountedOn, vNode: newVNode });
       return mountedOn;
     }
   }
@@ -120,23 +185,11 @@ export const patch_f =
   // Lookup a vPrune node in the prune map
   // Returns either null or the prune map data object
   function lookupPrune(pruneMap, vPrune) {
-    const key = calcPruneKey(vPrune);
-    const info = pruneMap[key];
+    const info = pruneMap.get(vPrune.keyPath);
     if (!info) return null;
     const unsureEq = vPrune.unsureEq;
     const paramsEqual = caseUnsure(unsureEq(vPrune.params)(info.params))(x => x)(false);
     return paramsEqual ? info : null;
-  }
-
-  function insertPrune(pruneMap, vPrune, value) {
-    const key = calcPruneKey(vPrune);
-    pruneMap[key] = value;
-  }
-
-  function calcPruneKey(vPrune) {
-    // Injectively fold the pruning key path into a single string
-    const key = vPrune.keyPath.map(k => k.replace(/→/g, '^→')).join(' → ');
-    return key;
   }
 
 
@@ -173,7 +226,7 @@ export const patch_f =
         (text => empty)
         (oldVTag => oldVTag)
         (vPrune => {
-          const info = lookupPrune(pruneMap, vPrune);
+          const info = lookupPrune(oldPruneMap, vPrune);
 
           // The prune was rendered last frame, so it must be in the prune map
           console.assert(!!info, `[mation] prune missing from map`);
