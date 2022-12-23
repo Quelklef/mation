@@ -4,6 +4,7 @@
 module Mation.Styles (module X, Scope (..), on) where
  
 import Mation.Gen.Styles as X
+import Mation.Core.Style (Style) as X
 
 import Mation.Core.Prelude
 

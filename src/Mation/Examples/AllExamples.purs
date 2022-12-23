@@ -6,12 +6,14 @@ import Mation as M
 import Mation.Elems as E
 import Mation.Styles as S
 import Mation.Props as P
+import Mation.WRef as WRef
 
 import Mation.Examples.Welcome as Welcome
 import Mation.Examples.Counter as Counter
 import Mation.Examples.Components as Components
 import Mation.Examples.AsyncApiCall as AsyncApiCall
 import Mation.Examples.Styling as Styling
+import Mation.Examples.Clock as Clock
 import Mation.Examples.TestingZone as TestingZone
 import Mation.Examples.PerfTest as PerfTest
 import Mation.Examples.Pruning as Pruning
@@ -27,6 +29,7 @@ data Page
   | Components
   | AsyncApiCall
   | Styling
+  | Clock
 
   -- Testing stuff
   | TestingZone
@@ -34,10 +37,10 @@ data Page
   | Pruning
 
 separateAfter :: Array Page
-separateAfter = [ Welcome, Styling ]
+separateAfter = [ Welcome, Clock ]
 
 pages :: Array Page
-pages = [ Welcome, Counter, Components, AsyncApiCall, Styling, TestingZone, PerfTest, Pruning ]
+pages = [ Welcome, Counter, Components, AsyncApiCall, Styling, Clock, TestingZone, PerfTest, Pruning ]
   -- Don't want to add a whole dep for Enum for a testing module
 
 derive instance Generic Page _
@@ -52,6 +55,7 @@ pretty = case _ of
   Components -> "Components"
   AsyncApiCall -> "Async-API-call"
   Styling -> "Styling"
+  Clock -> "Clock"
   TestingZone -> "Testing-zone"
   PerfTest -> "Perf-test"
   Pruning -> "Pruning"
@@ -64,6 +68,7 @@ unpretty = case _ of
   "Testing-zone" -> Just TestingZone
   "Async-API-call" -> Just AsyncApiCall
   "Styling" -> Just Styling
+  "Clock" -> Just Clock
   "Perf-test" -> Just PerfTest
   "Pruning" -> Just Pruning
   _ -> Nothing
@@ -89,6 +94,7 @@ type Model =
   , components :: Components.Model
   , asyncApiCall :: AsyncApiCall.Model
   , styling :: Styling.Model
+  , clock :: Clock.Model
   , testing :: TestingZone.Model
   , perfTest :: PerfTest.Model
   , pruning :: Pruning.Model
@@ -110,6 +116,7 @@ render model =
         TestingZone -> E.enroot (prop (Proxy :: Proxy "testing")) (TestingZone.render model.testing)
         AsyncApiCall -> E.enroot (prop (Proxy :: Proxy "asyncApiCall")) (AsyncApiCall.render model.asyncApiCall)
         Styling -> E.enroot (prop (Proxy :: Proxy "styling")) (Styling.render model.styling)
+        Clock -> E.enroot (prop (Proxy :: Proxy "clock")) (Clock.render model.clock)
         PerfTest -> E.enroot (prop (Proxy :: Proxy "perfTest")) (PerfTest.render model.perfTest)
         Pruning -> E.enroot (prop (Proxy :: Proxy "pruning")) (Pruning.render model.pruning)
     ]
@@ -168,6 +175,7 @@ initialize = do
     , testing: TestingZone.initial
     , asyncApiCall: AsyncApiCall.initial
     , styling: Styling.initial
+    , clock: Clock.initial
     , perfTest: PerfTest.initial
     , pruning: Pruning.initial
     }
@@ -185,8 +193,11 @@ main = do
     { initial
     , render
     , root: M.onBody
-    , listen: \{ new: model } -> syncPageToUrl model.page $> Nothing
     , kickoff: kickoff
+    , withState: fold
+        [ Clock.withState <<< WRef.mkView (prop (Proxy :: Proxy "clock"))
+        , WRef.onChange \model -> syncPageToUrl model.page
+        ]
     , toEffect: identity
     }
 

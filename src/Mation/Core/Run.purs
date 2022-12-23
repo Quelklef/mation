@@ -2,10 +2,10 @@ module Mation.Core.Run where
 
 import Mation.Core.Prelude
 
-import Effect.Ref (Ref)
-import Effect.Ref as Ref
 import Effect.Exception (throw)
 
+import Mation.WRef (WRef)
+import Mation.WRef as WRef
 import Mation.Core.Mation (Mation)
 import Mation.Core.Mation as Mation
 import Mation.Core.Html (Html (..), VNode)
@@ -31,7 +31,7 @@ runApp' args =
     , render: args.render
     , root: args.root
     , kickoff: Mation.mkNoop
-    , listen: \_ -> pure Nothing
+    , withState: mempty
     , toEffect: identity
     }
 
@@ -42,42 +42,53 @@ runApp' args =
 -- |
 -- | - `initial :: s`
 -- |
--- |    The initial model value. The type variable uses the character `s`
--- |    for "state"
+-- |   The initial model value. The type variable uses the character `s`
+-- |   for "state"
 -- |
 -- | - `render :: s -> Html m s`
 -- |
--- |    Specifies how to display the application
+-- |   Specifies how to display the application
 -- |
 -- | - `kickoff :: Mation m s`
 -- |
--- |    An initial `Mation` to execute
+-- |   An initial `Mation` to execute
 -- |
--- | - `listen :: { old :: s, new :: s } -> Effect (Maybe (Mation m s))`
+-- | - `withState :: WRef s -> Effect Unit`
+--
+-- FIXME: pretty sure the type 'type T s = WRef s -> Effect Unit` would
+--        admit an enroot function? Maybe we should give this abstraction
+--        a proper name and write it an enroot function?
+--
 -- |
--- |    Called every time the state is updated. Tihs is the only place
--- |    in the Mation API the state can be read back out of a running
--- |    application
---
--- FIXME: need a real subscriptions / "parallel agents" api
---
+-- |   Supplies the application state `WRef` to a callback. This
+-- |   is the only way the state can be read back out of a running
+-- |   applicaiton.
+-- |
+-- |   Changing the state in the provided reference will invoke
+-- |   an application re-render.
+-- |
+-- |   Existence of `withState` makes `kickoff` redundant, because
+-- |   one could use `runMation` and `toEffect` to turn the kickoff
+-- |   mation into an `Effect Unit`. `kickoff` is provided as a less
+-- |   powerful but more convenient alternative to `withState`.
+-- |   Note that `kickoff` executes before `withState`.
 -- |
 -- | - `root :: Effect DomNode`
 -- |
--- |    Specifies where the application should be mounted. See `onBody`
--- |    and others below.
+-- |   Specifies where the application should be mounted. See `onBody`
+-- |   and others below.
 -- |
--- |    Remarks:
+-- |   Remarks:
 -- |
--- |    - The process of mounting may replace the given `DomNode`. The
--- |      given `DomNode` only guarantees *where* the mounting occurs in
--- |      the DOM
+-- |   - The process of mounting may replace the given `DomNode`. The
+-- |     given `DomNode` only guarantees *where* the mounting occurs in
+-- |     the DOM
 -- |
--- |    - This is an `Effect DomNode`, meaning that the mountpoint can
--- |      theoretically change between frames. If you do change the
--- |      mountpoint, be sure that the new one is equivalent to the old
--- |      one up to details produced by `render`. For various reasons,
--- |      the Mation rendering algorithm is sensitive to this.
+-- |   - This is an `Effect DomNode`, meaning that the mountpoint can
+-- |     theoretically change between frames. If you do change the
+-- |     mountpoint, be sure that the new one is equivalent to the old
+-- |     one up to details produced by `render`. For various reasons,
+-- |     the Mation rendering algorithm is sensitive to this.
 -- |
 -- | - `toEffect :: m Unit -> Effect Unit`
 -- |
@@ -94,7 +105,7 @@ runApp :: forall m s. MonadEffect m =>
   , render :: s -> Html m s
   , root :: Effect DomNode
   , kickoff :: Mation m s
-  , listen :: { old ::s, new :: s } -> Effect (Maybe (Mation m s))
+  , withState :: WRef s -> Effect Unit
   , toEffect :: m Unit -> Effect Unit
   } -> Effect Unit
 
@@ -112,19 +123,19 @@ runApp args = do
   -- initialized with a dummy
   --
   -- This works because no Mation should ever be executed until
-  -- after the first render is complete (which is when this Ref
+  -- after the first render is complete (which is when this WRef
   -- will be populated)
   --
   -- This is an ugly setup but is necessary to bootstrap the
   -- application
-  stepRef :: Ref ((s -> s) -> Effect Unit)
-    <- Ref.new (\_ -> pure unit)
+  stepRef :: WRef ((s -> s) -> Effect Unit)
+    <- WRef.new (\_ -> pure unit)
 
   let
     -- Turn a Mation into an Effect
     execMation :: Mation m s -> Effect Unit
     execMation mat = do
-      step <- Ref.read stepRef
+      step <- WRef.get stepRef
       args.toEffect $ Mation.runMation mat (step >>> liftEffect)
 
   -- Render for the first time
@@ -140,13 +151,13 @@ runApp args = do
     pure $ model /\ vNode /\ pruneMap
 
   -- Holds current state
-  ref <- Ref.new (model /\ vNode /\ pruneMap)
+  ref <- WRef.new (model /\ vNode /\ pruneMap)
 
   let
     -- This is the actual step function
     step :: (s -> s) -> Effect Unit
     step endo = do
-      oldModel /\ oldVNode /\ oldPruneMap <- Ref.read ref
+      oldModel /\ oldVNode /\ oldPruneMap <- WRef.get ref
       let newModel = endo oldModel
       newVNode <- renderTo1 newModel
       let patch = Patch.patchOnto
@@ -155,15 +166,21 @@ runApp args = do
                     , mPruneMap: Just oldPruneMap
                     }
       newPruneMap <- args.root >>= patch
-      Ref.write (newModel /\ newVNode /\ newPruneMap) ref
-      args.listen { old: oldModel, new: newModel }
-        >>= case _ of Nothing -> pure unit
-                      Just mat -> execMation mat
+      WRef.set (newModel /\ newVNode /\ newPruneMap) ref
 
   -- Populate the stepRef with the correct value
-  Ref.write step stepRef
+  WRef.set step stepRef
 
+  -- Execute kickoff
   execMation args.kickoff
+
+  -- Execute withState
+  ref # WRef.onChange \_ -> step identity
+    -- FIXME: this^ is kind of a hack. The invarant between
+    --   the three states is broken temporarily until
+    --   we call 'step identity'
+  args.withState (WRef.mkView _1 ref)
+
 
 
 -- | Mount an application as a child of `<body>`
