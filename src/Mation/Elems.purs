@@ -58,3 +58,4 @@ enroot = Html.enroot
 prune :: forall m p s. UnsureEq p => String -> (p -> Html m s) -> p -> Html m s
 prune key render param = Html.mkPrune key render param
 
+-- FIXME: add 'unPrune' and 'pruneKeyed'
