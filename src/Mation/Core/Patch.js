@@ -3,7 +3,7 @@ function iife(f) {
   return f();
 }
 
-function replaceNode(target, replacement) {
+function setNode(target, replacement) {
   if (replacement === target)
     return;  // Seems replacement causes a reflow, which is slow; skip if possible
 
@@ -38,26 +38,52 @@ export const patch_f =
 
   // Mutatively patches the given root node (ie, target node to mount on)
   // Returns the node that was actually mounted on, which may be different
+  //
+  // Remark: the diffing algorithm tries its best to perform no unnecessary
+  // mutations, such as setting a DOM node attribute to the value it already
+  // has. The primary reason for this is that such mutations
+  // can interact poorly with parts of the DOM state. For instance, if
+  // the user is selecting part of a block of text and the text node gets
+  // replaced, the user selection will be disrupted, even if the new text
+  // node is equivalent with the previous one.
+  // This behaviour also improves performance! (in most cases)
   function patch(root, mOldVNode, newVNode) {
 
     // Perform patch
     const result = (
       caseVNode(newVNode)
         (domNode => {
-          replaceNode(root, domNode);
+          setNode(root, domNode);
           return domNode;
         })
         (html => {
-          const $div = document.createElement('div');
-          $div.innerHTML = html;
-          $div.style.display = 'contents';
-          replaceNode(root, $div);
-          return $div;
+          const alreadyGood = (
+            root.tagName === 'DIV'
+            && root.style.cssText === 'display: contents;'
+            && root.innerHTML === html
+          );
+          if (alreadyGood) {
+            return root;
+          } else {
+            const $div = document.createElement('div');
+            $div.innerHTML = html;
+            $div.style.display = 'contents';
+            setNode(root, $div);
+            return $div;
+          }
         })
         (text => {
-          const node = document.createTextNode(text);
-          replaceNode(root, node);
-          return node;
+          const alreadyGood = (
+            root.nodeName === '#text'
+            && root.textContent === text
+          );
+          if (alreadyGood) {
+            return root;
+          } else {
+            const node = document.createTextNode(text);
+            setNode(root, node);
+            return node;
+          }
         })
         (newVTag => {
           return tagCase(root, mOldVNode, newVTag)
@@ -66,6 +92,7 @@ export const patch_f =
           return pruneCase(root, mOldVNode, vPrune)
         })
     );
+
 
     // Let node know that we've visited it
     // This is undocumented and only exists for use in one of the test cases
@@ -80,7 +107,7 @@ export const patch_f =
   function pruneCase(root, mOldVNode, vPrune) {
     const info = lookupPrune(pruneMap, vPrune);
     if (info) {
-      replaceNode(root, info.node);
+      setNode(root, info.node);
       return info.node;
     } else {
       const newVNode = vPrune.render(vPrune.params);
@@ -132,7 +159,7 @@ export const patch_f =
     );
     if (shouldReplace) {
       const newRoot = document.createElement(newVTag.tag);
-      replaceNode(root, newRoot);
+      setNode(root, newRoot);
       root = newRoot;
       mOldVNode = null;  // Need to diff afresh
     }
@@ -184,34 +211,70 @@ export const patch_f =
   }
 
   function setAttribute(node, name, value) {
-    node.setAttribute(name, value);
+    switch (name) {
 
     // Some HTML attributes don't get auto-sync'd to the corresponding DOM
     // node, so we need to do it ourselves.
     // Also see <https://javascript.info/dom-attributes-and-properties>
-    if (name === 'value') {
-      node.value = value;
-    } else if (name === 'checked') {
-      node.checked = !!value;
+
+    case 'value': {
+      const alreadyGood =
+        node.getAttribute('value') === value && node.value === value;
+      if (!alreadyGood) {
+        node.setAttribute('value', value);
+        node.value = value;
+      }
+      return;
+    }
+
+    case 'checked': {
+      const alreadyGood =
+        node.getAttribute('checked') === value && node.checked === !!value;
+      if (!alreadyGood) {
+        node.setAttribute('checked', value);
+        node.checked = !!value;
+      }
+      return;
+    }
+
+    default: {
+      const alreadyGood = node.getAttribute(name) === value;
+      if (!alreadyGood)
+        node.setAttribute(name, value);
+      return;
+    }
+
     }
   }
 
   function deleteAttribute(node, name) {
-    node.removeAttribute(name);
+    switch (name) {
 
-    if (name === 'value') {
-      node.value = '';  // seems to be the best we can do
-    } else if (name === 'checked') {
-      node.checked = false;
+    case 'value': {
+      const alreadyGood = node.value === '';
+      if (!alreadyGood)
+        node.value = '';
+    }
+
+    case 'checked': {
+      const alreadyGood = !node.checked;
+      if (!alreadyGood)
+        node.checked = false;
+    }
+
+    default: {
+      const alreadyGood = !node.hasAttribute(name);
+      if (!alreadyGood)
+        node.removeAttribute(name);
+    }
+
     }
   }
 
   function patchListeners(root, oldListeners, newListeners) {
-    // Can't diff functions, so just remove all old listeners then add the new
+    // Can't diff functions, so just remove and re-add all listeners
 
     // Remove old listeners
-    // Read listeners from oldListeners instead of from root._listeners so that
-    // we don't remove listeners added by other code
     for (const [name, _] of oldListeners) {
       const map = root._listeners ?? {};
       root.removeEventListener(name, map[name]);

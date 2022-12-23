@@ -149,9 +149,8 @@ render :: Model -> E.Html' Model
 render model =
   E.div
   []
-  [ M.enroot _counter1 (renderCounter model.counter1)
-  , E.br []
-  , M.enroot _counter2 (renderCounter model.counter2)
+  [ E.p [] [ M.enroot _counter1 (renderCounter model.counter1) ]
+  , E.p [] [ M.enroot _counter2 (renderCounter model.counter2) ]
   , E.hr []
   , M.enroot _textbox (renderTextbox model.textbox)
   , E.hr []
