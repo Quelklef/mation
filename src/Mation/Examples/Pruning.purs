@@ -3,6 +3,7 @@ module Mation.Examples.Pruning where
 import Mation.Core.Prelude
 
 import Data.Lens.Lens.Tuple (_1, _2)
+import Data.Array (range)
 
 import Mation as M
 import Mation.Elems as E
@@ -18,12 +19,14 @@ type Vals = Double (Double (Double (Double Int)))
 type Model =
   { vals :: Vals
   , example2 :: { depth :: Int, color :: String }
+  , sumTest :: Int /\ Int
   }
 
 initial :: Model
 initial =
   { vals: double (double (double (double 0)))
   , example2: { depth: 4, color: "teal" }
+  , sumTest: 0 /\ 0
   }
 
   where
@@ -70,9 +73,12 @@ render model =
     ]
   , E.br []
   , E.hr []
-  , E.br []
   , E.p [ pSty ] [ E.text "Pruning works even when the node moves around the application. Try modifying the number of wrapper <divs> below. Again, updates are shown in red." ]
   , flip (E.prune "example-2") model.example2 (\ex2 -> E.enroot (prop (Proxy :: Proxy "example2")) $ renderExample2 ex2)
+  , E.br []
+  , E.br []
+  , E.hr []
+  , E.enroot (prop (Proxy :: Proxy "sumTest")) $ E.prune "sum-test" renderSumTest model.sumTest
   ]
 
   where
@@ -179,3 +185,32 @@ renderExample2 { depth, color } =
       ]
 
 foreign import parseInt :: String -> Int
+
+
+-- Tests cases where we cycle between different pruned VDOMs
+renderSumTest :: (Int /\ Int) -> E.Html' (Int /\ Int)
+renderSumTest (n /\ tab) =
+  E.div
+  []
+  [ E.p
+    []
+    [ E.button
+      [ P.onClick \_ -> M.mkPure (_1 %~ (_ + 1))
+      , P.style "padding: 0 1.5em; line-height: 2em"
+      ]
+      [ E.text (show n)
+      ]
+    , E.text " "
+    , E.button
+      [ P.onClick \_ -> M.mkPure (_2 %~ (_ + 1))
+      , P.style "padding: 0 1.5em; line-height: 2em"
+      ]
+      [ E.text "swap"
+      ]
+    , E.span [ P.style "padding: 0 1em" ] [ ]
+    , case tab `mod` 3 of
+        0 -> flip (E.prune "0") n (\n -> E.span [ P.style "border: 1px solid blue" ] [ E.text (show n <> " ") ])
+        1 -> flip (E.prune "1") n (\n -> range 1 n # foldMap \k -> E.text (show k <> " .. "))
+        _ -> flip (E.prune "_") n (\n -> E.span [ P.style "background-color: red; color: white" ] [ E.text "three" ])
+    ]
+  ]
