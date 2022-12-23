@@ -84,7 +84,7 @@ render model =
     E.span
     [ P.style'
       [ S.display "inline-flex"
-      , S.padding ".2em .5em"
+      , S.padding ".1em"
       , S.alignItems "center"
       ]
     ]
@@ -146,7 +146,7 @@ renderExample2 { depth, color } =
       [ P.style'
         [ S.display "flex"
         , S.gap "2px"
-        , S.maxWidth "20vw"
+        , S.maxWidth "450px"
         , S.flexWrap "wrap"
         , S.justifyContent "center"
         , S.padding "1em"
