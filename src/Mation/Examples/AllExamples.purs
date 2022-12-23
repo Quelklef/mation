@@ -110,15 +110,33 @@ render model =
   , E.div
     [ P.style' [ S.padding "1em" ] ]
     [ case model.page of
-        Welcome -> E.enroot (prop (Proxy :: Proxy "welcome")) (Welcome.render model.welcome)
-        Counter -> E.enroot (prop (Proxy :: Proxy "counter")) (Counter.render model.counter)
-        Components -> E.enroot (prop (Proxy :: Proxy "components")) (Components.render model.components)
-        TestingZone -> E.enroot (prop (Proxy :: Proxy "testing")) (TestingZone.render model.testing)
-        AsyncApiCall -> E.enroot (prop (Proxy :: Proxy "asyncApiCall")) (AsyncApiCall.render model.asyncApiCall)
-        Styling -> E.enroot (prop (Proxy :: Proxy "styling")) (Styling.render model.styling)
-        Clock -> E.enroot (prop (Proxy :: Proxy "clock")) (Clock.render model.clock)
-        PerfTest -> E.enroot (prop (Proxy :: Proxy "perfTest")) (PerfTest.render model.perfTest)
-        Pruning -> E.enroot (prop (Proxy :: Proxy "pruning")) (Pruning.render model.pruning)
+        Welcome      ->
+          E.enroot (prop (Proxy :: Proxy "welcome")) $
+            E.prune "page-welcome" Welcome.render model.welcome
+        Counter      ->
+          E.enroot (prop (Proxy :: Proxy "counter")) $
+            E.prune "page-counter" Counter.render model.counter
+        Components   ->
+          E.enroot (prop (Proxy :: Proxy "components")) $
+            E.prune "page-components" Components.render model.components
+        AsyncApiCall ->
+          E.enroot (prop (Proxy :: Proxy "asyncApiCall")) $
+            E.prune "page-asyncApiCall" AsyncApiCall.render model.asyncApiCall
+        Styling      ->
+          E.enroot (prop (Proxy :: Proxy "styling")) $
+            E.prune "page-styling" Styling.render model.styling
+        Clock        ->
+          E.enroot (prop (Proxy :: Proxy "clock")) $
+            E.prune "page-clock" Clock.render model.clock
+        TestingZone  ->
+          E.enroot (prop (Proxy :: Proxy "testing")) $
+            E.prune "page-testing" TestingZone.render model.testing
+        PerfTest     ->
+          E.enroot (prop (Proxy :: Proxy "perfTest")) $
+            E.prune "page-perfTest" PerfTest.render model.perfTest
+        Pruning      ->
+          E.enroot (prop (Proxy :: Proxy "pruning")) $
+            E.prune "page-pruning" Pruning.render model.pruning
     ]
   ]
 

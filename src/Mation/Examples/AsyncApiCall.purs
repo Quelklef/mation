@@ -13,6 +13,7 @@ import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
+import Mation.Core.Util.UnsureEq (class UnsureEq, unsureEq, Unsure (..), viaPrim)
 
 
 type Model =
@@ -26,6 +27,14 @@ data RequestStatus
   | InProgress { cancel :: Effect Unit }
   | Success { result :: String }
   | Failure { reason :: String }
+
+instance UnsureEq RequestStatus where
+  unsureEq NotStarted NotStarted = Surely true
+  unsureEq (InProgress c) (InProgress c') = viaPrim c c'
+  unsureEq (Success a) (Success a') = unsureEq a a'
+  unsureEq (Failure a) (Failure a') = unsureEq a a'
+  unsureEq _ _ = Surely false
+
 
 isInProgress :: RequestStatus -> Boolean
 isInProgress = case _ of

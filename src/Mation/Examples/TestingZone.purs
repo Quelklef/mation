@@ -8,12 +8,19 @@ import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
+import Mation.Core.Util.UnsureEq (class UnsureEq, Unsure (..), viaPrim)
 
 foreign import repeatedly :: Effect Unit -> Effect { cancel :: Effect Unit }
 
 type Counter = { count :: Int, streamState :: StreamState }
 
 data StreamState = NotStreaming | Streaming { cancel :: Effect Unit }
+
+-- FIXME: genericUnsureEq not working when the type contains a record?
+instance UnsureEq StreamState where
+  unsureEq NotStreaming NotStreaming = Surely true
+  unsureEq (Streaming c) (Streaming c') = viaPrim c c'
+  unsureEq _ _ = Surely false
 
 renderCounter :: Counter -> E.Html' Counter
 renderCounter model =
