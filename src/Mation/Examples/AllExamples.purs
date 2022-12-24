@@ -7,6 +7,7 @@ import Mation.Elems as E
 import Mation.Styles as S
 import Mation.Props as P
 import Mation.WRef as WRef
+import Mation.Core.Daemon as D
 
 import Mation.Examples.Welcome as Welcome
 import Mation.Examples.Counter as Counter
@@ -211,9 +212,8 @@ main = do
     { initial
     , render
     , root: M.onBody
-    , kickoff: kickoff
-    , withState: fold
-        [ Clock.withState <<< WRef.mkView (prop (Proxy :: Proxy "clock"))
+    , daemon: fold
+        [ D.enroot (prop (Proxy :: Proxy "clock")) Clock.daemon
         , WRef.onChange \model -> syncPageToUrl model.page
         ]
     , toEffect: identity

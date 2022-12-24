@@ -8,6 +8,8 @@ import Mation.WRef (WRef)
 import Mation.WRef as WRef
 import Mation.Core.Mation (Mation)
 import Mation.Core.Mation as Mation
+import Mation.Core.Daemon (Daemon)
+import Mation.Core.Daemon as Daemon
 import Mation.Core.Html (Html (..), VNode)
 import Mation.Core.Dom (DomNode)
 import Mation.Core.Patch as Patch
@@ -30,8 +32,7 @@ runApp' args =
     { initial: args.initial
     , render: args.render
     , root: args.root
-    , kickoff: Mation.mkNoop
-    , withState: mempty
+    , daemon: mempty
     , toEffect: identity
     }
 
@@ -49,29 +50,17 @@ runApp' args =
 -- |
 -- |   Specifies how to display the application
 -- |
--- | - `kickoff :: Mation m s`
+-- | - `daemon :: Daemon m s`
 -- |
--- |   An initial `Mation` to execute
+-- |   Possibly-long-lived process which has read/write access to
+-- |   the application state and runs in parallel with the application
+-- |   itself.
 -- |
--- | - `withState :: WRef s -> Effect Unit`
---
--- FIXME: pretty sure the type 'type T s = WRef s -> Effect Unit` would
---        admit an enroot function? Maybe we should give this abstraction
---        a proper name and write it an enroot function?
---
+-- |   The daemon is the only thing that can read the state back
+-- |   out of a running application.
 -- |
--- |   Supplies the application state `WRef` to a callback. This
--- |   is the only way the state can be read back out of a running
--- |   applicaiton.
--- |
--- |   Changing the state in the provided reference will invoke
--- |   an application re-render.
--- |
--- |   Existence of `withState` makes `kickoff` redundant, because
--- |   one could use `runMation` and `toEffect` to turn the kickoff
--- |   mation into an `Effect Unit`. `kickoff` is provided as a less
--- |   powerful but more convenient alternative to `withState`.
--- |   Note that `kickoff` executes before `withState`.
+-- |   If the daemon changes the application state, the application
+-- |   will re-render.
 -- |
 -- | - `root :: Effect DomNode`
 -- |
@@ -104,8 +93,7 @@ runApp :: forall m s. MonadEffect m =>
   { initial :: s
   , render :: s -> Html m s
   , root :: Effect DomNode
-  , kickoff :: Mation m s
-  , withState :: WRef s -> Effect Unit
+  , daemon :: Daemon m s
   , toEffect :: m Unit -> Effect Unit
   } -> Effect Unit
 
@@ -171,15 +159,12 @@ runApp args = do
   -- Populate the stepRef with the correct value
   WRef.set step stepRef
 
-  -- Execute kickoff
-  execMation args.kickoff
-
   -- Execute withState
   ref # WRef.onChange \_ -> step identity
     -- FIXME: this^ is kind of a hack. The invarant between
     --   the three states is broken temporarily until
     --   we call 'step identity'
-  args.withState (WRef.mkView _1 ref)
+  args.toEffect $ (Daemon.enroot _1 args.daemon) ref
 
 
 
