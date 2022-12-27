@@ -134,7 +134,7 @@ runApp args = do
     renderTo1 :: s -> Effect (VNode (Mation m s))
     renderTo1 = args.render >>> case _ of
       Html [x] -> pure x
-      _ -> throw "Unexpected Html value: toplevel node contains more than one value. Did you `<>` or `fold` some top-level Html values? Please wrap them in some container element."
+      _ -> throw "[mation] Error: Top-level Html value contains either zero nodes or more than one node. Did you produce `mempty`, perhaps, or some result of `<>` or `fold`? Please wrap your application in a container node."
 
   -- This will eventually hold the real step function, but is
   -- initialized with a dummy
