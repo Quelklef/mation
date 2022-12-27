@@ -146,7 +146,7 @@ renderExample2 { depth, color } =
   where
 
   doIt depth =
-    if depth == 0
+    if depth <= 0
     then
       E.div
       [ P.style'
@@ -158,7 +158,7 @@ renderExample2 { depth, color } =
         , S.padding "1em"
         ]
       ]
-      [ (_ `power` 200) $
+      [ flip (E.prune "the boxes") color \color ->  (_ `power` 200) $
         E.div
         [ P.style'
           [ S.display "inline-block"

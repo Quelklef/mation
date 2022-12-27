@@ -114,7 +114,7 @@ export const patch_f =
   function patch(root, mOldVNode, newVNode) {
 
     // Perform patch
-    const result = (
+    const mountedOn = (
       caseVNode(newVNode)
         (domNode => {
           setNode(root, domNode);
@@ -161,9 +161,9 @@ export const patch_f =
     // Let node know that we've visited it
     // This is undocumented and only exists for use in one of the test cases
     // This should otherwise never be used
-    root._touch?.();
+    mountedOn._touch?.();
 
-    return result;
+    return mountedOn;
 
   }
 
