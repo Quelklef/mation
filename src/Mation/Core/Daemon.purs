@@ -23,6 +23,9 @@ type Daemon m s = WRef s -> m Unit
 enroot :: forall m large small. Lens' large small -> Daemon m small -> Daemon m large
 enroot len f = f <<< WRef.mkView len
 
+-- | Transform the underlying monad of a `Daemon`
+-- |
+-- | The given `m ~> n` is expected to be a monad morphism
 hoist :: forall m n s. (m ~> n) -> Daemon m s -> Daemon n s
 hoist nt dae = dae >>> nt
 

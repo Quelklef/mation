@@ -203,5 +203,8 @@ mkPrune key render params =
 enroot :: forall m large small. Setter' large small -> Html m small -> Html m large
 enroot len (Html arr) = Html $ map (map (Mation.enroot len)) arr
 
-hoist :: forall m n a. (forall b. m b -> n b) -> Html m a -> Html n a
+-- | Transform the underlying monad of an `Html`
+-- |
+-- | The given `m ~> n` is expected to be a monad morphism
+hoist :: forall m n a. (m ~> n) -> Html m a -> Html n a
 hoist f (Html arr) = Html $ arr # map (map (Mation.hoist f))

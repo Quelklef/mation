@@ -182,5 +182,8 @@ enroot lens (Mation f) =
   Mation \apply -> f \endo -> apply (lens %~ endo)
 
 
-hoist :: forall m n a. (forall b. m b -> n b) -> Mation m a -> Mation n a
+-- | Transform the underlying monad of a `Mation`
+-- |
+-- | The given `m ~> n` is expected to be a monad morphism
+hoist :: forall m n a. (m ~> n) -> Mation m a -> Mation n a
 hoist f (Mation m) = Mation \step -> f (m step)

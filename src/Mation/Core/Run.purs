@@ -83,12 +83,41 @@ runApp' args =
 -- |
 -- |   Specifies how to execute the custom monad `m`.
 -- |
--- |   Note that you are only asked to provide an `m Unit -> Effect Unit`
--- |   as opposed to, for instance, an `forall a. m a -> Effect a`. This
--- |   means that, for instance, `toEffect` can be asynchronous. Beware
--- |   that if `toEffect` *is* async, that means that a mation executed
--- |   during one frame may still be running and updating the application
--- |   state despite the application having progressed to a new frame.
+-- |   Note the type of the function, `m Unit -> Effect Unit`. We do not
+-- |   require `toEffect` to be satisfy any conditions, such as being
+-- |   a monad morphism (see [1]) or even just a natural
+-- |   transformation (ie, having type `forall a. m a -> n a`),
+--
+-- Remark: There are various `hoist` functions in this codebase which
+-- are similar to `toEffect` insofar as they transform an underlying
+-- monad, but differ in that they *do* require a monad morphism. The
+-- rationale behind this difference is that `toEffect` is performed
+-- at the very top of the program, meaning that any failure to respect
+-- the monad structure is "less bad" as we only actually call `toEffect`
+-- a few times, and those callsites are known.
+--
+-- |
+-- |   This means that, for example, functions such
+-- |   as `launchAff_ :: Aff Unit -> Effect Unit` can be supplied as
+-- |   values for `toEffect`
+-- |
+-- |   However, it is usually in the user's best interest to choose
+-- |   a `toEffect` which *is* a monad morphism (specialized to `Unit`).
+-- |   Currently `toEffect` is called once to
+-- |   execute the given `daemon` and then once per application frame
+-- |   to execute the invoked event handler. These details are
+-- |   irrelevant if `toEffect` is a monad morphism, but can have subtle
+-- |   consequences if it is not. For instance, if `toEffect`
+-- |   is `launchAff_`, then mations from one frame may still be in
+-- |   progress when an event handler from the next frame is invoked.
+-- |
+-- |   [1\]:
+-- |     A monad morphism is a function `f :: forall a. m a -> n a`
+-- |     between `Monad`s `m` and `n` and mapping monad operations
+-- |     in `m` to monad operations in `n`; ie, satisfying both
+-- |     `f (return x) = return x` and `f (m >>= g) = f m >>= (f . g)`.
+-- |     This condiiton ensures that monad operations performed
+-- |     within `m` are not mangled by `f` when mapping into `n`.
 runApp :: forall m s. MonadEffect m =>
   { initial :: s
   , render :: s -> Html m s

@@ -65,7 +65,10 @@ mkNoop = FM.singleton $ PNoop
 enroot :: forall m large small. Setter' large small -> Prop m small -> Prop m large
 enroot len (Prop arr) = Prop $ arr # map (map (Mation.enroot len))
 
-hoist :: forall m n a. (forall b. m b -> n b) -> Prop m a -> Prop n a
+-- | Transform the underlying monad of a `Prop`
+-- |
+-- | The given `m ~> n` is expected to be a monad morphism
+hoist :: forall m n a. (m ~> n) -> Prop m a -> Prop n a
 hoist f (Prop arr) = Prop $ arr # map (map (Mation.hoist f))
 
 
