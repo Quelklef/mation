@@ -1,7 +1,7 @@
 module Mation.Examples.Clock where
 
 import Mation.Core.Prelude
-import Data.Int (round, toNumber)
+import Data.Int (floor, toNumber)
 import Data.Array (range)
 
 import Mation as M
@@ -51,9 +51,9 @@ render { hour, minute, second } =
       ]
     ]
     [ E.text $ let
-        hour' = case round hour of 0 -> 12
+        hour' = case floor hour of 0 -> 12
                                    n -> n
-      in showXX hour' <> ":" <> showXX (round minute) <> ":" <> showXX (round second)
+      in showXX hour' <> ":" <> showXX (floor minute) <> ":" <> showXX (floor second)
     ]
   ]
 

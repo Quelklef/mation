@@ -4,9 +4,9 @@ f => () => {
   function doIt() {
     const now = new Date();
 
-    const hour = now.getHours() % 12;
-    const minute = now.getMinutes();
     const second = now.getSeconds();
+    const minute = now.getMinutes() + second / 60;
+    const hour = (now.getHours() % 12) + minute / 60;
 
     f({ hour, minute, second })();
   }
