@@ -188,7 +188,7 @@ runApp args = do
   -- Populate the stepRef with the correct value
   WRef.set step stepRef
 
-  -- Execute withState
+  -- Start the daemon
   ref # WRef.onChange \_ -> step identity
     -- FIXME: this^ is kind of a hack. The invarant between
     --   the three states is broken temporarily until

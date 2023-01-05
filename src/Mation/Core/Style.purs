@@ -3,174 +3,152 @@ module Mation.Core.Style where
 import Mation.Core.Prelude
 
 import Data.String.Common (joinWith)
+import Data.Function (on)
+import Data.Map as Map
 
 import Mation.Core.Prop (Prop, mkFixup)
 import Mation.Core.Dom (DomNode)
 import Mation.Core.Util.FreeMonoid (class FreeMonoid)
 import Mation.Core.Util.FreeMonoid as FM
-import Mation.Core.Util.PuncturedFold (PuncturedFold)
-import Mation.Core.Util.PuncturedFold as PF
+import Mation.Core.Util.Weave (Weave)
+import Mation.Core.Util.Weave as W
 import Mation.Core.Util.Hashable (class Hashable, hash)
 
 
--- | Represents a bunch of styles
+-- | Represents a single CSS style
 -- |
--- | This type has one parameter named `endo`. The expectation is
--- | that `endo` be some substructure of `Endo`. In particular, we expect
--- | that there be some function `f` so that `(endo String, f)` embeds
--- | into `(Endo String, <>)` as a monoid. I don't think
--- | we use this fact outright, but it's good for illustration.
+-- | Styles are contextualized by a so-called "scope" which designates
+-- | when the style applies.
 -- |
--- | Despite the name `Style1`, this type represents a *collection* of CSS styles.
--- | The reason for the `-1` suffix is that we still form a monoid closure
--- | over it with `Style` since turning `Style1` into a lawful monoid
--- | directly would not be easy.
-data Style1 :: (Type -> Type) -> Type
-data Style1 endo
+-- | This type has one parameter, called `endo`. We expect that there
+-- | exists some interpretation function `f :: endo ~> Endo (->)` which
+-- | is a monoid-embedding for every type.
+newtype Style1 :: (Type -> Type) -> Type
+newtype Style1 endo = Style1
+    -- | Inline CSS string, e.g. `"line-height: 100em"`
+  { css :: String
+    -- | Style scopes
+  , scopes :: Scopes endo
+  }
 
-    -- | Raw inline style, eg `SInline "position: fixed; top: 0"`
-  = SInline String
+-- | Note that this is not "aware" of the semantics of CSS strings and will
+-- | consider some 'equivalent' values unequal. For instance, if two `Style1`
+-- | values have equal scopes but one's `css` is `color: red; font-weight: bold`
+-- | and the other's is `color: red; font-weight: bold;` (note the trailing
+-- | comma), the two will be considered inequal.
+instance Eq (endo String) => Eq (Style1 endo) where
+  eq = eq `on` \(Style1 s) -> s.css /\ s.scopes.selector /\ s.scopes.block
 
-    -- | Modify the scope of the style
-  | SScoped (StyleScope endo) (Style1 endo)
+instance Hashable (endo String) => Hashable (Style1 endo) where
+  hash = hash <<< \(Style1 s) -> s.css /\ s.scopes.selector /\ s.scopes.block
 
-    -- | Concatenation
-    -- |
-    -- | This is a constructor over an `Array` instead of a binary constructor
-    -- | for no reason other than it happens to be convenient elsewhere
-  | SConcat (Array (Style1 endo))
-
-
--- | Represents both block- and selector-level scopings for CSS styles.
--- |
--- | For instance,
--- |
--- | ```
--- | StyleScope
--- |  { selector: \sel -> sel <> " > *:nth-child(2)"
--- |  , block: \css -> "@media (max-width: 500px) { @print { " <> css <> " }}"
--- |  }
--- | ```
-newtype StyleScope endo = StyleScope
-
-    -- | Scope a style with some selector combinator, eg `_ <> ":focus"`
-    -- |
-    -- | Note that using `const` as the selector *can* be used to
-    -- | generate global styles. Not recommended, though.
+--- | Represents both block- and selector-level scopings for CSS styles.
+--- |
+--- | For instance,
+--- |
+--- | ```
+--- |  { selector: \sel -> sel <> " > *:nth-child(2)"
+--- |  , block: \css -> "@media (max-width: 500px) { @print { " <> css <> " }}"
+--- |  }
+--- | ```
+type Scopes endo =
+  -- | Scope a style with some selector combinator, eg `_ <> ":focus"`
   { selector :: endo String
-
-    -- | Scope a style by some block combinator, eg `\css -> "@media print { " <> css <> " }"`
+  -- | Scope a style by some block combinator, eg `\css -> "@media print { " <> css <> " }"`
   , block :: endo String
   }
 
-derive newtype instance Semigroup (endo String) => Semigroup (StyleScope endo)
-derive newtype instance Monoid (endo String) => Monoid (StyleScope endo)
-derive newtype instance Eq (endo String) => Eq (StyleScope endo)
 
-instance Hashable (endo String) => Hashable (StyleScope endo) where
-  hash (StyleScope { selector, block }) = hash $ selector /\ block
-
-mkSelectorScope :: forall endo. Monoid (endo String) => endo String -> StyleScope endo
-mkSelectorScope scope = StyleScope { selector: scope, block: mempty }
-
-mkBlockScope :: forall endo. Monoid (endo String) => endo String -> StyleScope endo
-mkBlockScope scope = StyleScope { selector: mempty, block: scope }
+addScope :: forall endo. Monoid (endo String) => Scopes endo -> (Style1 endo -> Style1 endo)
+addScope sco (Style1 { css, scopes }) = Style1 { css, scopes: sco <> scopes }
 
 
-derive instance Eq (endo String) => Eq (Style1 endo)
-
-instance Hashable (endo String) => Hashable (Style1 endo) where
-  hash = case _ of
-    SInline s -> hash $ 1 /\ s
-    SScoped s a -> hash $ 2 /\ s /\ a
-    SConcat xs -> hash $ 3 /\ xs
-
-mapStyle1 :: forall endo endo'. (endo String -> endo' String) -> (Style1 endo -> Style1 endo')
-mapStyle1 f = case _ of
-  SInline s -> SInline s
-  SScoped (StyleScope { selector, block }) sty ->
-    SScoped (StyleScope { block: f block, selector: f selector }) (mapStyle1 f sty)
-  SConcat xs -> SConcat (map (mapStyle1 f) xs)
+-- | Change the underling `endo`
+-- |
+-- | Ehhh probably the given function ought to be a monoid morphism
+hoistStyle1 :: forall endo endo'. (endo String -> endo' String) -> Style1 endo -> Style1 endo'
+hoistStyle1 f (Style1 { css, scopes: { selector, block } }) = Style1
+  { css, scopes: { selector: f selector, block: f block } }
 
 
--- | Given a target selector (eg `"#my-element"`), render a `Style1` to CSS targeting that selector
+-- | Given a selector (eg `"#my-element"`), render a collection of
+-- | styles to a CSS string targeting that selector
 toCss :: String -> Style1 (Endo (->)) -> String
-toCss selec0 = collate >>> linearize >>> emit
+toCss selec0 (Style1 { css, scopes }) =
+    runEndo scopes.block $ runEndo scopes.selector selec0 <> " { " <> css <> " }"
 
   where
 
-  -- | Combine unscoped styles
-  collate :: forall endo. Style1 endo -> Style1 endo
-  collate = case _ of
-    SInline s -> SInline s
-    SConcat styles ->
-      let inlines /\ others = styles # partitionWith case _ of
-            SInline s -> Left s
-            other -> Right other
-      in
-        SConcat $ [ SInline $ joinWith "; " inlines ] <> others
-
-    other -> other
-
-  -- | Turn a `Style` into an array of inline styles (eg, `color: red; flex: 1`) contextualized by scope
-  linearize :: Style1 (Endo (->)) -> Array { css :: String, scope :: StyleScope (Endo (->)) }
-  linearize = case _ of
-    SInline s -> [ { css: s, scope: mempty } ]
-    SScoped sco style -> linearize style # map (_scope %~ (sco <> _))
-    SConcat xs -> xs >>= linearize
+  runEndo :: forall c a. Endo c a -> c a a
+  runEndo (Endo f) = f
 
 
-  -- | Return the result of `linearize` into a CSS string (eg, to be placed into a <style> tag)
-  emit :: Array { css :: String, scope :: StyleScope (Endo (->)) } -> String
-  emit = foldMap emit1
+-- Combine the CSS strings for styles with the same scope
+collate :: forall endo. Ord (endo String) => Array (Style1 endo) -> Array (Style1 endo)
+collate = collateBy
+  (\(Style1 { scopes }) -> scopes)
+  (\(Style1 sty1) (Style1 sty2) -> Style1 { css: sty1.css <> "; " <> sty2.css, scopes: sty1.scopes })
 
-  emit1 :: { css :: String, scope :: StyleScope (Endo (->)) } -> String
-  emit1 { css, scope: StyleScope scope } =
-      (runEndo scope.block $ runEndo scope.selector selec0 <> " { " <> css <> " } ") <> "\n"
+  where
 
-  _scope = prop (Proxy :: Proxy "scope")
+  collateBy :: forall k a. Ord k =>
+    (a -> k) -> (a -> a -> a) -> Array a -> Array a
+  collateBy key merge =
+    map (\a -> key a /\ a)
+    >>> Map.fromFoldableWith merge
+    >>> Map.toUnfoldableUnordered
+    >>> map (\(_ /\ v) -> v)
 
-  partitionWith :: forall a x y. (a -> Either x y) -> Array a -> Array x /\ Array y
-  partitionWith f = foldMap $ f >>> case _ of Left a -> [a] /\ []
-                                              Right a -> [] /\ [a]
 
-
-
-toProp1 :: forall m s. Style1 PuncturedFold -> Prop m s
-toProp1 style =
+toProp' :: forall m s. Array (Style1 Weave) -> Prop m s
+toProp' styles =
   let
-    styleHash = hash style
+    styleHash = hash styles
     className = "mation-style-" <> styleHash
-    getCss _ = toCss ("." <> className) (mapStyle1 PF.toEndoCom style)
+    getCss _ =
+      styles
+      # collate
+      # map (hoistStyle1 (Endo <<< W.runWeave))
+      # map (toCss ("." <> className))
+      # intercalate "\n"
+
   in mkFixup \node -> do
     restoreCss <- putCss { getCss, hash: styleHash }
     restoreClass <- putClass node className
     pure (restoreCss <> restoreClass)
 
+    -- TODO: Pretty sure the `fixup` API has a leak problem right now. If a node
+    --       is removed from the DOM due to its parent being removed (ie, the node
+    --       itself does not get diffed) then the fixup lifecycle will not
+    --       complete. WRT styles this manifests as 'zombie' <style> tags within
+    --       the stylsheet hangout; ie, <style>s which are no longer needed but
+    --       are still present.
+
 foreign import putCss :: { getCss :: Unit -> String, hash :: String } -> Effect { restore :: Effect Unit }
 foreign import putClass :: DomNode -> String -> Effect { restore :: Effect Unit }
 
-toProp :: forall m s. Array Style -> Prop m s
-toProp = FM.float >>> SConcat >>> toProp1
 
-runEndo :: forall c a. Endo c a -> c a a
-runEndo (Endo f) = f
+-- | Represents a bunch of styles
+newtype Style = Style (Array (Style1 Weave))
 
-
-
--- | Represents some style to place on an `Html` node
-newtype Style = Style (Array (Style1 PuncturedFold))
-
-instance FreeMonoid Style (Style1 PuncturedFold)
+derive newtype instance Eq Style
+derive newtype instance Hashable Style
 
 derive instance Newtype Style _
+
 derive newtype instance Semigroup Style
 derive newtype instance Monoid Style
+instance FreeMonoid Style (Style1 Weave)
+
+toProp :: forall m s. Array Style -> Prop m s
+toProp = FM.float >>> toProp'
 
 mkPair :: String -> String -> Style
-mkPair k v = FM.singleton $ SInline (k <> ": " <> v)
-
-
-mkScoped :: StyleScope PuncturedFold -> Style -> Style
-mkScoped scope (Style styles) = FM.singleton $ SScoped scope (SConcat styles)
+mkPair k v = FM.singleton $ Style1
+  { css: k <> ": " <> v
+  , scopes:
+      { selector: W.noop
+      , block: W.noop
+      }
+  }
 

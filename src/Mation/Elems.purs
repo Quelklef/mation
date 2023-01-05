@@ -39,6 +39,7 @@ mkTag = Prop.mkElement
 enroot :: forall m large small. Setter' large small -> Html m small -> Html m large
 enroot = Html.enroot
 
+
 -- | Marks a node for "pruning", meaning that its `Html` will only be re-computed
 -- | when its model actually changes.
 -- |
@@ -59,4 +60,4 @@ prune :: forall m p s. UnsureEq p => String -> (p -> Html m s) -> p -> Html m s
 prune key render param = Html.mkPrune key render param
 
 -- FIXME: reverse args for prune?
--- FIXME: add 'unPrune' and 'pruneKeyed'
+-- FIXME: add 'unPrune' (undoes `prune`) and 'pruneKeyed' (adds prune keys but does not prune)

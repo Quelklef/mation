@@ -41,25 +41,27 @@ outputs = { self, ... }@inputs: let
       root=$PWD
 
       function mation.devt {(
+        python3 -m http.server &
         { find . -name '*.purs';
           find src -name '*.js';
-        } | entr -crs "
+        } | entr -cs "
               cd '$root' &&
               node ./src/Mation/Gen/generate.js &&
               purs-nix bundle &&
-              echo 'You may need to reload your browser' &&
-              python3 -m http.server
+              echo 'You may need to reload your browser'
           "
       )}
 
       function mation.devt.docs {(
+        mkdir -p generated-docs/html &&
+        python3 -m http.server --directory generated-docs/html &
         { find . -name '*.purs';
           find src -name '*.js';
-        } | entr -crs "
+        } | entr -cs "
               cd '$root' &&
               node ./src/Mation/Gen/generate.js &&
               purs-nix docs &&
-              python3 -m http.server --directory generated-docs/html
+              echo 'Serving on localhost:8000'
           "
       )}
     '';

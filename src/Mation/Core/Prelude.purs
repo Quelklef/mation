@@ -15,6 +15,7 @@ import Prim.Coerce (class Coercible) as X
 import Safe.Coerce (coerce) as X
 import Data.Generic.Rep (class Generic) as X
 import Data.Show.Generic (genericShow) as X
+import Data.Ord.Generic (genericCompare) as X
 import Data.Foldable (class Foldable, fold, foldMap, intercalate, elem, minimum, maximum) as X
 import Data.Tuple.Nested ((/\), type (/\)) as X
 import Data.Either (Either (..)) as X
@@ -31,3 +32,11 @@ import Data.Lens.Lens.Tuple (_1, _2) as X
 import Data.Newtype (class Newtype) as X
 
 type Endo' a = X.Endo (->) a
+
+foreign import dTrace :: forall a r. a -> r -> r
+
+dTraceThis :: forall a. a -> a
+dTraceThis a = dTrace a a
+
+dTraceShowThis :: forall a. X.Show a => a -> a
+dTraceShowThis a = dTrace (X.show a) a

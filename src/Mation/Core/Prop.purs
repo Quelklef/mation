@@ -76,7 +76,6 @@ hoist f (Prop arr) = Prop $ arr # map (map (Mation.hoist f))
 --        between Functor and FreeMonoid and enroot and hoist in both Prop and Html?
 
 
-
 -- | Create an element
 mkElement :: forall m s. String -> Array (Prop m s) -> Array (Html m s) -> Html m s
 mkElement tag props children =

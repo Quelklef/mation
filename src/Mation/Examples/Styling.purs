@@ -6,7 +6,7 @@ import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
 import Mation.Selectors as Sel
-import Mation.Selectors ((>>))
+import Mation.Selectors ((#>>), (#<>))
 
 type Model = Unit
 
@@ -20,33 +20,41 @@ render _model =
   ]
   [ mkExample
       "I style on hover"
-      (S.on Sel.hover)
+      Sel.hover
 
   , mkExample
       "I style when the page is ≤800px tall"
-      (S.on $ Sel.media "(max-height: 800px)")
+      (Sel.media "(max-height: 800px)")
 
   , mkExample
       "I style my children"
-      (S.on Sel.children)
+      Sel.children
 
   , mkExample
       "I style my children when they are hovered"
-      (S.on $ Sel.children >> Sel.hover)
+      (Sel.children #>> Sel.hover)
 
   , mkExample
       "I style my children when I am hovered"
-      (S.on $ Sel.hover >> Sel.children)
+      (Sel.hover #>> Sel.children)
 
   , mkExample
       "I style my children when the page is ≤800px tall"
-      (S.on $ Sel.children >> Sel.media "(max-height: 800px)")
+      (Sel.children #>> Sel.media "(max-height: 800px)")
+
+  , E.hr [ P.style "width: 100%" ]
+
+  , mkExample
+      "I style: my first child; my last child when I am not hovered; my middle child when it is hovered or when the page is ≤800px tall; myself when the page is ≤700px tall"
+      $ (Sel.children #>> (Sel.firstChild #<> (Sel.nthChild "2" #>> (Sel.hover #<> Sel.media "(max-height: 800px)"))))
+          #<> (Sel.not ":hover" #>> Sel.children #>> Sel.lastChild)
+          #<> (Sel.this #>> Sel.media "(max-height: 700px)")
       
   ]
 
   where
 
-  mkExample text condition =
+  mkExample text selector =
     E.div
     []
     [ E.span
@@ -55,7 +63,7 @@ render _model =
         , S.cursor "pointer"
         , S.padding "1em"
         , S.border "1px solid black"
-        , condition
+        , S.on selector
             [ S.background "rgb(230, 230, 230)"
             , S.textDecoration "underline"
             ]

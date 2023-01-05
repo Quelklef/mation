@@ -143,9 +143,8 @@ function * pseudoClasses() {
   yield '';
   yield 'import Mation.Core.Prelude';
   yield '';
-  yield 'import Mation.Core.Style (mkSelectorScope)';
   yield 'import Mation.Styles (Scope (..))';
-  yield 'import Mation.Core.Util.PuncturedFold as PF';
+  yield 'import Mation.Core.Util.Weave as W';
   yield '';
   yield '';
 
@@ -159,7 +158,7 @@ function * pseudoClasses() {
 
     yield `-- | [CSS :${pcls.name} pseudo-class](https://developer.mozilla.org/en-US/docs/Web/CSS/:${pcls.name}). This is generated code.`;
     yield `${ident} :: ${argTypes}Scope`
-    yield `${ident} ${args}= Scope $ mkSelectorScope $ PF.PF [ PF.Hole, PF.Elem $ ":${pcls.name}${argsCall}" ]`;
+    yield `${ident} ${args}= ScopeAlts [ { selector: W.Weave [ W.Hole, W.Elem $ ":${pcls.name}${argsCall}" ], block: W.noop } ]`;
     yield '';
   }
 }
