@@ -3,7 +3,11 @@ module Mation.Core.Util.Assoc where
 import Mation.Core.Prelude
 
 
--- | Pairs as two-element arrays
+-- | A representation of 2-tuples
+-- |
+-- | For convenience interfacing with foreign code, pairs are represented
+-- | as two-element arrays. That is, the value `Pair x y` is equivalent to
+-- | the Javascript value `[x, y]`.
 foreign import data Pair :: Type -> Type -> Type
 
 foreign import mkPair :: forall a b. a -> b -> Pair a b

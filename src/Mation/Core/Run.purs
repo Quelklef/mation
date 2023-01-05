@@ -197,10 +197,10 @@ runApp args = do
 
 
 
--- | Mount an application as a child of `<body>`
+-- | Mount an application on `<body>`. The application will replace `<body>` each render
 foreign import onBody :: Effect DomNode
 
--- | Mount an application on `<body>`. The application will replace `<body>` each render
+-- | Mount an application as a child of `<body>`
 foreign import underBody:: Effect DomNode
 
 -- | Mount an application on `<html>`. The application will replace `<html>` each render

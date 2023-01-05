@@ -51,7 +51,7 @@ on (ScopeAlts alts) styles = S.Style (S.addScope <$> alts <*> FM.float styles)
 -- |
 -- | Composing with a block-level scope adds a static condition to the selector. For instance,
 -- | the selector `children #>> firstChild #>> media "print"` is the same as `children #>> firstChild`
--- | if the `@media print` rule holds, and is the empty selector otherwise.
+-- | when the `@media print` rule holds, and is the empty selector otherwise.
 -- |
 -- | Also see notes [1] and [2].
 -- |
@@ -142,7 +142,8 @@ composeScopesLTR = flip composeScopesRTL
 -- | selector `children #>> lastChild` targets the node's last child, the
 -- | selector `(children #>> firstChild) #<> (childen #>> lastChild)` selects both.
 -- |
--- | This could also be written as `children #>> (firstChild #<> lastChild)`
+-- | This selector could also be written as `children #>> (firstChild #<> lastChild)`; more
+-- | generally we have that `#>>` distributes over `#<>`.
 infixl 1 disjunct as #<>
 
 -- | See `#<>`

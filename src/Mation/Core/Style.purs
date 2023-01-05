@@ -20,9 +20,10 @@ import Mation.Core.Util.Hashable (class Hashable, hash)
 -- | Styles are contextualized by a so-called "scope" which designates
 -- | when the style applies.
 -- |
--- | This type has one parameter, called `endo`. We expect that there
--- | exists some interpretation function `f :: endo ~> Endo (->)` which
--- | is a monoid-embedding for every type.
+-- | This type has one parameter, called `endo`. We expect that `endo`
+-- | monoid-embeds into `Endo (->)` polymorphically; that is, there exists
+-- | some function `f :: endo ~> Endo (->)` which is a monoid-embedding
+-- | for every choice of type parameter instantiation.
 newtype Style1 :: (Type -> Type) -> Type
 newtype Style1 endo = Style1
     -- | Inline CSS string, e.g. `"line-height: 100em"`
@@ -31,11 +32,11 @@ newtype Style1 endo = Style1
   , scopes :: Scopes endo
   }
 
--- | Note that this is not "aware" of the semantics of CSS strings and will
+-- | Note that this `Eq` instance is not "aware of what CSS is and will"
 -- | consider some 'equivalent' values unequal. For instance, if two `Style1`
 -- | values have equal scopes but one's `css` is `color: red; font-weight: bold`
 -- | and the other's is `color: red; font-weight: bold;` (note the trailing
--- | comma), the two will be considered inequal.
+-- | semicolon), then the two will be considered inequal.
 instance Eq (endo String) => Eq (Style1 endo) where
   eq = eq `on` \(Style1 s) -> s.css /\ s.scopes.selector /\ s.scopes.block
 
@@ -65,7 +66,8 @@ addScope sco (Style1 { css, scopes }) = Style1 { css, scopes: sco <> scopes }
 
 -- | Change the underling `endo`
 -- |
--- | Ehhh probably the given function ought to be a monoid morphism
+-- | The given function ought to be a monoid morphism in order to preserve
+-- | the `Style1` invariant wrt `endo`
 hoistStyle1 :: forall endo endo'. (endo String -> endo' String) -> Style1 endo -> Style1 endo'
 hoistStyle1 f (Style1 { css, scopes: { selector, block } }) = Style1
   { css, scopes: { selector: f selector, block: f block } }

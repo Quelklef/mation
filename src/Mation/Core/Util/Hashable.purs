@@ -5,8 +5,12 @@ import Mation.Core.Prelude
 
 -- | Datatypes which can be hashed
 -- |
--- | The hashing function is not intended to be a secure hash for
--- | cryptographic purposes but a fast one-way function
+-- | The hashing function is intended to be a fast one-way function
+-- | but is not necessarily cryptographically secure.
+-- |
+-- | If a type `T` implements both `Eq` and `Hashable`, then it should
+-- | abide by the following law. If values `x, y :: T` are equal according
+-- | to `Eq`, then they must have the same `hash`.
 class Hashable a where
   hash :: a -> String
 

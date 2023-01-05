@@ -19,7 +19,7 @@ import Mation.Core.Style as Style
 style' :: forall m s. Array Style -> Prop m s
 style' = Style.toProp
 
--- | Attach an listener to the `input` event.
+-- | Attach a listener to the `input` event.
 -- |
 -- | This differs from `onInput` in type: `onInput` provides a `DomEvent`, but this function provides the value `String`
 onInput' :: forall m s. (String -> Mation m s) -> Prop m s

@@ -18,6 +18,6 @@ mkExists = unsafeCoerce
 runExists :: forall f r. (forall a. f a -> r) -> Exists f -> r
 runExists = unsafeCoerce
 
-mapExists :: forall f a f' a'. (f a -> f' a') -> Exists f -> Exists f'
-mapExists f e = unsafeCoerce (f (unsafeCoerce e))
+mapExists :: forall f f' a'. (forall a. f a -> f' a') -> Exists f -> Exists f'
+mapExists f = runExists (f >>> mkExists)
 

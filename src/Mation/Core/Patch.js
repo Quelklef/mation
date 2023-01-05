@@ -1,84 +1,4 @@
 
-function iife(f) {
-  return f();
-}
-
-function setNode(target, replacement) {
-  if (replacement === target)
-    return;  // Seems replacement causes a reflow, which is slow; skip if possible
-
-  if (target instanceof Element) {
-    target.replaceWith(replacement);
-  } else if (target.parentNode) {
-    target.parentNode.replaceChild(replacement, target);
-  } else {
-    throw Error("Your DOM consists of a single node which isn't an Element?");
-  }
-}
-
-// An SMap is a mapping whose keys are string arrays
-// Values in an SMap must never be nully
-class SMap {
-  constructor(trie) {
-    this.trie = trie || {};
-  }
-
-  static rose = Symbol();
-
-  get(keys) {
-    let root = this.trie;
-    for (const key of keys)
-      root = root?.[key];
-    return root?.[SMap.rose];
-  }
-
-  set(keys, val) {
-    let root = this.trie;
-    for (const key of keys) {
-      if (!(key in root)) root[key] = {};
-      root = root[key];
-    }
-    root[SMap.rose] = val;
-  }
-
-  *entries() {
-    yield* go([], this.trie);
-    function* go(ks, root) {
-      if (SMap.rose in root)
-        yield [ks, root[SMap.rose]];
-      for (const [k, v] of Object.entries(root))
-        if (k !== SMap.rose)
-          yield* go([...ks, k], v);
-    }
-  }
-
-  *keys() {
-    for (const [ks, v] of this.entries())
-      yield ks;
-  }
-
-  // Merge another SMap into this one
-  merge(other) {
-    // Could be more efficient
-    for (const [ks, v] of other.entries()) {
-      this.set(ks, v);
-    }
-  }
-
-  // Return an SMap consisting of all (keys, value) pairs of
-  // this SMap whose key sequence has the given key sequence
-  // as a prefix
-  filterPrefixedBy(keys) {
-    let root = this.trie;
-    for (const key of keys)
-      root = root?.[key];
-    for (const key of Array.from(keys).reverse())
-      root = { [key]: root };
-    return new SMap(root);
-  }
-}
-
-
 export const patch_f =
 ({ caseMaybe
  , caseUnsure
@@ -173,6 +93,7 @@ export const patch_f =
     if (info) {
       setNode(root, info.node);
       newPruneMap.merge(oldPruneMap.filterPrefixedBy(vPrune.keyPath));
+        // ^ Add the prune children, which won't otherwise be seen in this diff
       return info.node;
     } else {
       const newVNode = vPrune.render(vPrune.params);
@@ -183,7 +104,7 @@ export const patch_f =
   }
 
   // Lookup a vPrune node in the prune map
-  // Returns either null or the prune map data object
+  // Returns null on absence
   function lookupPrune(pruneMap, vPrune) {
     const info = pruneMap.get(vPrune.keyPath);
     if (!info) return null;
@@ -359,3 +280,83 @@ export const patch_f =
   }
 
 };
+
+
+function iife(f) {
+  return f();
+}
+
+function setNode(target, replacement) {
+  if (replacement === target)
+    return;  // Seems replacement causes a reflow, which is slow; skip if possible
+
+  if (target instanceof Element) {
+    target.replaceWith(replacement);
+  } else if (target.parentNode) {
+    target.parentNode.replaceChild(replacement, target);
+  } else {
+    throw Error("Your DOM consists of a single node which isn't an Element?");
+  }
+}
+
+// An SMap is a mapping whose keys are string arrays
+// Values in an SMap must never be nully
+class SMap {
+  constructor(trie) {
+    this.trie = trie || {};
+  }
+
+  static rose = Symbol();
+
+  get(keys) {
+    let root = this.trie;
+    for (const key of keys)
+      root = root?.[key];
+    return root?.[SMap.rose];
+  }
+
+  set(keys, val) {
+    let root = this.trie;
+    for (const key of keys) {
+      if (!(key in root)) root[key] = {};
+      root = root[key];
+    }
+    root[SMap.rose] = val;
+  }
+
+  *entries() {
+    yield* go([], this.trie);
+    function* go(ks, root) {
+      if (SMap.rose in root)
+        yield [ks, root[SMap.rose]];
+      for (const [k, v] of Object.entries(root))
+        if (k !== SMap.rose)
+          yield* go([...ks, k], v);
+    }
+  }
+
+  *keys() {
+    for (const [ks, v] of this.entries())
+      yield ks;
+  }
+
+  // Merge another SMap into this one
+  merge(other) {
+    // Could be more efficient
+    for (const [ks, v] of other.entries()) {
+      this.set(ks, v);
+    }
+  }
+
+  // Return an SMap consisting of all (keys, value) pairs of
+  // this SMap whose key sequence has the given key sequence
+  // as a prefix
+  filterPrefixedBy(keys) {
+    let root = this.trie;
+    for (const key of keys)
+      root = root?.[key];
+    for (const key of Array.from(keys).reverse())
+      root = { [key]: root };
+    return new SMap(root);
+  }
+}

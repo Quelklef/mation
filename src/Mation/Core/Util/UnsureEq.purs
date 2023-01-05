@@ -68,7 +68,7 @@ surely = case _ of
 -- | and will recompute the cache value if the result is anything
 -- | other than `Surely true`. The benefit of choosing to use `UnsureEq`
 -- | for this instead of `Eq` is that we are able to perform a "best
--- | effort" caching on types which *sometimes* has decidable equality,
+-- | effort" caching on types which can *sometimes* compute equality,
 -- | such as
 -- |
 -- | ```
@@ -143,7 +143,7 @@ else instance (IsSymbol lbl, UnsureEq head, UnsureEqFields tail rows) => UnsureE
 
 
 -- The strategy for implementing `UnsureEq` on `Generic` types is essentially copied from [2]
--- [1]: <https://github.com/purescript/purescript-prelude/blob/f4cad0ae8106185c9ab407f43cf9abf05c256af4/src/Data/Eq/Generic.purs>
+-- [2]: <https://github.com/purescript/purescript-prelude/blob/f4cad0ae8106185c9ab407f43cf9abf05c256af4/src/Data/Eq/Generic.purs>
 genericUnsureEq :: forall a rep. Generic a rep => UnsureEqGeRep rep => (a -> a -> Unsure Boolean)
 genericUnsureEq a a' = gUnsureEq (G.from a) (G.from a')
 
