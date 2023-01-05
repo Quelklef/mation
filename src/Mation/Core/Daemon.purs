@@ -2,8 +2,8 @@ module Mation.Core.Daemon where
 
 import Mation.Core.Prelude
 import Mation.Core.Mation (Mation, runMation)
-import Mation.WRef (WRef)
-import Mation.WRef as WRef
+import Mation.Core.Util.WRef (WRef)
+import Mation.Core.Util.WRef as WRef
 
 
 -- | A `Daemon s` is a possibly-long-lived effectful process

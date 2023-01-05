@@ -1,13 +1,13 @@
 
 -- | Watchable references
-module Mation.WRef where
+module Mation.Core.Util.WRef where
 
 import Mation.Core.Prelude
 
 
 -- | A `WRef a` is a reference to a mutable value of type `s`
 -- |
--- | The `Mation.WRef` API is very similar to the `Effect.Ref` API.
+-- | The `WRef` API is very similar to the `Effect.Ref` API.
 -- | However, `WRef`s are more powerful, providing affordances
 -- | like `onChange` and `mkView` that `Ref` does not.
 -- |
@@ -110,7 +110,7 @@ onChange' f ref = do
 
 -- | Create a `WRef` that acts as a view into a part of another `WRef`.
 -- | The two `WRef`s will be two-way synchronized: if one changes, the
--- | other will update accordingly
+-- | other will update accordingly.
 mkView :: forall a b. Lens' a b -> WRef a -> WRef b
 mkView len = mkView_f { getter, setter }
   where

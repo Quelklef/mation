@@ -4,8 +4,6 @@ import Mation.Core.Prelude
 
 import Effect.Exception (throw)
 
-import Mation.WRef (WRef)
-import Mation.WRef as WRef
 import Mation.Core.Mation (Mation)
 import Mation.Core.Mation as Mation
 import Mation.Core.Daemon (Daemon)
@@ -13,6 +11,8 @@ import Mation.Core.Daemon as Daemon
 import Mation.Core.Html (Html (..), VNode)
 import Mation.Core.Dom (DomNode)
 import Mation.Core.Patch as Patch
+import Mation.Core.Util.WRef (WRef)
+import Mation.Core.Util.WRef as WRef
 
 -- | Simplified version of `runApp`
 -- |

@@ -6,7 +6,7 @@ import Mation as M
 import Mation.Elems as E
 import Mation.Styles as S
 import Mation.Props as P
-import Mation.WRef as WRef
+import Mation.Core.Util.WRef as WRef
 import Mation.Core.Daemon as D
 
 import Mation.Examples.Welcome as Welcome
