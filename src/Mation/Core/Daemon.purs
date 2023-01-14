@@ -33,4 +33,4 @@ hoist nt dae = dae >>> nt
 -- |
 -- | Useful to run `Mation` values within daemons
 execMation :: forall m s. MonadEffect m => WRef s -> Mation m s -> m Unit
-execMation ref mation = runMation mation (\f -> liftEffect $ WRef.modify_ f ref)
+execMation ref mation = runMation mation (\f -> liftEffect $ WRef.modify f ref)

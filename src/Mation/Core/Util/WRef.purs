@@ -53,21 +53,17 @@ foreign import get :: forall a. WRef a -> Effect a
 -- | Put a new value into a `WRef`
 foreign import set :: forall a. a -> WRef a -> Effect Unit
 
--- | Modify the value in a `WRef`. Returns the new value
-modify :: forall a. (a -> a) -> WRef a -> Effect a
-modify f = modify' (\x -> let y = f x in y /\ y)
-
 -- | Modify the value in a `WRef`
-modify_ :: forall a. (a -> a) -> WRef a -> Effect Unit
-modify_ f = void <<< modify f
+modify :: forall a. (a -> a) -> WRef a -> Effect Unit
+modify f = void <<< modify' f
 
--- | Modify the value in a `WRef`, returning some other value
-modify' :: forall a r. (a -> a /\ r) -> WRef a -> Effect r
+-- | Modify the value in a `WRef`. Returns the new value
+modify' :: forall a. (a -> a) -> WRef a -> Effect a
 modify' f ref = do
   val <- get ref
-  let val' /\ res = f val
+  let val' = f val
   set val' ref
-  pure res
+  pure val'
 
 
 -- | Await a value change
