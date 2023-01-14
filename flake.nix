@@ -41,7 +41,7 @@ outputs = { self, ... }@inputs: let
       root=$PWD
 
       function mation.devt {(
-        python3 -m http.server &
+        python3 -m http.server & trap "kill $!" EXIT
         { find . -name '*.purs';
           find src -name '*.js';
         } | entr -cs "
@@ -54,7 +54,7 @@ outputs = { self, ... }@inputs: let
 
       function mation.devt.docs {(
         mkdir -p generated-docs/html &&
-        python3 -m http.server --directory generated-docs/html &
+        python3 -m http.server --directory generated-docs/html & trap "kill $!" EXIT
         { find . -name '*.purs';
           find src -name '*.js';
         } | entr -cs "
