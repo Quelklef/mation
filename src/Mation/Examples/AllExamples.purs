@@ -200,11 +200,6 @@ initialize = do
     }
 
 
-kickoff :: M.Mation Effect Model
-kickoff =
-  M.mkNoop
-
-
 main :: Effect Unit
 main = do
   initial <- initialize
@@ -214,6 +209,7 @@ main = do
     , root: M.onBody
     , daemon: fold
         [ D.enroot (prop (Proxy :: Proxy "clock")) Clock.daemon
+        , D.enroot (prop (Proxy :: Proxy "testing")) TestingZone.daemon
         , WRef.onChange \model -> syncPageToUrl model.page
         ]
     , toEffect: identity

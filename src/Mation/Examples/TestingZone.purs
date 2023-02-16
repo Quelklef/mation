@@ -8,6 +8,10 @@ import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
+import Mation.Core.Util.WRef as WRef
+import Mation.Core.Daemon (Daemon)
+import Mation.Core.Daemon as D
+import Mation.Core.Dom (DomNode)
 import Mation.Core.Util.UnsureEq (class UnsureEq, Unsure (..), viaPrim)
 
 foreign import repeatedly :: Effect Unit -> Effect { cancel :: Effect Unit }
@@ -134,6 +138,25 @@ renderPhoneNumber pn =
 foreign import parseInt :: String -> Int
 
 
+type RawNodes = Maybe (DomNode /\ DomNode)
+
+daemonRawNodes :: Daemon Effect RawNodes
+daemonRawNodes wref = do
+  rn1 <- mkTextRawNode
+  rn2 <- mkIframeRawNode
+  WRef.set (Just $ rn1 /\ rn2) wref
+
+foreign import mkTextRawNode :: Effect DomNode
+foreign import mkIframeRawNode :: Effect DomNode
+
+-- FIXME: an embedded <iframe> will reload if removed from
+--        and then re-added to the DOM by Mation re-renders
+
+renderRawNodes :: forall a. RawNodes -> E.Html' a
+renderRawNodes = case _ of
+  Nothing -> E.text "..."
+  Just (rn1 /\ rn2) -> E.rawNode rn1 <> E.rawNode rn2
+
 
 type Model =
   { counter1 :: Counter
@@ -141,6 +164,7 @@ type Model =
   , textbox :: String
   , checkbox :: Boolean
   , phoneNumber :: PhoneNumber
+  , rawNodes :: RawNodes
   }
 
 initial :: Model
@@ -150,7 +174,12 @@ initial =
   , textbox: "type in me"
   , checkbox: false
   , phoneNumber: 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0
+  , rawNodes: Nothing
   }
+
+daemon :: Daemon Effect Model
+daemon = do
+  D.enroot (prop (Proxy :: Proxy "rawNodes")) daemonRawNodes
 
 render :: Model -> E.Html' Model
 render model =
@@ -176,6 +205,9 @@ render model =
   , E.hr []
   , E.enroot _phoneNumber $ renderPhoneNumber model.phoneNumber
   , E.enroot _phoneNumber $ renderPhoneNumber model.phoneNumber
+  , E.hr []
+  , renderRawNodes model.rawNodes
+  , E.br [] `power` 25
   ]
 
   where

@@ -95,6 +95,12 @@ instance (UnsureEq a, UnsureEq b) => UnsureEq (a /\ b) where
               Surely false -> Surely false
               other -> other `min` unsureEq b y
 
+instance UnsureEq a => UnsureEq (Maybe a) where
+  unsureEq (Just a) (Just b) = unsureEq a b
+  unsureEq (Just _) Nothing = Surely false
+  unsureEq Nothing (Just _) = Surely false
+  unsureEq Nothing Nothing = Surely true
+
 instance UnsureEq a => UnsureEq (Array a) where
   unsureEq a b =
     case primEq a b, Array.length a == Array.length b of
