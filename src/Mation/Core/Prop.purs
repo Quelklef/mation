@@ -27,6 +27,11 @@ data Prop1 msg
     -- | power to circumvent framework safeties.
   | PFixup (DomNode -> Effect { restore :: Effect Unit })
       -- ^ FIXME: 'Effect' or 'm' ?
+      --
+      -- ^ FIXME: this type for PFixup does not support applying state updates
+      --   in a fixup prop, which one may want to do. Eg may want to use a fixup
+      --   prop to detect when something is no longer hovered by testing if other
+      --   elements are hovered (since mouseout is not really reliable)
 
     -- | Has no effect
   | PNoop
