@@ -39,6 +39,21 @@ import Effect.Ref as Ref
 -- | read the model state. All I have is an intuition, and I'm going with it!)
 newtype Mation m s = Mation (Step s -> m Unit)
 
+{-
+
+FIXME. For what it's worth, Mation and Daemon are quite similar:
+
+  Daemon m a ≈ (ReadWriteRef a -> m Unit)
+  Mation m a ≈ (   UpdateRef a -> m Unit)
+
+for sufficient types ReadWriteRef, UpdateRef.
+
+Might be worthwhile -- or at the very least fun -- to create a module
+with the different Ref kinds and then turn Daemon and Mation into
+simple type aliases.
+
+-}
+
 
 -- | Applies a single state update
 -- |

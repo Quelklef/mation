@@ -53,6 +53,13 @@ function * tags() {
   yield '';
   yield '';
 
+  // FIXME. Could be nice to expose for teach tag T a function `T` and
+  //   a function `T'` which takes an extra string as parameter and exposes
+  //   as a dom attribute such as data-mation-name. This would allow for the
+  //   user to label the rendered DOM nodes which would help both with:
+  //   - readability, since names would act as mini-comments in the code; and
+  //   - debugging, because the DOM tree would have semantics labels
+
   const { tags } = require('./data/tags.js');
   for (const tag of tags) {
     const ident = toIdent(tag.name);
