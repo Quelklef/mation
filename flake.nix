@@ -25,6 +25,7 @@ outputs = { self, ... }@inputs: let
     nixed.command {
       srcs = [ "$PWD/src" ];
       bundle = purs-nix-bundle-args;
+      output = "out/purs-cache";
     };
 
   # For both development and the live demo
@@ -41,26 +42,28 @@ outputs = { self, ... }@inputs: let
       root=$PWD
 
       function mation.devt {(
-        python3 -m http.server & trap "kill $!" EXIT
+        cd "$root" &&
+        mkdir -p out/app &&
+        python3 -m http.server --directory out/app & trap "kill $!" EXIT
         { find . -name '*.purs';
           find src -name '*.js';
         } | entr -cs "
-              cd '$root' &&
               node ./src/Mation/Gen/generate.js &&
-              purs-nix bundle &&
+              purs-nix bundle && mv main.js out/app/main.js &&
+              cp index.html out/app/index.html &&
               echo 'You may need to reload your browser'
           "
       )}
 
       function mation.devt.docs {(
-        mkdir -p generated-docs/html &&
-        python3 -m http.server --directory generated-docs/html & trap "kill $!" EXIT
+        cd "$root" &&
+        mkdir -p out/docs &&
+        python3 -m http.server --directory out/docs & trap "kill $!" EXIT
         { find . -name '*.purs';
           find src -name '*.js';
         } | entr -cs "
-              cd '$root' &&
               node ./src/Mation/Gen/generate.js &&
-              purs-nix docs &&
+              purs-nix docs -o out/docs &&
               echo 'Serving on localhost:8000'
           "
       )}

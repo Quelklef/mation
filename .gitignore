@@ -1,4 +1,5 @@
 **/output/
+out/
 main.js
 generated-docs/
 result
