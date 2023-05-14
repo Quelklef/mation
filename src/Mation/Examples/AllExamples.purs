@@ -105,39 +105,52 @@ type Model =
 render :: Model -> E.Html' Model
 render model =
   E.body
-  [ P.style "margin: 0"
+  [ P.style'
+    [ S.margin "0"
+    ]
   ]
   [ navBar
   , E.div
-    [ P.style' [ S.padding "1em" ] ]
-    [ case model.page of
-        Welcome      ->
-          E.enroot (prop (Proxy :: Proxy "welcome")) $
-            E.prune "page-welcome" Welcome.render model.welcome
-        Counter      ->
-          E.enroot (prop (Proxy :: Proxy "counter")) $
-            E.prune "page-counter" Counter.render model.counter
-        Components   ->
-          E.enroot (prop (Proxy :: Proxy "components")) $
-            E.prune "page-components" Components.render model.components
-        AsyncApiCall ->
-          E.enroot (prop (Proxy :: Proxy "asyncApiCall")) $
-            E.prune "page-asyncApiCall" AsyncApiCall.render model.asyncApiCall
-        Styling      ->
-          E.enroot (prop (Proxy :: Proxy "styling")) $
-            E.prune "page-styling" Styling.render model.styling
-        Clock        ->
-          E.enroot (prop (Proxy :: Proxy "clock")) $
-            E.prune "page-clock" Clock.render model.clock
-        TestingZone  ->
-          E.enroot (prop (Proxy :: Proxy "testing")) $
-            E.prune "page-testing" TestingZone.render model.testing
-        PerfTest     ->
-          E.enroot (prop (Proxy :: Proxy "perfTest")) $
-            E.prune "page-perfTest" PerfTest.render model.perfTest
-        Pruning      ->
-          E.enroot (prop (Proxy :: Proxy "pruning")) $
-            E.prune "page-pruning" Pruning.render model.pruning
+    [ P.style'
+      [ S.display "flex"
+      , S.justifyContent "center"
+      ]
+    ]
+    [ E.div
+      [ P.style'
+        [ S.width pageWidth
+        , S.padding "2em 0"
+        ]
+      ]
+      [ case model.page of
+          Welcome      ->
+            E.enroot (prop (Proxy :: Proxy "welcome")) $
+              E.prune "page-welcome" Welcome.render model.welcome
+          Counter      ->
+            E.enroot (prop (Proxy :: Proxy "counter")) $
+              E.prune "page-counter" Counter.render model.counter
+          Components   ->
+            E.enroot (prop (Proxy :: Proxy "components")) $
+              E.prune "page-components" Components.render model.components
+          AsyncApiCall ->
+            E.enroot (prop (Proxy :: Proxy "asyncApiCall")) $
+              E.prune "page-asyncApiCall" AsyncApiCall.render model.asyncApiCall
+          Styling      ->
+            E.enroot (prop (Proxy :: Proxy "styling")) $
+              E.prune "page-styling" Styling.render model.styling
+          Clock        ->
+            E.enroot (prop (Proxy :: Proxy "clock")) $
+              E.prune "page-clock" Clock.render model.clock
+          TestingZone  ->
+            E.enroot (prop (Proxy :: Proxy "testing")) $
+              E.prune "page-testing" TestingZone.render model.testing
+          PerfTest     ->
+            E.enroot (prop (Proxy :: Proxy "perfTest")) $
+              E.prune "page-perfTest" PerfTest.render model.perfTest
+          Pruning      ->
+            E.enroot (prop (Proxy :: Proxy "pruning")) $
+              E.prune "page-pruning" Pruning.render model.pruning
+      ]
     ]
   ]
 
@@ -146,34 +159,43 @@ render model =
   navBar =
     E.div
     [ P.style'
-        [ S.display "flex"
-        , S.gap "1.5em"
-        , S.alignItems "center"
-        , S.fontFamily "sans-serif"
-        , S.padding "0 2em"
-        , S.backgroundColor "rgb(50, 50, 50)"
-        , S.color "white"
-        ]
+      [ S.display "flex"
+      , S.justifyContent "center"
+      , S.backgroundColor "rgb(50, 50, 50)"
+      ]
     ]
-    [ E.text "Page:"
-    , intercalate (E.text " ") $ pages >>= \page ->
-        [ let isCurrent = page == model.page in
-          E.span
-          [ P.style'
-            [ S.cursor "pointer"
-            , S.textAlign "center"
-            , S.padding "1em 0"
-            , if isCurrent then S.textDecoration "underline" else mempty
+    [ E.div
+      [ P.style'
+          [ S.width pageWidth
+          , S.display "flex"
+          , S.gap "1.5em"
+          , S.alignItems "center"
+          , S.fontFamily "sans-serif"
+          , S.color "white"
+          ]
+      ]
+      [ E.text "Page:"
+      , intercalate (E.text " ") $ pages >>= \page ->
+          [ let isCurrent = page == model.page in
+            E.span
+            [ P.style'
+              [ S.cursor "pointer"
+              , S.textAlign "center"
+              , S.padding "1em 0"
+              , if isCurrent then S.textDecoration "underline" else mempty
+              ]
+            , P.onClick \_ -> M.mkPure (prop (Proxy :: Proxy "page") .~ page)
             ]
-          , P.onClick \_ -> M.mkPure (prop (Proxy :: Proxy "page") .~ page)
+            [ E.text (pretty page)
+            ]
+          , if page `elem` separateAfter
+            then E.span [ P.style "color: rgb(100, 100, 100)" ] [ E.text " | " ]
+            else mempty
           ]
-          [ E.text (pretty page)
-          ]
-        , if page `elem` separateAfter
-          then E.text " | "
-          else mempty
-        ]
+      ]
     ]
+
+  pageWidth = "1200px"
 
 
 initialize :: Effect Model
