@@ -1,6 +1,7 @@
 module Mation.Core.Util.FreeMonoid where
 
-import Mation.Core.Prelude
+import Prelude as Prelude
+import Mation.Core.Prelude hiding (map)
 
 import Data.Array as Array
 
@@ -88,5 +89,12 @@ float arr = arr >>= coerce
 singleton :: forall t t1. FreeMonoid t t1 => t1 -> t
 singleton = Array.singleton >>> coerce
 
+wrap :: forall t t1. FreeMonoid t t1 => Array t1 -> t
+wrap = coerce
+
 unwrap :: forall t t1. FreeMonoid t t1 => t -> Array t1
 unwrap = coerce
+
+map :: forall t t1. FreeMonoid t t1 => (t1 -> t1) -> (t -> t)
+map f = unwrap >>> Prelude.map f >>> wrap
+

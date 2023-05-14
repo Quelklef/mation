@@ -1,8 +1,11 @@
-module Mation.Core.Util.Weave where
+module Mation.Core.Util.Weave (module Mation.Core.Util.Weave, module X) where
+
+import Mation.Core.Util.IsEndo ((.>>), (.<<), (.<>)) as X
 
 import Mation.Core.Prelude hiding (compose)
 
 import Mation.Core.Util.Hashable (class Hashable, hash)
+import Mation.Core.Util.IsEndo (class IsEndo, concatEndo)
 
 
 -- | Given a type `A` instantiating `Monoid`, this gives a concrete
@@ -45,32 +48,40 @@ instance Hashable a => Hashable (Elem a) where
     Hole -> hash $ 1
     Elem x -> hash $ 2 /\ x
 
+instance Monoid a => IsEndo (Weave a) a where
 
--- | Interprets each `Hole` as the function parameter and
--- | interpret element juxtaposition as monoidal concatenation.
-runWeave :: forall a. Monoid a => Weave a -> (a -> a)
-runWeave (Weave elems) =
-  elems # foldMap case _ of
-    Hole -> identity
-    Elem a -> const a
+  -- | Interprets each `Hole` as the function parameter and
+  -- | interpret element juxtaposition as monoidal concatenation.
+  runEndo :: Weave a -> (a -> a)
+  runEndo (Weave elems) =
+    elems # foldMap case _ of
+      Hole -> identity
+      Elem a -> const a
 
--- | Monoid under `compose`/`noop`
-instance Semigroup (Weave a) where
-  append = compose
+  -- | Compose two `Weave`s left-to-right as functions
+  -- |
+  -- | Semantics: `runWeave (composeLTR f g) = runWeave f >>> runWeave g`
+  composeEndoLTR :: Weave a -> Weave a -> Weave a
+  composeEndoLTR (Weave xs) (Weave ys) = Weave $
+    ys >>= case _ of
+      Hole -> xs
+      Elem y -> [ Elem y ]
 
--- | Monoid under `compose`/`noop`
-instance Monoid (Weave a) where
-  mempty = noop
+  -- | Concatenate two `Weave`s
+  -- |
+  -- | Semantics: `runWeave (concat f g) = runWeave f <> runWeave g`
+  concatEndo :: Weave a -> Weave a -> Weave a
+  concatEndo (Weave xs) (Weave ys) = Weave (xs <> ys)
 
 
--- | Compose two `Weave`s left-to-right as functions
--- |
--- | Semantics: `runWeave (compose f g) = runWeave f <<< runWeave g`
-compose :: forall a. Weave a -> Weave a -> Weave a
-compose (Weave xs) (Weave ys) = Weave $
-  xs >>= case _ of
-    Hole -> ys
-    Elem x -> [ Elem x ]
+-- | Semigroup under pointwise concatenation
+instance Monoid a => Semigroup (Weave a) where
+  append = concatEndo
+
+-- | Monoid under pointwise concatenation
+instance Monoid a => Monoid (Weave a) where
+  mempty = empty
+
 
 -- | Identity function
 -- |
@@ -78,13 +89,15 @@ compose (Weave xs) (Weave ys) = Weave $
 noop :: forall a. Weave a
 noop = Weave [ Hole ]
 
--- | Concatenate two `Weave`s
--- |
--- | Semantics: `runWeave (concat f g) = runWeave f <> runWeave g`
-concat :: forall a. Weave a -> Weave a -> Weave a
-concat (Weave xs) (Weave ys) = Weave (xs <> ys)
-
 -- | Semantics: `runWeave empty = const mempty`
 empty :: forall a. Monoid a => Weave a
 empty = Weave [ Elem mempty ]
+
+-- | Represent a known value as a `Weave`
+this :: forall a. a -> Weave a
+this a = Weave [ Elem a ]
+
+-- | Represents a function parameter / `Weave` "hole"
+that :: forall a. Weave a
+that = Weave [ Hole ]
 

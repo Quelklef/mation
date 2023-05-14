@@ -1,9 +1,11 @@
 module Mation.Core.StyleScopeModifier where
 
 import Mation.Core.Prelude
-import Mation.Core.Style (Style (..), Style1 (..), Scopes)
+import Mation.Core.Style (Style, Style1 (..), Scopes, addScope, composeScopesLTR)
 import Mation.Core.Util.Weave (Weave)
 import Mation.Core.Util.FreeMonoid as FM
+import Mation.Core.Util.IsEndo (composeEndoRTL)
+
 
 -- | Represents a "style scope modifier", which is a piece of logic
 -- | changing to whom some styling applies. Modifiers are one of:
@@ -30,11 +32,7 @@ newtype ScopeModifier = SMAlts (Array (Scopes Weave))
 -- |
 -- | will apply the `color: red` style to hovered children
 on :: ScopeModifier -> Array Style -> Style
-on (SMAlts alts) styles = Style (addScope <$> alts <*> FM.float styles)
-  where
-
-  addScope :: forall endo. Monoid (endo String) => Scopes endo -> (Style1 endo -> Style1 endo)
-  addScope sco (Style1 { css, scopes }) = Style1 { css, scopes: sco <> scopes }
+on (SMAlts alts) styles = FM.wrap (addScope <$> alts <*> FM.float styles)
 
 
 -- | Compose `ScopeModifiers`s by "chaining" them.
@@ -118,16 +116,13 @@ infixl 1 composeScopeModifiersLTR as #>>
 -- | Same as `#>>` but with its arguments reversed
 infixl 1 composeScopeModifiersRTL as #<<
 
--- | See `#<<`
-composeScopeModifiersRTL :: ScopeModifier -> ScopeModifier -> ScopeModifier
-composeScopeModifiersRTL (SMAlts alts) (SMAlts alts') = SMAlts (compose1 <$> alts <*> alts')
-  where
-  compose1 :: Scopes Weave -> Scopes Weave -> Scopes Weave
-  compose1 s s' = s <> s'  -- Recall that `Weave` is a monoid under composition
-
 -- | See `#>>`
 composeScopeModifiersLTR :: ScopeModifier -> ScopeModifier -> ScopeModifier
-composeScopeModifiersLTR = flip composeScopeModifiersRTL
+composeScopeModifiersLTR (SMAlts alts) (SMAlts alts') = SMAlts (composeScopesLTR <$> alts <*> alts')
+
+-- | See `#<<`
+composeScopeModifiersRTL :: ScopeModifier -> ScopeModifier -> ScopeModifier
+composeScopeModifiersRTL = flip composeScopeModifiersLTR
 
 
 -- | Composes `ScopeModifier`s ala "also"

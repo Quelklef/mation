@@ -7,6 +7,8 @@ import Mation.Props as P
 import Mation.Styles as S
 import Mation.Selectors as Sel
 import Mation.Selectors ((#>>), (#<>))
+import Mation.Core.Util.Weave as W
+
 
 type Model = Unit
 
@@ -18,43 +20,46 @@ render _model =
   E.div
   [ P.style "display: flex; flex-direction: column; gap: 1em;"
   ]
-  [ mkExample
+  [ mkSelectorExample
       "I style on hover"
       Sel.hover
 
-  , mkExample
+  , mkSelectorExample
       "I style when the page is ≤800px tall"
       (Sel.media "(max-height: 800px)")
 
-  , mkExample
+  , mkSelectorExample
       "I style my children"
       Sel.children
 
-  , mkExample
+  , mkSelectorExample
       "I style my children when they are hovered"
       (Sel.children #>> Sel.hover)
 
-  , mkExample
+  , mkSelectorExample
       "I style my children when I am hovered"
       (Sel.hover #>> Sel.children)
 
-  , mkExample
+  , mkSelectorExample
       "I style my children when the page is ≤800px tall"
       (Sel.children #>> Sel.media "(max-height: 800px)")
 
-  , E.hr [ P.style "width: 100%" ]
-
-  , mkExample
+  , mkSelectorExample
       "I style: my first child; my last child when I am not hovered; my middle child when it is hovered or when the page is ≤800px tall; myself when the page is ≤700px tall"
       $ (Sel.children #>> (Sel.firstChild #<> (Sel.nthChild "2" #>> (Sel.hover #<> Sel.media "(max-height: 800px)"))))
           #<> (Sel.not ":hover" #>> Sel.children #>> Sel.lastChild)
           #<> (Sel.this #>> Sel.media "(max-height: 700px)")
+
+  , E.hr [ P.style "width: 100%" ]
+
+  , mkPreludeExample mempty
+  , mkPreludeExample (S.fontWeight "bold")
       
   ]
 
   where
 
-  mkExample text selector =
+  mkSelectorExample text selector =
     E.div
     []
     [ E.span
@@ -76,3 +81,23 @@ render _model =
       , E.span [] [ E.text "⋆⋆⋆" ]
       ]
     ]
+
+  mkPreludeExample extraStyle =
+    E.div
+    [ P.style'
+      [ S.withPrelude
+          (fold
+            [ "@keyframes my-animation {"
+            , "   0% { background-color: hsla(0  , 35%, 50%, .5); }"
+            , "  50% { background-color: hsla(100, 35%, 50%, .5); }"
+            , " 100% { background-color: hsla(0  , 35%, 50%, .5); }"
+            , "}"
+            ])
+          (S.animation "my-animation 2s infinite")
+      , S.padding ".5em 1em"
+      , extraStyle
+      ]
+    ]
+    [ E.text "I have an animation!"
+    ]
+
