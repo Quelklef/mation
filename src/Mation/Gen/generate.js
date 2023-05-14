@@ -49,7 +49,7 @@ function * tags() {
   yield 'module Mation.Gen.Tags where';
   yield '';
   yield 'import Mation.Core.Html (Html)';
-  yield 'import Mation.Core.Prop (Prop, mkElement)';
+  yield 'import Mation.Core.Prop (Prop, mkTagFromProps)';
   yield '';
   yield '';
 
@@ -69,10 +69,10 @@ function * tags() {
     yield `-- | [HTML <${tag.name}> tag](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/${encodeURIComponent(tag.name)}). This is generated code.`;
     if (!tag.isVoid) {
       yield `${ident} :: forall m s. Array (Prop m s) -> Array (Html m s) -> Html m s`;
-      yield `${ident} props children = mkElement "${tag.name}" props children`
+      yield `${ident} props children = mkTagFromProps "${tag.name}" props children`
     } else {
       yield `${ident} :: forall m s. Array (Prop m s) -> Html m s`;
-      yield `${ident} props = mkElement "${tag.name}" props []`
+      yield `${ident} props = mkTagFromProps "${tag.name}" props []`
     }
     yield '';
   }
@@ -152,7 +152,7 @@ function * pseudoClasses() {
   yield '';
   yield 'import Mation.Core.Prelude';
   yield '';
-  yield 'import Mation.Styles (Scope (..))';
+  yield 'import Mation.Core.StyleScopeModifier (ScopeModifier (..))';
   yield 'import Mation.Core.Util.Weave as W';
   yield '';
   yield '';
@@ -166,8 +166,8 @@ function * pseudoClasses() {
     const argTypes = range(pcls.arity).map(_ => `String -> `).join('');
 
     yield `-- | [CSS :${pcls.name} pseudo-class](https://developer.mozilla.org/en-US/docs/Web/CSS/:${pcls.name}). This is generated code.`;
-    yield `${ident} :: ${argTypes}Scope`
-    yield `${ident} ${args}= ScopeAlts [ { selector: W.Weave [ W.Hole, W.Elem $ ":${pcls.name}${argsCall}" ], block: W.noop } ]`;
+    yield `${ident} :: ${argTypes}ScopeModifier`
+    yield `${ident} ${args}= SMAlts [ { selector: W.Weave [ W.Hole, W.Elem $ ":${pcls.name}${argsCall}" ], block: W.noop } ]`;
     yield '';
   }
 }

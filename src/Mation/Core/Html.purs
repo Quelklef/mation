@@ -152,15 +152,19 @@ derive newtype instance Semigroup (Html m s)
 derive newtype instance Monoid (Html m s)
 
 
+-- | `Html` constructor
 mkRawNode :: forall m s. DomNode -> Html m s
 mkRawNode node = FM.singleton $ VRawNode node
 
+-- | `Html` constructor
 mkRawHtml :: forall m s. String -> Html m s
 mkRawHtml html = FM.singleton $ VRawHtml html
 
+-- | `Html` constructor
 mkText :: forall m s. String -> Html m s
 mkText text = FM.singleton $ VText text
 
+-- | `Html` constructor
 mkTag :: forall m s.
   { tag :: String
   , attrs :: Assoc String String
@@ -173,7 +177,7 @@ mkTag info = Html [ VTag info' ]
   where
   info' = info { children = FM.float info.children }
 
-
+-- | `Html` constructor
 mkPrune :: forall p s m. UnsureEq p => String -> (p -> Html m s) -> p -> Html m s
 mkPrune key render params =
   FM.singleton $ VPrune $ mkExists $ PruneE
@@ -198,7 +202,6 @@ mkPrune key render params =
     }
 
 
-
 -- | Embed one `Html` within another
 enroot :: forall m large small. Setter' large small -> Html m small -> Html m large
 enroot len (Html arr) = Html $ map (map (Mation.enroot len)) arr
@@ -208,3 +211,4 @@ enroot len (Html arr) = Html $ map (map (Mation.enroot len)) arr
 -- | The given `m ~> n` is expected to be a monad morphism
 hoist :: forall m n a. (m ~> n) -> Html m a -> Html n a
 hoist f (Html arr) = Html $ arr # map (map (Mation.hoist f))
+

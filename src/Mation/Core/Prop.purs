@@ -54,15 +54,19 @@ derive instance Newtype (Prop m s) _
 derive newtype instance Semigroup (Prop m s)
 derive newtype instance Monoid (Prop m s)
 
+-- | `Prop` constructor
 mkPair :: forall m s. String -> String -> Prop m s
 mkPair k v = FM.singleton $ PPair k v
 
+-- | `Prop` constructor
 mkListener :: forall m s. String -> (DomEvent -> Mation m s) -> Prop m s
 mkListener k v = FM.singleton $ PListener k v
 
+-- | `Prop` constructor
 mkFixup :: forall m s. (DomNode -> Effect { restore :: Effect Unit }) -> Prop m s
 mkFixup f = FM.singleton $ PFixup f
 
+-- | `Prop` constructor
 mkNoop :: forall m s. Prop m s
 mkNoop = FM.singleton $ PNoop
 
@@ -81,9 +85,9 @@ hoist f (Prop arr) = Prop $ arr # map (map (Mation.hoist f))
 --        between Functor and FreeMonoid and enroot and hoist in both Prop and Html?
 
 
--- | Create an element
-mkElement :: forall m s. String -> Array (Prop m s) -> Array (Html m s) -> Html m s
-mkElement tag props children =
+-- | Create an `Html` from an array of `Prop`s
+mkTagFromProps :: forall m s. String -> Array (Prop m s) -> Array (Html m s) -> Html m s
+mkTagFromProps tag props children =
   mkTag { tag, attrs, listeners, fixup, children }
 
   where

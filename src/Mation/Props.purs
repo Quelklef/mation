@@ -32,11 +32,15 @@ foreign import getTargetValue :: DomEvent -> String
 fixup :: forall m s. (DomNode -> Effect { restore :: Effect Unit }) -> Prop m s
 fixup = Prop.mkFixup
 
--- | Do-it-yourself HTML attribute
+-- | Create a `Prop` directly from an HTML attribute key/value pair
+-- |
+-- | Generally should not be necessary
 mkPair :: forall m s. String -> String -> Prop m s
 mkPair = Prop.mkPair
 
--- | Do-it-yourself event listener
+-- | Create a `Prop` directly from an event listener
+-- |
+-- | Generally should not be necessary
 mkListener :: forall m s. String -> (DomEvent -> Mation m s) -> Prop m s
 mkListener = Prop.mkListener
 

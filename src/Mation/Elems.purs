@@ -30,9 +30,11 @@ rawHtml = Html.mkRawHtml
 rawNode :: forall m s. DomNode -> Html m s
 rawNode = Html.mkRawNode
 
--- | Bring-your-own tagname
+-- | Construct an element directly from a tag name, props, and children.
+-- |
+-- | Generally should not be used
 mkTag :: forall m s. String -> Array (Prop m s) -> Array (Html m s) -> Html m s
-mkTag = Prop.mkElement
+mkTag = Prop.mkTagFromProps
 
 
 -- | Embed one `Html` within another
