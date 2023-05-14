@@ -17,6 +17,7 @@ import Data.Generic.Rep (class Generic) as X
 import Data.Show.Generic (genericShow) as X
 import Data.Ord.Generic (genericCompare) as X
 import Data.Foldable (class Foldable, fold, foldMap, intercalate, elem, minimum, maximum) as X
+import Data.Traversable (class Traversable, traverse) as X
 import Data.Tuple.Nested ((/\), type (/\)) as X
 import Data.Either (Either (..)) as X
 import Data.Maybe (Maybe (..), fromMaybe) as X
@@ -34,6 +35,7 @@ import Data.Newtype (class Newtype) as X
 type Endo' a = X.Endo (->) a
 
 foreign import dTrace :: forall a r. a -> r -> r
+foreign import dTraceWith :: forall a. String -> a -> a
 
 dTraceThis :: forall a. a -> a
 dTraceThis a = dTrace a a

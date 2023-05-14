@@ -67,7 +67,7 @@ unpretty = case _ of
   "Counter" -> Just Counter
   "Components" -> Just Components
   "Testing-zone" -> Just TestingZone
-  "Async-API-call" -> Just AsyncApiCall
+  "Async" -> Just AsyncApiCall
   "Styling" -> Just Styling
   "Clock" -> Just Clock
   "Perf-test" -> Just PerfTest
@@ -75,17 +75,18 @@ unpretty = case _ of
   _ -> Nothing
 
 router :: R.Router Page
-router = R.mkRouter { toPath: pageToPath, fromPath: pathToPage }
+router = R.mkVirtualRouter { toPath, fromPath, error }
   where
 
-  pageToPath :: Page -> R.Path
-  pageToPath page =
-    R.emptyPath
-        { fragment = Just (pretty page)
-        }
+  toPath :: Page -> R.VirtualPath
+  toPath page = R.emptyVirtualPath { parts = [pretty page] }
 
-  pathToPage :: R.Path -> Page
-  pathToPage path = (path.fragment >>= unpretty) # fromMaybe Welcome
+  fromPath :: R.VirtualPath -> Page
+  fromPath { parts } = case parts of
+    [s] -> unpretty s # fromMaybe Welcome
+    _ -> Welcome
+
+  error _ = Welcome
 
 
 

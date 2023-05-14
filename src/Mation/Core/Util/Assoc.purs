@@ -1,4 +1,4 @@
-module Mation.Core.Util.Assoc (Assoc, toArray, fromFoldable, lookup) where
+module Mation.Core.Util.Assoc (Assoc, empty, toArray, fromFoldable, lookup) where
 
 import Mation.Core.Prelude
 
@@ -28,6 +28,8 @@ instance Monoid (Assoc k v) where
   mempty = Assoc []
 
 
+empty :: forall k v. Assoc k v
+empty = Assoc []
 
 toArray :: forall k v. Assoc k v -> Array (k /\ v)
 toArray (Assoc arr) = arr # map (usePair (\k v -> k /\ v))
