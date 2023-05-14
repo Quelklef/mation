@@ -6,7 +6,7 @@ import Mation as M
 import Mation.Elems as E
 import Mation.Styles as S
 import Mation.Props as P
-import Mation.Core.Util.WRef as WRef
+import Mation.Router as R
 import Mation.Core.Daemon as D
 
 import Mation.Examples.Welcome as Welcome
@@ -74,18 +74,19 @@ unpretty = case _ of
   "Pruning" -> Just Pruning
   _ -> Nothing
 
+router :: R.Router Page
+router = R.mkRouter { toPath: pageToPath, fromPath: pathToPage }
+  where
 
+  pageToPath :: Page -> R.Path
+  pageToPath page =
+    R.emptyPath
+        { fragment = Just (pretty page)
+        }
 
-syncPageToUrl :: Page -> Effect Unit
-syncPageToUrl = pretty >>> syncPageToUrl_f
+  pathToPage :: R.Path -> Page
+  pathToPage path = (path.fragment >>= unpretty) # fromMaybe Welcome
 
-foreign import syncPageToUrl_f :: String -> Effect Unit
-
-getPageFromUrl :: Effect (Maybe Page)
-getPageFromUrl = unpretty <$> getPageFromUrl_f
-
-
-foreign import getPageFromUrl_f :: Effect String
 
 
 type Model =
@@ -201,12 +202,9 @@ render model =
 initialize :: Effect Model
 initialize = do
 
-  page <-
-    getPageFromUrl >>= case _ of
-      Nothing -> pure Welcome
-      Just page -> pure page
-
   welcome <- Welcome.initialize
+
+  page <- R.readRoute router
 
   pure
     { page
@@ -232,7 +230,7 @@ main = do
     , daemon: fold
         [ D.enroot (prop (Proxy :: Proxy "clock")) Clock.daemon
         , D.enroot (prop (Proxy :: Proxy "testing")) TestingZone.daemon
-        , WRef.onChange \model -> syncPageToUrl model.page
+        , D.enroot (prop (Proxy :: Proxy "page")) $ R.sync router
         ]
     , toEffect: identity
     }
