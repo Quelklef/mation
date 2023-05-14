@@ -6,7 +6,7 @@ import Mation.Core.Util.WRef (WRef)
 import Mation.Core.Util.WRef as WRef
 
 
--- | A `Daemon s` is a possibly-long-lived effectful process
+-- | A `Daemon m s` is a possibly-long-lived effectful process
 -- | which has read/write access to some state of type `s`
 -- |
 -- | This is to be contrasted with a `Mation m s` which

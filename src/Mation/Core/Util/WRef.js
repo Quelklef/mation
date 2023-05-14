@@ -8,17 +8,17 @@ performant implementation of WRef views
 
 */
 
-export const new_f =
+export const make_f =
 f => () => {
 
   let value = null;
   let waiting = () => {};  // next change listener
 
   const ref = {
-    get() {
+    read() {
       return value;
     },
-    set(newVal) {
+    write(newVal) {
       value = newVal;
       const waiting0 = waiting;
       waiting = () => {};
@@ -30,20 +30,20 @@ f => () => {
     },
   };
 
-  ref.set(f(ref));
+  ref.write(f(ref));
 
   return ref;
 
 };
 
-export const get =
+export const read =
 ref => () => {
-  return ref.get();
+  return ref.read();
 };
 
-export const set =
+export const write =
 newVal => ref => () => {
-  ref.set(newVal);
+  ref.write(newVal);
 };
 
 export const nextChange =
@@ -54,15 +54,15 @@ f => ref => () => {
 export const mkView_f =
 ({ getter, setter }) => largeRef => {
   return {
-    get() {
-      const large = largeRef.get();
+    read() {
+      const large = largeRef.read();
       const small = getter(large);
       return small;
     },
-    set(newSmall) {
-      const large = largeRef.get();
+    write(newSmall) {
+      const large = largeRef.read();
       const large_ = setter(newSmall)(large);
-      largeRef.set(large_);
+      largeRef.write(large_);
     },
     doOnNextChange(f) {
       largeRef.doOnNextChange(f);

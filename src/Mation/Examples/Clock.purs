@@ -25,7 +25,7 @@ initial = { hour: 0.0, minute: 0.0, second: 0.0 }
 daemon :: M.Daemon Effect Model
 daemon ref =
   watchTime \{ hour, minute, second } ->
-    ref # WRef.set { hour, minute, second }
+    ref # WRef.write { hour, minute, second }
 
 foreign import watchTime :: ({ hour :: Number, minute :: Number, second :: Number } -> Effect Unit) -> Effect Unit
 

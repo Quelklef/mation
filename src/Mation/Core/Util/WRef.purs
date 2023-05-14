@@ -38,20 +38,20 @@ import Mation.Core.Prelude
 foreign import data WRef :: Type -> Type
 
 -- | Create a new `WRef`
-new :: forall a. a -> Effect (WRef a)
-new = new_f <<< const
+make :: forall a. a -> Effect (WRef a)
+make = make_f <<< const
 
 -- | Create a new `WRef` with a value which can close over the `WRef
-new' :: forall a. (WRef a -> a) -> Effect (WRef a)
-new' = new_f
+make' :: forall a. (WRef a -> a) -> Effect (WRef a)
+make' = make_f
 
-foreign import new_f :: forall a. (WRef a -> a) -> Effect (WRef a)
+foreign import make_f :: forall a. (WRef a -> a) -> Effect (WRef a)
 
 -- | Get the value out of a `WRef`
-foreign import get :: forall a. WRef a -> Effect a
+foreign import read :: forall a. WRef a -> Effect a
 
 -- | Put a new value into a `WRef`
-foreign import set :: forall a. a -> WRef a -> Effect Unit
+foreign import write :: forall a. a -> WRef a -> Effect Unit
 
 -- | Modify the value in a `WRef`
 modify :: forall a. (a -> a) -> WRef a -> Effect Unit
@@ -60,9 +60,9 @@ modify f = void <<< modify' f
 -- | Modify the value in a `WRef`. Returns the new value
 modify' :: forall a. (a -> a) -> WRef a -> Effect a
 modify' f ref = do
-  val <- get ref
+  val <- read ref
   let val' = f val
-  set val' ref
+  write val' ref
   pure val'
 
 
@@ -90,17 +90,17 @@ foreign import nextChange :: forall a. Effect Unit -> WRef a -> Effect Unit
 onChange :: forall a. (a -> Effect Unit) -> WRef a -> Effect Unit
 onChange f ref =
   ref # nextChange do
-    newVal <- get ref
+    newVal <- read ref
     f newVal
     onChange f ref
 
 -- | Like `onChange`, but provides both the old and new values
 onChange' :: forall a. ({ old :: a, new :: a } -> Effect Unit) -> WRef a -> Effect Unit
 onChange' f ref = do
-  oldRef <- get ref >>= new
+  oldRef <- read ref >>= make
   ref # onChange \newVal -> do
-    oldVal <- get oldRef
-    set newVal oldRef
+    oldVal <- read oldRef
+    write newVal oldRef
     f { old: oldVal, new: newVal }
 
 

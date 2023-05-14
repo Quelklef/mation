@@ -146,13 +146,13 @@ runApp args = do
   -- This is an ugly setup but is necessary to bootstrap the
   -- application
   stepRef :: WRef ((s -> s) -> Effect Unit)
-    <- WRef.new (\_ -> pure unit)
+    <- WRef.make (\_ -> pure unit)
 
   let
     -- Turn a Mation into an Effect
     execMation :: Mation m s -> Effect Unit
     execMation mat = do
-      step <- WRef.get stepRef
+      step <- WRef.read stepRef
       args.toEffect $ Mation.runMation mat (step >>> liftEffect)
 
   -- Render for the first time
@@ -168,13 +168,13 @@ runApp args = do
     pure $ model /\ vNode /\ pruneMap
 
   -- Holds current state
-  ref <- WRef.new (model /\ vNode /\ pruneMap)
+  ref <- WRef.make (model /\ vNode /\ pruneMap)
 
   let
     -- This is the actual step function
     step :: (s -> s) -> Effect Unit
     step endo = do
-      oldModel /\ oldVNode /\ oldPruneMap <- WRef.get ref
+      oldModel /\ oldVNode /\ oldPruneMap <- WRef.read ref
       let newModel = endo oldModel
       newVNode <- renderTo1 newModel
       let patch = Patch.patchOnto
@@ -183,10 +183,10 @@ runApp args = do
                     , mPruneMap: Just oldPruneMap
                     }
       newPruneMap <- args.root >>= patch
-      WRef.set (newModel /\ newVNode /\ newPruneMap) ref
+      WRef.write (newModel /\ newVNode /\ newPruneMap) ref
 
   -- Populate the stepRef with the correct value
-  WRef.set step stepRef
+  WRef.write step stepRef
 
   -- Start the daemon
   ref # WRef.onChange \_ -> step identity

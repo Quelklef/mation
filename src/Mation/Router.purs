@@ -271,5 +271,5 @@ sync router wref = do
   -- FIXME: sync forward/back buttons
 
   -- Push path->route
-  readRoute router >>= (\route -> WRef.set route wref)
+  readRoute router >>= (\route -> WRef.write route wref)
 

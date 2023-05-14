@@ -144,7 +144,7 @@ daemonRawNodes :: Daemon Effect RawNodes
 daemonRawNodes wref = do
   rn1 <- mkTextRawNode
   rn2 <- mkIframeRawNode
-  WRef.set (Just $ rn1 /\ rn2) wref
+  WRef.write (Just $ rn1 /\ rn2) wref
 
 foreign import mkTextRawNode :: Effect DomNode
 foreign import mkIframeRawNode :: Effect DomNode
