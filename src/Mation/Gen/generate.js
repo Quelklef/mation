@@ -59,6 +59,8 @@ function * tags() {
   //   user to label the rendered DOM nodes which would help both with:
   //   - readability, since names would act as mini-comments in the code; and
   //   - debugging, because the DOM tree would have semantics labels
+  //
+  //   Another option is to use a prop for this.
 
   const { tags } = require('./data/tags.js');
   for (const tag of tags) {

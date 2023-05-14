@@ -5,7 +5,7 @@ module Mation.Core.Util.WRef where
 import Mation.Core.Prelude
 
 
--- | A `WRef a` is a reference to a mutable value of type `s`
+-- | A `WRef a` is a mutable reference to a value of type `s`
 -- |
 -- | The `WRef` API is very similar to the `Effect.Ref` API.
 -- | However, `WRef`s are more powerful, providing affordances
