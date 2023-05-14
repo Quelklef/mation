@@ -54,7 +54,7 @@ pretty = case _ of
   Welcome -> "Welcome"
   Counter -> "Counter"
   Components -> "Components"
-  AsyncApiCall -> "Async-API-call"
+  AsyncApiCall -> "Async"
   Styling -> "Styling"
   Clock -> "Clock"
   TestingZone -> "Testing-zone"
@@ -120,7 +120,7 @@ render model =
     [ E.div
       [ P.style'
         [ S.width pageWidth
-        , S.padding "2em 0"
+        , S.padding "2em"
         ]
       ]
       [ case model.page of
@@ -173,6 +173,7 @@ render model =
           , S.alignItems "center"
           , S.fontFamily "sans-serif"
           , S.color "white"
+          , S.padding "0 2em"
           ]
       ]
       [ E.text "Page:"
@@ -196,7 +197,7 @@ render model =
       ]
     ]
 
-  pageWidth = "1200px"
+  pageWidth = "800px"
 
 
 initialize :: Effect Model

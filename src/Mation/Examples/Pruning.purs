@@ -14,7 +14,7 @@ import Mation.Core.Util.UnsureEq (class UnsureEq)
 
 type Double a = a /\ a
 
-type Vals = Double (Double (Double (Double Int)))
+type Vals = Double (Double (Double Int))
 
 type Model =
   { vals :: Vals
@@ -24,7 +24,7 @@ type Model =
 
 initial :: Model
 initial =
-  { vals: double (double (double (double 0)))
+  { vals: double (double (double 0))
   , example2: { depth: 4, color: "teal" }
   , sumTest: 0 /\ 0
   }
@@ -69,7 +69,7 @@ render model =
   , E.div
     [ P.style "font-size: 0.75em"
     ]
-    [ flip (E.prune "example-1") model.vals (\vals -> E.enroot (prop (Proxy :: Proxy "vals")) $ onDouble (onDouble (onDouble (onDouble mkCounter))) vals)
+    [ flip (E.prune "example-1") model.vals (\vals -> E.enroot (prop (Proxy :: Proxy "vals")) $ onDouble (onDouble (onDouble mkCounter)) vals)
     ]
   , E.br []
   , E.hr []
@@ -158,7 +158,7 @@ renderExample2 { depth, color } =
         , S.padding "1em"
         ]
       ]
-      [ flip (E.prune "the boxes") color \color ->  (_ `power` 200) $
+      [ flip (E.prune "the boxes") color \color ->  (_ `power` 60) $
         E.div
         [ P.style'
           [ S.display "inline-block"

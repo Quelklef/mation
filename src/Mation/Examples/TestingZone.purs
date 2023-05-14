@@ -198,7 +198,7 @@ render model =
   , E.hr []
   , E.enroot _checkbox $ model.checkbox # \checked ->
       E.div
-      [] $ (_ `power` 20)
+      [] $ (_ `power` 15)
         [ E.input [ P.type_ "checkbox", P.checked      checked , P.onInput \_ -> M.mkPure not ]
         , E.input [ P.type_ "checkbox", P.checked (not checked), P.onInput \_ -> M.mkPure not ]
         ]

@@ -60,8 +60,8 @@ export const mkIframeRawNode =
   const $output = document.createElement('iframe');
   $output.style.verticalAlign = 'middle';
   $output.style.border = '1px solid grey';
-  $output.style.width = '800px';
-  $output.style.height = '300px';
+  $output.style.width = '400px';
+  $output.style.height = '200px';
   $node.append($output);
 
   $input.addEventListener('input', () => {
