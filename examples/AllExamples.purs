@@ -9,15 +9,15 @@ import Mation.Props as P
 import Mation.Router as R
 import Mation.Core.Daemon as D
 
-import Mation.Examples.Welcome as Welcome
-import Mation.Examples.Counter as Counter
-import Mation.Examples.Components as Components
-import Mation.Examples.AsyncApiCall as AsyncApiCall
-import Mation.Examples.Styling as Styling
-import Mation.Examples.Clock as Clock
-import Mation.Examples.TestingZone as TestingZone
-import Mation.Examples.PerfTest as PerfTest
-import Mation.Examples.Pruning as Pruning
+import Mation.Examples.Welcome as Examples.Welcome
+import Mation.Examples.Counter as Examples.Counter
+import Mation.Examples.Components as Examples.Components
+import Mation.Examples.AsyncApiCall as Examples.AsyncApiCall
+import Mation.Examples.Styling as Examples.Styling
+import Mation.Examples.Clock as Examples.Clock
+import Mation.Examples.TestingZone as Examples.TestingZone
+import Mation.Examples.PerfTest as Examples.PerfTest
+import Mation.Examples.Pruning as Examples.Pruning
 
 
 data Page
@@ -92,15 +92,17 @@ router = R.mkVirtualRouter { toPath, fromPath, error }
 
 type Model =
   { page :: Page
-  , welcome :: Welcome.Model
-  , counter :: Counter.Model
-  , components :: Components.Model
-  , asyncApiCall :: AsyncApiCall.Model
-  , styling :: Styling.Model
-  , clock :: Clock.Model
-  , testing :: TestingZone.Model
-  , perfTest :: PerfTest.Model
-  , pruning :: Pruning.Model
+  , submodels ::
+    { welcome :: Examples.Welcome.Model
+    , counter :: Examples.Counter.Model
+    , components :: Examples.Components.Model
+    , asyncApiCall :: Examples.AsyncApiCall.Model
+    , styling :: Examples.Styling.Model
+    , clock :: Examples.Clock.Model
+    , testing :: Examples.TestingZone.Model
+    , perfTest :: Examples.PerfTest.Model
+    , pruning :: Examples.Pruning.Model
+    }
   }
 
 
@@ -126,32 +128,32 @@ render model =
       ]
       [ case model.page of
           Welcome      ->
-            E.enroot (prop (Proxy :: Proxy "welcome")) $
-              E.prune "page-welcome" Welcome.render model.welcome
+            E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "welcome")) $
+              E.prune "page-welcome" Examples.Welcome.render model.submodels.welcome
           Counter      ->
-            E.enroot (prop (Proxy :: Proxy "counter")) $
-              E.prune "page-counter" Counter.render model.counter
+            E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "counter")) $
+              E.prune "page-counter" Examples.Counter.render model.submodels.counter
           Components   ->
-            E.enroot (prop (Proxy :: Proxy "components")) $
-              E.prune "page-components" Components.render model.components
+            E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "components")) $
+              E.prune "page-components" Examples.Components.render model.submodels.components
           AsyncApiCall ->
-            E.enroot (prop (Proxy :: Proxy "asyncApiCall")) $
-              E.prune "page-asyncApiCall" AsyncApiCall.render model.asyncApiCall
+            E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "asyncApiCall")) $
+              E.prune "page-asyncApiCall" Examples.AsyncApiCall.render model.submodels.asyncApiCall
           Styling      ->
-            E.enroot (prop (Proxy :: Proxy "styling")) $
-              E.prune "page-styling" Styling.render model.styling
+            E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "styling")) $
+              E.prune "page-styling" Examples.Styling.render model.submodels.styling
           Clock        ->
-            E.enroot (prop (Proxy :: Proxy "clock")) $
-              E.prune "page-clock" Clock.render model.clock
+            E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "clock")) $
+              E.prune "page-clock" Examples.Clock.render model.submodels.clock
           TestingZone  ->
-            E.enroot (prop (Proxy :: Proxy "testing")) $
-              E.prune "page-testing" TestingZone.render model.testing
+            E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "testing")) $
+              E.prune "page-testing" Examples.TestingZone.render model.submodels.testing
           PerfTest     ->
-            E.enroot (prop (Proxy :: Proxy "perfTest")) $
-              E.prune "page-perfTest" PerfTest.render model.perfTest
+            E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "perfTest")) $
+              E.prune "page-perfTest" Examples.PerfTest.render model.submodels.perfTest
           Pruning      ->
-            E.enroot (prop (Proxy :: Proxy "pruning")) $
-              E.prune "page-pruning" Pruning.render model.pruning
+            E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "pruning")) $
+              E.prune "page-pruning" Examples.Pruning.render model.submodels.pruning
       ]
     ]
   ]
@@ -177,8 +179,7 @@ render model =
           , S.padding "0 2em"
           ]
       ]
-      [ E.text "Page:"
-      , intercalate (E.text " ") $ pages >>= \page ->
+      [ intercalate (E.text " ") $ pages >>= \page ->
           [ let isCurrent = page == model.page in
             E.span
             [ P.style'
@@ -204,21 +205,23 @@ render model =
 initialize :: Effect Model
 initialize = do
 
-  welcome <- Welcome.initialize
+  welcome <- Examples.Welcome.initialize
 
   page <- R.readRoute router
 
   pure
     { page
-    , welcome
-    , counter: Counter.initial
-    , components: Components.initial
-    , testing: TestingZone.initial
-    , asyncApiCall: AsyncApiCall.initial
-    , styling: Styling.initial
-    , clock: Clock.initial
-    , perfTest: PerfTest.initial
-    , pruning: Pruning.initial
+    , submodels:
+      { welcome
+      , counter: Examples.Counter.initial
+      , components: Examples.Components.initial
+      , testing: Examples.TestingZone.initial
+      , asyncApiCall: Examples.AsyncApiCall.initial
+      , styling: Examples.Styling.initial
+      , clock: Examples.Clock.initial
+      , perfTest: Examples.PerfTest.initial
+      , pruning: Examples.Pruning.initial
+      }
     }
 
 
@@ -230,8 +233,8 @@ main = do
     , render
     , root: M.onBody
     , daemon: fold
-        [ D.enroot (prop (Proxy :: Proxy "clock")) Clock.daemon
-        , D.enroot (prop (Proxy :: Proxy "testing")) TestingZone.daemon
+        [ D.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "clock")) Examples.Clock.daemon
+        , D.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "testing")) Examples.TestingZone.daemon
         , D.enroot (prop (Proxy :: Proxy "page")) $ R.sync router
         ]
     , toEffect: identity

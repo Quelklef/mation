@@ -3,3 +3,5 @@ out/
 main.js
 generated-docs/
 result
+.purs-repl
+.psci_modules
