@@ -13,11 +13,10 @@
       maybe
       either
       tuples
-      newtype
-      refs
+      strings
+      foreign
       foldable-traversable
       profunctor-lenses
-      node-fs
     ];
 
 }
