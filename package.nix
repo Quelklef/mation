@@ -2,7 +2,7 @@
 
 { ps-pkgs, ... }: {
 
-  src = "src";
+  src = "mation";
 
   dependencies =
     with ps-pkgs;

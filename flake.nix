@@ -21,17 +21,24 @@ outputs = { self, ... }@inputs: let
     module = "Mation.Examples.AllExamples";
   };
 
-  purs-nix-command =
-    nixed.command {
-      srcs = [ "$PWD/src" ];
+  purs-nix-command = nixed.command {
+      srcs = [ "$PWD/mation" "$PWD/examples" ];
       bundle = purs-nix-bundle-args;
       output = "out/purs-cache";
+    };
+  purs-nix-command-no-examples =
+    nixed.command {
+      srcs = [ "$PWD/mation" ];
+      bundle = purs-nix-bundle-args;
+      output = "out/purs-cache";
+      name = "purs-nix-no-examples";
     };
 
   # For both development and the live demo
   devt-shell = {
     runtime-deps = [
         purs-nix-command
+        purs-nix-command-no-examples
         pkgs.python3
         pkgs.nodejs
         pkgs.entr
@@ -46,11 +53,12 @@ outputs = { self, ... }@inputs: let
         mkdir -p out/app &&
         python3 -m http.server --directory out/app & trap "kill $!" EXIT
         { find . -name '*.purs';
-          find src -name '*.js';
+          find mation -name '*.js';
+          find examples -name '*.html';
         } | entr -cs "
-              node ./src/Mation/Gen/generate.js &&
+              node ./mation/Mation/Gen/generate.js &&
               purs-nix bundle && mv main.js out/app/main.js &&
-              cp index.html out/app/index.html &&
+              cp examples/index.html out/app/index.html &&
               echo 'You may need to reload your browser'
           "
       )}
@@ -60,10 +68,10 @@ outputs = { self, ... }@inputs: let
         mkdir -p out/docs &&
         python3 -m http.server --directory out/docs & trap "kill $!" EXIT
         { find . -name '*.purs';
-          find src -name '*.js';
+          find mation -name '*.js';
         } | entr -cs "
-              node ./src/Mation/Gen/generate.js &&
-              purs-nix docs -o out/docs &&
+              node ./mation/Mation/Gen/generate.js &&
+              purs-nix-no-examples docs -o out/docs &&
               echo 'Serving on localhost:8000'
           "
       )}
