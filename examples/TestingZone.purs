@@ -3,11 +3,14 @@ module Mation.Examples.TestingZone where
 import Mation.Core.Prelude
 
 import Data.Array (range)
+import Data.Map as Map
 
 import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
+import Mation.Selectors as Sel
+import Mation.Selectors ((#<>))
 import Mation.Core.Util.WRef as WRef
 import Mation.Core.Daemon (Daemon)
 import Mation.Core.Daemon as D
@@ -29,26 +32,63 @@ instance UnsureEq StreamState where
 renderCounter :: Counter -> E.Html' Counter
 renderCounter model =
   E.div
-  [ ]
-  [ E.text (show model.count)
-  , E.text " "
+  [ P.style'
+    [ S.fontSize "1.5em"
+    , S.on (Sel.this #<> Sel.descendantsWhere "button")
+      [ S.fontFamily "monospace"
+      ]
+    , S.on (Sel.descendantsWhere "button")
+      [ S.width "6ch"
+      , S.textAlign "center"
+      , S.fontSize "inherit"
+      ]
+    ]
+  ]
+  [ E.span
+    [ P.style'
+      [ S.display "inline-block"
+      , S.minWidth "10ch"
+      ]
+    , P.dataset $ range 1 (min model.count 50) # foldMap (\n -> Map.singleton (show n) (show n))
+    ]
+    [ E.text (show model.count)
+    ]
+  , E.text " | "
   , E.button
     [ P.onClick \_ -> M.mkPure (_count %~ (_ + 1))
     , buttonStyle
     ]
-    [ E.text "increment once"
+    [ E.text "+"
+    ]
+  , E.text " "
+  , E.button
+    [ P.onClick \_ -> M.mkPure (_count %~ (_ - 1))
+    , buttonStyle
+    ]
+    [ E.text "-"
     ]
   , E.text " "
   , case model.streamState of
-      NotStreaming ->
-        E.button
-        [ P.onClick \_ ->
-            M.mkCont \step -> do
-              { cancel } <- repeatedly (step $ _count %~ (_ + 1))
-              step (_streamState .~ Streaming { cancel })
-        , buttonStyle
-        ]
-        [ E.text "start streaming"
+      NotStreaming -> fold
+        [ E.button
+          [ P.onClick \_ ->
+              M.mkCont \step -> do
+                { cancel } <- repeatedly (step $ _count %~ (_ + 1))
+                step (_streamState .~ Streaming { cancel })
+          , buttonStyle
+          ]
+          [ E.text "++"
+          ]
+        , E.text " "
+        , E.button
+          [ P.onClick \_ ->
+              M.mkCont \step -> do
+                { cancel } <- repeatedly (step $ _count %~ ((_ - 1) >>> max 0))
+                step (_streamState .~ Streaming { cancel })
+          , buttonStyle
+          ]
+          [ E.text "--"
+          ]
         ]
       Streaming { cancel } ->
         E.button
@@ -56,7 +96,7 @@ renderCounter model =
             M.mkEff (cancel $> (_streamState .~ NotStreaming))
         , buttonStyle
         ]
-        [ E.text "stop streaming"
+        [ E.text "🛑"
         ]
   ]
 
@@ -103,6 +143,7 @@ renderPhoneNumber pn =
     , S.alignItems "center"
     , S.margin "1em 0"
     ]
+  , P.remark "phone number input"
   ]
   [ digit _1 pn
   , digit (_2 <<< _1) pn
@@ -126,6 +167,7 @@ renderPhoneNumber pn =
   digit len pn =
     E.select
     [ P.onInput' $ parseInt >>> (len .~ _) >>> M.mkPure
+    , P.remark "phone number digit"
     ]
     [ flip foldMap (range 1 9) \n ->
         E.option

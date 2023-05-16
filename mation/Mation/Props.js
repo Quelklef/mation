@@ -4,6 +4,24 @@ ev => {
   return ev.target.value;
 };
 
+export const dataset_f =
+kvs => node => () => {
+
+  const before = { ...node.dataset };
+  put({});
+
+  put(Object.fromEntries(kvs));
+
+  return { restore: () => put(before) };
+
+  function put(obj) {
+    for (const k in node.dataset)
+      delete node.dataset[k];
+    for (const k in obj)
+      node.dataset[k] = obj[k];
+  }
+
+};
 
 export const showUpdates_f =
 node => () => {
@@ -16,3 +34,4 @@ node => () => {
   }
   return { restore: () => {} };
 };
+
