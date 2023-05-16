@@ -4,6 +4,7 @@ import Mation.Core.Prelude
 
 import Data.Array (range)
 import Data.Map as Map
+import Data.Lens (lens)
 
 import Mation as M
 import Mation.Elems as E
@@ -16,8 +17,11 @@ import Mation.Core.Daemon (Daemon)
 import Mation.Core.Daemon as D
 import Mation.Core.Dom (DomNode)
 import Mation.Core.Util.UnsureEq (class UnsureEq, Unsure (..), viaPrim)
+import Mation.Experimental.Component as Com
+import Mation.Lenses ((×))
 
-foreign import repeatedly :: Effect Unit -> Effect { cancel :: Effect Unit }
+
+--------------------------------------------------------------------------------
 
 type Counter = { count :: Int, streamState :: StreamState }
 
@@ -111,6 +115,10 @@ renderCounter model =
     , S.borderColor "red"
     ]
 
+foreign import repeatedly :: Effect Unit -> Effect { cancel :: Effect Unit }
+
+
+--------------------------------------------------------------------------------
 
 type Textbox = String
 
@@ -131,6 +139,8 @@ renderTextbox str =
   , E.p [] [ E.text "As placeholder (!): ", E.input [ P.placeholder str ] ]
   ]
 
+
+--------------------------------------------------------------------------------
 
 type PhoneNumber = Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int
 
@@ -180,6 +190,58 @@ renderPhoneNumber pn =
 foreign import parseInt :: String -> Int
 
 
+--------------------------------------------------------------------------------
+
+type ComStuff =
+  { string :: String
+  , caps :: Boolean
+  }
+
+stringComponent :: Com.Component Effect Unit String
+stringComponent =
+  Com.mkComponent
+    { name: Proxy :: Proxy "left component"
+    , init: pure "meow meow meow"
+    , daemon: \_ -> pure unit
+    , view: \(_ /\ s) ->
+        E.input
+        [ P.onInput' \v -> M.mkPure (_2 .~ v)
+        , P.value s
+        ]
+    }
+
+comComponent :: Com.Component Effect Unit ComStuff
+comComponent =
+  Com.mkParent1
+    { name: Proxy :: Proxy "Component api example"
+    , init: \string -> pure { string, caps: false }
+    , daemon: \_ -> pure unit
+    , view: \stringCom (_ /\ { string, caps }) ->
+        E.div
+        []
+        [ stringCom
+        , E.text " "
+        , E.label [ P.for "caps" ] [ E.text "caps" ]
+        , E.input
+          [ P.type_ "checkbox"
+          , P.id "caps"
+          , P.checked caps
+          , P.onInput' \s -> M.mkPure (_2 <<< prop (Proxy :: Proxy "caps") %~ not)
+          ]
+        , E.text " → "
+        , E.text (if caps then toUpperCase string else string)
+        ]
+    , child1:
+      { component: stringComponent
+      , at: Com.BoxLens (_1 × _2 <<< prop (Proxy :: Proxy "string"))
+      }
+    }
+
+foreign import toUpperCase :: String -> String
+
+
+--------------------------------------------------------------------------------
+
 type RawNodes = Maybe (DomNode /\ DomNode)
 
 daemonRawNodes :: Daemon Effect RawNodes
@@ -200,28 +262,36 @@ renderRawNodes = case _ of
   Just (rn1 /\ rn2) -> E.rawNode rn1 <> E.rawNode rn2
 
 
+--------------------------------------------------------------------------------
+
 type Model =
   { counter1 :: Counter
   , counter2 :: Counter
   , textbox :: String
   , checkbox :: Boolean
   , phoneNumber :: PhoneNumber
+  , comStuff :: ComStuff
   , rawNodes :: RawNodes
   }
 
-initial :: Model
-initial =
-  { counter1: { count: 0, streamState: NotStreaming }
-  , counter2: { count: 0, streamState: NotStreaming }
-  , textbox: "type in me"
-  , checkbox: false
-  , phoneNumber: 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0
-  , rawNodes: Nothing
-  }
+initialize :: Effect Model
+initialize = do
+  comStuff <- Com.initializeC comComponent
+  pure
+    { counter1: { count: 0, streamState: NotStreaming }
+    , counter2: { count: 0, streamState: NotStreaming }
+    , textbox: "type in me"
+    , checkbox: false
+    , phoneNumber: 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0
+    , comStuff
+    , rawNodes: Nothing
+    }
 
 daemon :: Daemon Effect Model
-daemon = do
-  D.enroot (prop (Proxy :: Proxy "rawNodes")) daemonRawNodes
+daemon = fold
+  [ D.enroot (prop (Proxy :: Proxy "rawNodes")) daemonRawNodes
+  , D.enroot (_unit × prop (Proxy :: Proxy "comStuff")) (Com.daemonC comComponent)
+  ]
 
 render :: Model -> E.Html' Model
 render model =
@@ -248,6 +318,8 @@ render model =
   , E.enroot _phoneNumber $ renderPhoneNumber model.phoneNumber
   , E.enroot _phoneNumber $ renderPhoneNumber model.phoneNumber
   , E.hr []
+  , E.enroot (_unit × prop (Proxy :: Proxy "comStuff")) $ Com.viewC comComponent (unit /\ model.comStuff)
+  , E.hr []
   , renderRawNodes model.rawNodes
   , E.br [] `power` 25
   ]
@@ -260,4 +332,5 @@ render model =
   _checkbox = prop (Proxy :: Proxy "checkbox")
   _phoneNumber = prop (Proxy :: Proxy "phoneNumber")
 
-
+_unit :: forall x. Lens' x Unit
+_unit = lens (const unit) (\v _ -> v)

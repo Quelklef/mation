@@ -16,6 +16,8 @@ s => {
   return n;
 };
 
+export const toUpperCase = s => s.toUpperCase();
+
 export const mkTextRawNode =
 () => {
 

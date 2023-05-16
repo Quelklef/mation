@@ -206,6 +206,7 @@ initialize :: Effect Model
 initialize = do
 
   welcome <- Examples.Welcome.initialize
+  testing <- Examples.TestingZone.initialize
 
   page <- R.readRoute router
 
@@ -215,7 +216,7 @@ initialize = do
       { welcome
       , counter: Examples.Counter.initial
       , components: Examples.Components.initial
-      , testing: Examples.TestingZone.initial
+      , testing
       , asyncApiCall: Examples.AsyncApiCall.initial
       , styling: Examples.Styling.initial
       , clock: Examples.Clock.initial
