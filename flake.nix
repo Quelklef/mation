@@ -22,7 +22,7 @@ outputs = { self, ... }@inputs: let
   };
 
   purs-nix-command = nixed.command {
-      srcs = [ "$PWD/mation" "$PWD/examples" ];
+      srcs = [ "$PWD/mation" "$PWD/experimental" "$PWD/examples" ];
       bundle = purs-nix-bundle-args;
       output = "out/purs-cache";
     };
