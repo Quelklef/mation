@@ -15,6 +15,7 @@ import Mation.Examples.Components as Examples.Components
 import Mation.Examples.AsyncApiCall as Examples.AsyncApiCall
 import Mation.Examples.Styling as Examples.Styling
 import Mation.Examples.Clock as Examples.Clock
+import Mation.Examples.Inputs as Examples.Inputs
 import Mation.Examples.TestingZone as Examples.TestingZone
 import Mation.Examples.PerfTest as Examples.PerfTest
 import Mation.Examples.Pruning as Examples.Pruning
@@ -31,6 +32,7 @@ data Page
   | AsyncApiCall
   | Styling
   | Clock
+  | Inputs
 
   -- Testing stuff
   | TestingZone
@@ -38,10 +40,10 @@ data Page
   | Pruning
 
 separateAfter :: Array Page
-separateAfter = [ Welcome, Clock ]
+separateAfter = [ Welcome, Inputs ]
 
 pages :: Array Page
-pages = [ Welcome, Counter, Components, AsyncApiCall, Styling, Clock, TestingZone, PerfTest, Pruning ]
+pages = [ Welcome, Counter, Components, AsyncApiCall, Styling, Clock, Inputs, TestingZone, PerfTest, Pruning ]
   -- Don't want to add a whole dep for Enum for a testing module
 
 derive instance Generic Page _
@@ -57,6 +59,7 @@ pretty = case _ of
   AsyncApiCall -> "Async"
   Styling -> "Styling"
   Clock -> "Clock"
+  Inputs -> "Inputs"
   TestingZone -> "Testing-zone"
   PerfTest -> "Perf-test"
   Pruning -> "Pruning"
@@ -70,6 +73,7 @@ unpretty = case _ of
   "Async" -> Just AsyncApiCall
   "Styling" -> Just Styling
   "Clock" -> Just Clock
+  "Inputs" -> Just Inputs
   "Perf-test" -> Just PerfTest
   "Pruning" -> Just Pruning
   _ -> Nothing
@@ -99,6 +103,7 @@ type Model =
     , asyncApiCall :: Examples.AsyncApiCall.Model
     , styling :: Examples.Styling.Model
     , clock :: Examples.Clock.Model
+    , inputs :: Examples.Inputs.Model
     , testing :: Examples.TestingZone.Model
     , perfTest :: Examples.PerfTest.Model
     , pruning :: Examples.Pruning.Model
@@ -145,6 +150,9 @@ render model =
           Clock        ->
             E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "clock")) $
               E.prune "page-clock" Examples.Clock.render model.submodels.clock
+          Inputs       ->
+            E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "inputs")) $
+              E.prune "page-inputs" Examples.Inputs.render model.submodels.inputs
           TestingZone  ->
             E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "testing")) $
               E.prune "page-testing" Examples.TestingZone.render model.submodels.testing
@@ -220,6 +228,7 @@ initialize = do
       , asyncApiCall: Examples.AsyncApiCall.initial
       , styling: Examples.Styling.initial
       , clock: Examples.Clock.initial
+      , inputs: Examples.Inputs.initial
       , perfTest: Examples.PerfTest.initial
       , pruning: Examples.Pruning.initial
       }

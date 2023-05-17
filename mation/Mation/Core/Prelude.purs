@@ -16,8 +16,9 @@ import Safe.Coerce (coerce) as X
 import Data.Generic.Rep (class Generic) as X
 import Data.Show.Generic (genericShow) as X
 import Data.Ord.Generic (genericCompare) as X
-import Data.Foldable (class Foldable, fold, foldMap, intercalate, elem, minimum, maximum) as X
+import Data.Foldable (class Foldable, fold, foldMap, intercalate, elem, minimum, maximum, null) as X
 import Data.Traversable (class Traversable, traverse) as X
+import Data.Bifunctor (class Bifunctor, bimap, lmap, rmap) as X
 import Data.Tuple.Nested ((/\), type (/\)) as X
 import Data.Either (Either (..)) as X
 import Data.Maybe (Maybe (..), fromMaybe) as X

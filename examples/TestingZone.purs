@@ -297,10 +297,10 @@ render :: Model -> E.Html' Model
 render model =
   E.div
   []
-  [ E.p [] [ M.enroot _counter1 (renderCounter model.counter1) ]
-  , E.p [] [ M.enroot _counter2 (renderCounter model.counter2) ]
+  [ E.p [] [ E.enroot _counter1 (renderCounter model.counter1) ]
+  , E.p [] [ E.enroot _counter2 (renderCounter model.counter2) ]
   , E.hr []
-  , M.enroot _textbox (renderTextbox model.textbox)
+  , E.enroot _textbox (renderTextbox model.textbox)
   , E.hr []
   , E.div
     [ P.style' [ S.fontSize ".8em" ] ]
