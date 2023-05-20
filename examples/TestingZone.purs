@@ -59,14 +59,14 @@ renderCounter model =
     ]
   , E.text " | "
   , E.button
-    [ P.onClick \_ -> M.mkPure (_count %~ (_ + 1))
+    [ P.onClick \_ step -> step (_count %~ (_ + 1))
     , buttonStyle
     ]
     [ E.text "+"
     ]
   , E.text " "
   , E.button
-    [ P.onClick \_ -> M.mkPure (_count %~ (_ - 1))
+    [ P.onClick \_ step -> step (_count %~ (_ - 1))
     , buttonStyle
     ]
     [ E.text "-"
@@ -75,20 +75,18 @@ renderCounter model =
   , case model.streamState of
       NotStreaming -> fold
         [ E.button
-          [ P.onClick \_ ->
-              M.mkCont \step -> do
-                { cancel } <- repeatedly (step $ _count %~ (_ + 1))
-                step (_streamState .~ Streaming { cancel })
+          [ P.onClick \_ step -> do
+              { cancel } <- repeatedly (step $ _count %~ (_ + 1))
+              step (_streamState .~ Streaming { cancel })
           , buttonStyle
           ]
           [ E.text "++"
           ]
         , E.text " "
         , E.button
-          [ P.onClick \_ ->
-              M.mkCont \step -> do
-                { cancel } <- repeatedly (step $ _count %~ ((_ - 1) >>> max 0))
-                step (_streamState .~ Streaming { cancel })
+          [ P.onClick \_ step -> do
+              { cancel } <- repeatedly (step $ _count %~ ((_ - 1) >>> max 0))
+              step (_streamState .~ Streaming { cancel })
           , buttonStyle
           ]
           [ E.text "--"
@@ -96,8 +94,7 @@ renderCounter model =
         ]
       Streaming { cancel } ->
         E.button
-        [ P.onClick \_ ->
-            M.mkEff (cancel $> (_streamState .~ NotStreaming))
+        [ P.onClick \_ step -> do cancel *> step (_streamState .~ NotStreaming)
         , buttonStyle
         ]
         [ E.text "🛑"
@@ -128,11 +125,11 @@ renderTextbox str =
   []
   [ E.p
     []
-    [ E.input [ P.type_ "text", P.value str, P.onInput' \val -> M.mkPure (const val) ]
+    [ E.input [ P.type_ "text", P.value str, P.onInput' \val step -> step (const val) ]
     , E.text " "
-    , E.input [ P.type_ "text", P.value str, P.onInput' \val -> M.mkPure (const val) ]
+    , E.input [ P.type_ "text", P.value str, P.onInput' \val step -> step (const val) ]
     , E.text " "
-    , E.input [ P.type_ "text", P.value str, P.onInput' \val -> M.mkPure (const val) ]
+    , E.input [ P.type_ "text", P.value str, P.onInput' \val step -> step (const val) ]
     ]
   , E.p [] [ E.text "As text: ", E.text str ]
   , E.p [] [ E.text "As html: ", E.rawHtml str ]
@@ -176,7 +173,7 @@ renderPhoneNumber pn =
   digit :: Lens' PhoneNumber Int -> PhoneNumber -> E.Html' PhoneNumber
   digit len pn =
     E.select
-    [ P.onInput' $ parseInt >>> (len .~ _) >>> M.mkPure
+    [ P.onInput' \v step -> step (len .~ (parseInt v))
     , P.remark "phone number digit"
     ]
     [ flip foldMap (range 1 9) \n ->
@@ -205,7 +202,7 @@ stringComponent =
     , daemon: \_ -> pure unit
     , view: \(_ /\ s) ->
         E.input
-        [ P.onInput' \v -> M.mkPure (_2 .~ v)
+        [ P.onInput' \v step -> step (_2 .~ v)
         , P.value s
         ]
     }
@@ -226,7 +223,7 @@ comComponent =
           [ P.type_ "checkbox"
           , P.id "caps"
           , P.checked caps
-          , P.onInput' \s -> M.mkPure (_2 <<< prop (Proxy :: Proxy "caps") %~ not)
+          , P.onInput' \s step -> step (_2 <<< prop (Proxy :: Proxy "caps") %~ not)
           ]
         , E.text " → "
         , E.text (if caps then toUpperCase string else string)
@@ -311,8 +308,8 @@ render model =
   , E.enroot _checkbox $ model.checkbox # \checked ->
       E.div
       [] $ (_ `power` 15)
-        [ E.input [ P.type_ "checkbox", P.checked      checked , P.onInput \_ -> M.mkPure not ]
-        , E.input [ P.type_ "checkbox", P.checked (not checked), P.onInput \_ -> M.mkPure not ]
+        [ E.input [ P.type_ "checkbox", P.checked      checked , P.onInput \_ step -> step not ]
+        , E.input [ P.type_ "checkbox", P.checked (not checked), P.onInput \_ step -> step not ]
         ]
   , E.hr []
   , E.enroot _phoneNumber $ renderPhoneNumber model.phoneNumber

@@ -1,7 +1,6 @@
 module Mation.Core.Daemon where
 
 import Mation.Core.Prelude
-import Mation.Core.Mation (Mation, runMation)
 import Mation.Core.Util.WRef (WRef)
 import Mation.Core.Util.WRef as WRef
 
@@ -29,8 +28,3 @@ enroot len f = f <<< WRef.mkView len
 hoist :: forall m n s. (m ~> n) -> Daemon m s -> Daemon n s
 hoist nt dae = dae >>> nt
 
--- | Execute a mation using a `WRef`
--- |
--- | Useful to run `Mation` values within daemons
-execMation :: forall m s. MonadEffect m => WRef s -> Mation m s -> m Unit
-execMation ref mation = runMation mation (\f -> liftEffect $ WRef.modify f ref)

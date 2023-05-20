@@ -14,6 +14,7 @@ import Mation.Core.Util.Weave (Weave)
 import Mation.Core.Util.Weave as W
 import Mation.Core.Util.Hashable (class Hashable, hash)
 import Mation.Core.Util.IsEndo (class IsEndo, runEndo, toEndo, composeEndoLTR, concatEndo)
+import Mation.Core.Util.Revertible as Rev
 
 
 -- | Represents a single CSS style
@@ -156,7 +157,7 @@ toProp :: forall m s. Array Style -> Prop m s
 toProp = FM.float >>> toProp'
   where
 
-  toProp' :: forall m s. Array (Style1 Weave) -> Prop m s
+  toProp' :: Array (Style1 Weave) -> Prop m s
   toProp' styles =
     let
       styleHash = hash styles
@@ -172,10 +173,10 @@ toProp = FM.float >>> toProp'
         -- Combine them
         # intercalate "\n"
 
-    in mkFixup \node -> do
-      restoreCss <- putCss { getCss, hash: styleHash }
-      restoreClass <- putClass node className
-      pure (restoreCss <> restoreClass)
+    in mkFixup \node -> Rev.mkRevertibleE $ liftEffect do
+      { restore: restoreCss } <- putCss { getCss, hash: styleHash }
+      { restore: restoreClass } <- putClass node className
+      pure $ liftEffect (restoreCss <> restoreClass)
 
       -- TODO: Pretty sure the `fixup` API has a leak problem right now. If a node
       --       is removed from the DOM due to its parent being removed (ie, the node

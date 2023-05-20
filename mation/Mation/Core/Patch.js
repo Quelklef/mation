@@ -3,6 +3,8 @@ export const patch_f =
 ({ caseMaybe
  , caseUnsure
  , caseVNode
+ , collapseRevertible
+ , emptyRevertible
  , mPruneMap
 }) => {
 
@@ -17,7 +19,7 @@ export const patch_f =
 
   // Create an empty VTag
   function mkEmptyVTag(tag){
-    return { tag, attrs: [], listeners: [], children: [], fixup: () => {} };
+    return { tag, attrs: [], listeners: [], children: [], fixup: emptyRevertible };
   }
 
   // Mutatively patches the given root node (ie, target node to mount on)
@@ -163,7 +165,8 @@ export const patch_f =
     patchListeners(root, oldVTag.listeners, newVTag.listeners);
     patchChildren(root, oldVTag.children, newVTag.children);
 
-    const { restore } = newVTag.fixup(root)();
+    const revertible = collapseRevertible(newVTag.fixup(root));
+    const restore = revertible();
     root._fixupRestore = restore;
 
     return root;

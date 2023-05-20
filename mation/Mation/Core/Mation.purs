@@ -37,7 +37,8 @@ import Effect.Ref as Ref
 -- | (nb. I'm sorry to say I don't have any concrete examples or a pointed
 -- | explanation of why it would indeed be bad for an event handler to be able to
 -- | read the model state. All I have is an intuition, and I'm going with it!)
-newtype Mation m s = Mation (Step s -> m Unit)
+type Mation m s = Step s -> m Unit
+
 
 {-
 
@@ -131,74 +132,48 @@ simple type aliases.
 --        sake of full generality for the `Mation` type?
 type Step s = forall n. MonadEffect n => (s -> s) -> n Unit
 
-
--- | The most powerful form of mation. Callsites to this function
--- | are supplied a function `apply :: Step s -> m Unit`. The `apply`
--- | function accepts some state update `s -> s` and applies it
--- | to the current state. Callsites to `mkCont` may supply `apply` with
--- | as many such state updates as they like, at whatever time they like.
-mkCont :: forall m s. (Step s -> m Unit) -> Mation m s
-mkCont = Mation
-
--- | Convenience wrapper around `mkCont` which creates a mation able
--- | to buffer its state updates before applying them. The underlying
--- | state is completely unaffected until the buffer is flushed.
-mkStaged :: forall m s.
-  MonadEffect m =>
-     -- | Add a state update to the buffer
-  ({ stage :: (s -> s) -> m Unit
-     -- | Apply all staged updates to the state
-   , apply :: m Unit
-   } -> m Unit
-  ) -> Mation m s
-mkStaged f =
-  mkCont \step -> do
-    buf <- liftEffect $ Ref.new identity
-    f
-      { stage: \g -> liftEffect do
-          Ref.modify_ (_ >>> g) buf
-      , apply: do
-          liftEffect (Ref.read buf) >>= step
-          liftEffect $ Ref.write identity buf
-      }
-
--- | Create a mation which applies some given state update
-mkPure :: forall m s. MonadEffect m => (s -> s) -> Mation m s
-mkPure endo = Mation \step -> step endo
-
--- | Create a mation which does nothing
-mkNoop :: forall m s. Applicative m => Mation m s
-mkNoop = Mation \_step -> pure unit
-
--- | Create a mation which effectfully computes a state update and then applies it
-mkEff :: forall m s. MonadEffect m => m (s -> s) -> Mation m s
-mkEff getEndo = Mation \step -> getEndo >>= \endo -> step endo
-
-
--- | `Mation` destructor
-runMation :: forall m s. Mation m s -> Step s -> m Unit
-runMation (Mation f) = f
-
-
-instance Apply m => Semigroup (Mation m s) where
-  append (Mation f) (Mation g) = Mation \step -> f step *> g step
-
-instance Applicative m => Monoid (Mation m s) where
-  mempty = Mation \_step -> pure unit
+-- | `Step` enroot. Covariant
+enrootStep :: forall large small. Setter' large small -> Step large -> Step small
+enrootStep lens step endo = step (lens %~ endo)
 
 
 
--- | Given a witness `Setter'` to `small` being contained within `large`, we
--- | are able to lift a mation on a `small` type to one on a `large` type.
+-- | Transforms a `Step s` stepper into a "buffered stepper" which
+-- | stages state updates `s -> s` before applying them all at once.
 -- |
--- | This is what allows composition of `Html` components!
-enroot :: forall m large small. Setter' large small -> Mation m small -> Mation m large
-enroot lens (Mation f) =
-  Mation \apply -> f \endo -> apply (lens %~ endo)
-
-
--- | Transform the underlying monad of a `Mation`
+-- | Intended to be used with event handlers like
 -- |
--- | The given `m ~> n` is expected to be a monad morphism
-hoist :: forall m n a. (m ~> n) -> Mation m a -> Mation n a
-hoist f (Mation m) = Mation \step -> f (m step)
+-- | ```purs
+-- | onClick \step -> do
+-- |   { stage, apply } <- M.toBuffered step
+-- |   ...
+-- | ```
+-- |
+-- | It's tempting to instead write
+-- |
+-- | ```purs
+-- | onClick $ M.toBuffered >=> \{ stage, apply } -> ...`
+-- | ```
+-- |
+-- | but this makes the typesystem choke up due to `Step`
+-- | containing a `forall`
+toBuffered :: forall m s.
+  MonadEffect m => Step s -> m (BufferedStep m s)
+toBuffered step = liftEffect do
+  buf <- liftEffect $ Ref.new identity
+  pure
+    { stage: \g -> liftEffect do
+        Ref.modify_ (_ >>> g) buf
+    , apply: do
+        liftEffect (Ref.read buf) >>= step
+        liftEffect $ Ref.write identity buf
+    }
+
+type BufferedStep m s =
+    -- | Add a state update to the buffer
+  { stage :: (s -> s) -> m Unit
+    -- | Apply all staged updates to the state
+  , apply :: m Unit
+  }
+
+

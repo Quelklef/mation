@@ -6,6 +6,9 @@ module Mation.Props
   , style'
   , onInput'
   , fixup
+  , fixupM
+  , fixupEUnutterable
+  , fixupMUnutterable
   , mkPair
   , mkListener
   , dataset
@@ -15,6 +18,7 @@ module Mation.Props
 
 import Data.Map (Map)
 import Data.Map as Map
+import Control.Monad.Reader.Class (ask)
   
 import Mation.Core.Prop (Prop, enroot, hoist) as X
 import Mation.Gen.Attributes as X
@@ -22,6 +26,8 @@ import Mation.Gen.Events as X
 
 import Mation.Core.Prelude
 import Mation.Core.Mation (Mation)
+import Mation.Core.MationT (Step, MationT (..))
+import Mation.Core.MationT as MationT
 import Mation.Core.Prop (Prop)
 import Mation.Core.Prop as Prop
 import Mation.Core.Dom (DomEvent, DomNode)
@@ -29,6 +35,8 @@ import Mation.Core.Style (Style)
 import Mation.Core.Style as Style
 import Mation.Core.Util.Assoc (Assoc)
 import Mation.Core.Util.Assoc as Assoc
+import Mation.Core.Util.Revertible (Revertible)
+import Mation.Core.Util.Revertible as Rev
 
 
 -- | From a collection of `Style` values, produce a `Prop` for the `style` attribute on an `Html` node
@@ -46,7 +54,30 @@ foreign import getTargetValue :: DomEvent -> String
 -- | Create a `Prop` which will execute a given function on the rendered DOM node
 -- | and then execute the given `restore` before rendering the next frame
 fixup :: forall m s. (DomNode -> Effect { restore :: Effect Unit }) -> Prop m s
-fixup = Prop.mkFixup
+fixup f = Prop.mkFixup \node -> Rev.mkRevertibleE (_.restore <$> f node)
+
+-- | Like `fixup` but lives in `m`
+fixupM :: forall m s. Functor m => (DomNode -> m { restore :: m Unit }) -> Prop m s
+fixupM f =
+  Prop.mkFixup \node -> Rev.mkRevertibleM $ MationT \_step ->
+    (MationT.lift <<< _.restore) <$> f node
+
+-- | Like `fixup` but with access the application `Step s`
+-- |
+-- | This is very powerful and is generally not needed.
+-- |
+-- | Apologies for the `MonadEffect` constraint
+fixupEUnutterable :: forall m s. MonadEffect m => (DomNode -> Step s -> Effect { restore :: Effect Unit }) -> Prop m s
+fixupEUnutterable f = fixupMUnutterable (\node step -> f node step # liftEffect # map (_restore %~ liftEffect))
+  where _restore = prop (Proxy :: Proxy "restore")
+
+-- | Like `fixup` lives in `m` and the application `Step s`
+-- |
+-- | This is very powerful and is generally not needed.
+fixupMUnutterable :: forall m s. Functor m => (DomNode -> Step s -> m { restore :: m Unit }) -> Prop m s
+fixupMUnutterable f =
+  Prop.mkFixup \node -> Rev.mkRevertibleM $ MationT \step ->
+    (MationT.lift <<< _.restore) <$> f node step
 
 -- | Create a `Prop` directly from an HTML attribute key/value pair
 -- |

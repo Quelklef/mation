@@ -31,10 +31,11 @@ render num =
   , E.p
     []
     [ E.button
-      [ P.onClick      -- on click,
-          \_event ->   -- ignore the incoming event
-            M.mkPure   -- perform a pure state update
-              (_ + 1)  -- which increments the number
+      [ P.onClick        -- on click,
+          \_ ->          -- ignore the incoming event
+            \step ->     -- accept the state update function
+              step       -- update the state
+                (_ + 1)  -- by incrementing the number
       ]
       [ E.text "Increment counter" ]
     ]

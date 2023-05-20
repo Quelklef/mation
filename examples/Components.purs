@@ -37,13 +37,13 @@ renderConcat :: ConcatModel -> E.Html' ConcatModel
 renderConcat (prefix /\ suffix) =
   fold
   [ E.input
-    [ P.onInput' \newPrefix -> M.mkPure (\(_oldPrefix /\ suffix) -> newPrefix /\ suffix)
+    [ P.onInput' \newPrefix step -> step (\(_oldPrefix /\ suffix) -> newPrefix /\ suffix)
     , P.value prefix
     , P.style "width: 10ch"
     ]
   , E.text " + "
   , E.input
-    [ P.onInput' \newSuffix -> M.mkPure (\(prefix /\ _oldSuffix) -> prefix /\ newSuffix)
+    [ P.onInput' \newSuffix step -> step (\(prefix /\ _oldSuffix) -> prefix /\ newSuffix)
     , P.value suffix
     , P.style "width: 10ch"
     ]
@@ -66,14 +66,14 @@ renderRepeat :: RepeatModel -> E.Html' RepeatModel
 renderRepeat (string /\ count) =
   fold
   [ E.input
-    [ P.onInput' \s -> M.mkPure (_1 .~ s)
+    [ P.onInput' \s step -> step (_1 .~ s)
     , P.value string
     , P.style "width: 10ch"
     ]
   , E.text " × "
   , E.input
     [ P.type_ "number"
-    , P.onInput' \s -> M.mkPure (_2 .~ parseNumber s)
+    , P.onInput' \s step -> step (_2 .~ parseNumber s)
     , P.value (show count)
     , P.style "width: 5ch"
     ]

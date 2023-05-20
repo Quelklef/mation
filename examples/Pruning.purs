@@ -104,12 +104,12 @@ render model =
         ]
       ]
       [ E.button
-        [ P.onClick \_ -> M.mkPure (_ + 1)
+        [ P.onClick \_ step -> step (_ + 1)
         , P.style "font-size: 1em; padding: .1em .2em"
         ]
         [ E.text "↑" ]
       , E.button
-        [ P.onClick \_ -> M.mkPure (_ - 1)
+        [ P.onClick \_ step -> step (_ - 1)
         , P.style "font-size: 1em; padding: .1em .2em"
         ]
         [ E.text "↓" ]
@@ -127,11 +127,11 @@ renderExample2 { depth, color } =
     , E.input
       [ P.type_ "number"
       , P.value $ show depth
-      , P.onInput' $ parseInt >>> (prop (Proxy :: Proxy "depth") .~ _) >>> M.mkPure
+      , P.onInput' \v step -> step (prop (Proxy :: Proxy "depth") .~ parseInt v)
       ]
     , E.text " "
     , E.button
-      [ P.onClick \_ -> M.mkPure $ prop (Proxy :: Proxy "color") %~ case _ of
+      [ P.onClick \_ step -> step $ prop (Proxy :: Proxy "color") %~ case _ of
             "lightgreen" -> "teal"
             "teal" -> "lightgreen"
             _ -> "yellow"
@@ -195,14 +195,14 @@ renderSumTest (n /\ tab) =
   [ E.p
     []
     [ E.button
-      [ P.onClick \_ -> M.mkPure (_1 %~ (_ + 1))
+      [ P.onClick \_ step -> step (_1 %~ (_ + 1))
       , P.style "padding: 0 1.5em; line-height: 2em"
       ]
       [ E.text (show n)
       ]
     , E.text " "
     , E.button
-      [ P.onClick \_ -> M.mkPure (_2 %~ (_ + 1))
+      [ P.onClick \_ step -> step (_2 %~ (_ + 1))
       , P.style "padding: 0 1.5em; line-height: 2em"
       ]
       [ E.text "swap"

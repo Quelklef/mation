@@ -10,7 +10,7 @@ import Mation.Core.Prelude
 import Unsafe.Coerce (unsafeCoerce)
 
 
-foreign import data Exists :: (Type -> Type) -> Type
+foreign import data Exists :: forall k. (k -> Type) -> Type
 
 mkExists :: forall f a. f a -> Exists f
 mkExists = unsafeCoerce

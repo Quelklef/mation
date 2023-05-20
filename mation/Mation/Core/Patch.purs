@@ -5,6 +5,8 @@ import Mation.Core.Prelude
 import Mation.Core.Html (VNode, CaseVNode, caseVNode)
 import Mation.Core.Dom (DomNode)
 import Mation.Core.Util.UnsureEq (Unsure (..))
+import Mation.Core.Util.Revertible (Revertible)
+import Mation.Core.Util.Revertible as Rev
 
 
 -- | Reference to an object holding runtime information necessary to
@@ -29,8 +31,8 @@ foreign import data PruneMapRef :: Type
 -- | if some DOM node attribute is accidentally deleted by external javascript,
 -- | for instance, re-rendering the model will not replace it.
 patchOnto ::
-  { mOldVNode :: Maybe (VNode (Effect Unit))
-  , newVNode :: VNode (Effect Unit)
+  { mOldVNode :: Maybe (VNode Effect)
+  , newVNode :: VNode Effect
   , mPruneMap :: Maybe PruneMapRef
   }
   -> DomNode -> Effect PruneMapRef
@@ -39,6 +41,8 @@ patchOnto { mOldVNode, newVNode, mPruneMap } =
     { caseMaybe
     , caseUnsure
     , caseVNode
+    , collapseRevertible: Rev.collapse
+    , emptyRevertible: mempty
     , mPruneMap
     }
     { mOldVNode
@@ -50,10 +54,12 @@ foreign import patch_f ::
    { caseMaybe :: CaseMaybe
    , caseUnsure :: CaseUnsure
    , caseVNode :: CaseVNode
+   , collapseRevertible :: Revertible Effect -> Effect (Effect Unit)
+   , emptyRevertible :: Revertible Effect
    , mPruneMap :: Maybe PruneMapRef
    } ->
-   { mOldVNode :: Maybe (VNode (Effect Unit))
-   , newVNode :: VNode (Effect Unit)
+   { mOldVNode :: Maybe (VNode Effect)
+   , newVNode :: VNode Effect
    }
   -> (DomNode -> Effect PruneMapRef)
 
@@ -78,3 +84,5 @@ caseUnsure uc certainly uncertain =
   case uc of
     Surely x -> certainly x
     Unsure -> uncertain
+
+

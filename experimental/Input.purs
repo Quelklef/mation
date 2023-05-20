@@ -139,8 +139,8 @@ render :: forall m model err t. MonadEffect m => InputSpec model err t -> InputS
 render (InputSpec spec) (InputState { model, perturbed }) =
 
   E.span
-  [ P.onFocusout \_ -> M.mkPure (_Newtype <<< prop (Proxy :: Proxy "perturbed") .~ true)
-  , P.onInput \_ -> M.mkPure (_Newtype <<< prop (Proxy :: Proxy "perturbed") .~ true)
+  [ P.onFocusout \_ step -> step (_Newtype <<< prop (Proxy :: Proxy "perturbed") .~ true)
+  , P.onInput \_ step -> step (_Newtype <<< prop (Proxy :: Proxy "perturbed") .~ true)
   , P.style'
     [ S.display "contents"
     ]
@@ -307,7 +307,7 @@ stringInput fromDefaults =
     , render: \s ->
         E.input
         [ P.value s
-        , P.onInput' \s' -> M.mkPure (\_ -> s')
+        , P.onInput' \s' step -> step (const s')
         , fold opts.props
           # P.enroot (re _Newtype :: Iso' String StringInputModel)
         ]

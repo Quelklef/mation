@@ -84,6 +84,7 @@ mkParent1 :: forall
   sup1 model1
   .
   IsSymbol name =>
+  Functor m =>
 
       -- | Parent component name
   { name :: Proxy name

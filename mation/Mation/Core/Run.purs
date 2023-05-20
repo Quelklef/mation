@@ -4,11 +4,12 @@ import Mation.Core.Prelude
 
 import Effect.Exception (throw)
 
-import Mation.Core.Mation (Mation)
-import Mation.Core.Mation as Mation
+import Mation.Core.MationT (MationT)
+import Mation.Core.MationT as MationT
 import Mation.Core.Daemon (Daemon)
 import Mation.Core.Daemon as Daemon
 import Mation.Core.Html (Html (..), VNode)
+import Mation.Core.Html as Html
 import Mation.Core.Dom (DomNode)
 import Mation.Core.Patch as Patch
 import Mation.Core.Util.WRef (WRef)
@@ -118,12 +119,14 @@ runApp' args =
 -- |     `f (return x) = return x` and `f (m >>= g) = f m >>= (f . g)`.
 -- |     This condiiton ensures that monad operations performed
 -- |     within `m` are not mangled by `f` when mapping into `n`.
+--
+-- FIXME: `toEffect` didn't used to be a nat trans
 runApp :: forall m s. MonadEffect m =>
   { initial :: s
   , render :: s -> Html m s
   , root :: Effect DomNode
   , daemon :: Daemon m s
-  , toEffect :: m Unit -> Effect Unit
+  , toEffect :: m ~> Effect
   } -> Effect Unit
 
 runApp args = do
@@ -131,7 +134,7 @@ runApp args = do
   let
     -- Render to an VNode instead of an Html
     -- This is unsafe, but during usual usage of the framework should never happen
-    renderTo1 :: s -> Effect (VNode (Mation m s))
+    renderTo1 :: s -> Effect (VNode (MationT m s))
     renderTo1 = args.render >>> case _ of
       Html [x] -> pure x
       _ -> throw "[mation] Error: Top-level Html value contains either zero nodes or more than one node. Did you produce `mempty`, perhaps, or some result of `<>` or `fold`? Please wrap your application in a container node."
@@ -150,10 +153,10 @@ runApp args = do
 
   let
     -- Turn a Mation into an Effect
-    execMation :: Mation m s -> Effect Unit
+    execMation :: MationT m s ~> Effect
     execMation mat = do
       step <- WRef.read stepRef
-      args.toEffect $ Mation.runMation mat (step >>> liftEffect)
+      args.toEffect $ MationT.runMationT mat (step >>> liftEffect)
 
   -- Render for the first time
   model /\ vNode /\ pruneMap <- do
@@ -161,7 +164,7 @@ runApp args = do
     vNode <- renderTo1 model
     let patch = Patch.patchOnto
                   { mOldVNode: Nothing
-                  , newVNode: execMation <$> vNode
+                  , newVNode: Html.hoist1 execMation vNode
                   , mPruneMap: Nothing
                   }
     pruneMap <- args.root >>= patch
@@ -178,8 +181,8 @@ runApp args = do
       let newModel = endo oldModel
       newVNode <- renderTo1 newModel
       let patch = Patch.patchOnto
-                    { mOldVNode: Just (execMation <$> oldVNode)
-                    , newVNode: execMation <$> newVNode
+                    { mOldVNode: Just (Html.hoist1 execMation oldVNode)
+                    , newVNode: Html.hoist1 execMation newVNode
                     , mPruneMap: Just oldPruneMap
                     }
       newPruneMap <- args.root >>= patch

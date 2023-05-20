@@ -72,7 +72,7 @@ renderStringReverse model =
     [ E.text "Some input string: "
     , E.input
       [ P.value model.input
-      , P.onInput' $ ((prop (Proxy :: Proxy "input")) .~ _) >>> M.mkPure
+      , P.onInput' \v step -> step (prop (Proxy :: Proxy "input") .~ v)
       , P.disabled $ isInProgress model.requestStatus
       ]
     ]
@@ -90,9 +90,9 @@ renderStringReverse model =
           , renderSpinner model.spinnerTick
           , E.text " "
           , E.button
-            [ P.onClick \_ -> M.mkEff do
+            [ P.onClick \_ step -> do
                   cancel
-                  pure (prop (Proxy :: Proxy "requestStatus") .~ NotStarted)
+                  step (prop (Proxy :: Proxy "requestStatus") .~ NotStarted)
             ]
             [ E.text "Cancel"
             ]
@@ -153,26 +153,25 @@ renderSpinner tick =
 
 
 doReverse :: String -> M.Mation Effect Model
-doReverse string =
-  M.mkCont \step -> do
+doReverse string step = do
 
-    let fps = 60.0
-    { cancel: cancelSpinner } <-
-      everyNSeconds (1.0 / fps) do
-        step (prop (Proxy :: Proxy "spinnerTick") %~ (_ + 6))
+  let fps = 60.0
+  { cancel: cancelSpinner } <-
+    everyNSeconds (1.0 / fps) do
+      step (prop (Proxy :: Proxy "spinnerTick") %~ (_ + 6))
 
-    { cancel: cancelApi } <-
-      launchApiCall
-        { onSuccess: \result -> do
-            cancelSpinner
-            step (prop (Proxy :: Proxy "requestStatus") .~ Success { result })
-        , onFailure: \reason -> do
-            cancelSpinner
-            step (prop (Proxy :: Proxy "requestStatus") .~ Failure { reason })
-        , input: string
-        }
+  { cancel: cancelApi } <-
+    launchApiCall
+      { onSuccess: \result -> do
+          cancelSpinner
+          step (prop (Proxy :: Proxy "requestStatus") .~ Success { result })
+      , onFailure: \reason -> do
+          cancelSpinner
+          step (prop (Proxy :: Proxy "requestStatus") .~ Failure { reason })
+      , input: string
+      }
 
-    step (prop (Proxy :: Proxy "requestStatus") .~ InProgress { cancel: cancelSpinner *> cancelApi })
+  step (prop (Proxy :: Proxy "requestStatus") .~ InProgress { cancel: cancelSpinner *> cancelApi })
 
 
 -- Imagine that this is some genuine asynchronous API

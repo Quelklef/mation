@@ -5,10 +5,15 @@ module Mation.Core.Html where
   
 import Mation.Core.Prelude
 
-import Mation.Core.Mation (Mation)
-import Mation.Core.Mation as Mation
+import Data.Either (either)
+import Data.Array as Array
+
+import Mation.Core.MationT (Step, MationT (..))
+import Mation.Core.MationT as MationT
 import Mation.Core.Util.Assoc (Assoc)
 import Mation.Core.Util.Assoc as Assoc
+import Mation.Core.Util.Revertible (Revertible)
+import Mation.Core.Util.Revertible as Rev
 import Mation.Core.Dom (DomNode, DomEvent)
 import Mation.Core.Util.FreeMonoid (class FreeMonoid)
 import Mation.Core.Util.FreeMonoid as FM
@@ -16,8 +21,8 @@ import Mation.Core.Util.UnsureEq (class UnsureEq, unsureEq, Unsure)
 import Mation.Core.Util.Exists (Exists, mkExists, mapExists)
 
 
--- | A single Virtual Node. Type is parameterized by listener result.
-data VNode msg
+-- | A single Virtual Node
+data VNode m
 
     -- | Embed an existing DomNode directly into the virtual dom
   = VRawNode DomNode
@@ -30,16 +35,46 @@ data VNode msg
 
     -- | Tag node
   | VTag
+
+      -- | Tag name
       { tag :: String
+
+      -- | Html attributes
       , attrs :: Assoc String String
-      , listeners :: Assoc String (DomEvent -> msg)
-          -- ^
-          -- Knowledge of the listeners is needed here so that `enroot`
-          -- can be implemented
-          --
-          -- Otherwise we could put listeners in `fixup`
-      , fixup :: DomNode -> Effect { restore :: Effect Unit }
-      , children :: Array (VNode msg)
+
+      -- | Event listeners
+      , listeners :: Assoc String (DomEvent -> m Unit)
+
+      -- | Arbitrary revertible change on the mounted `DomNode`,
+      -- | such as adding a class. The change is applied after
+      -- | the node is mounted and then is reverted right before
+      -- | the next re-render.
+      -- |
+      -- | Fixups give a highly generic type of VNode "property".
+      -- |
+      -- | In principle having `fixup` subsumes the need for
+      -- | both `attrs` and `listeners`, since one can always create
+      -- | a `fixup` which adds an attribute or attaches a listener.
+      -- |
+      -- | ***
+      -- |
+      -- | Remark: it's worth asking why the `fixup` lives in `m`.
+      -- | Since it mutates the `DomNode` should it not live in
+      -- | something like `Effect` instead?
+      -- |
+      -- | Well, in the end we'll be using the `VNode` type
+      -- | instantiated with `m ~ MationT s n` for some user-defined
+      -- | `n`. We expect `n` to instantiate `MonadEffect` since it
+      -- | has to be able to execute the Mation runtime (see the
+      -- | long comment on `Mation.Core.Mation (Mation)`), meaning
+      -- | that working in `n` does give us our desired access
+      -- | to `Effect`. Additionally, via `MationT s` it will
+      -- | give us access to the application `Step s`, which is useful
+      -- | for some `fixup`s.
+      , fixup :: DomNode -> Revertible m
+
+      -- | Children virtual nodes
+      , children :: Array (VNode m)
       }
 
     -- | The user can "prune" a virtual node by supplying, instead of an actual
@@ -64,31 +99,34 @@ data VNode msg
     -- | function is not allowed to change--we know that the deferred comptuations
     -- | are exactly equal, and we skip diffing entirely by just re-using the
     -- | DOM node from last frame.
-  | VPrune (Exists (PruneE msg))
+  | VPrune (Exists (PruneE m))
 
 
-newtype PruneE msg p = PruneE
+newtype PruneE m p = PruneE
   { keyPath :: Array String
   , params :: p
   , unsureEq :: p -> p -> Unsure Boolean
     -- ^ Typeclass instance. Manually managed because Purescript doesn't have
     --   native support for existentials (not to mention constrained existentials)
-  , render :: p -> VNode msg
+  , render :: p -> VNode m
   }
 
 
-instance Functor VNode where
-  map f = case _ of
-    VRawNode x -> VRawNode x
-    VRawHtml x -> VRawHtml x
-    VText x -> VText x
-    VTag { tag, attrs, listeners, fixup, children } ->
-      VTag { tag, attrs, fixup
-           , listeners: listeners # map (map f)
-           , children: children # map (map f)
-           }
-    VPrune e -> VPrune $ e # mapExists \(PruneE { keyPath, params, unsureEq, render }) ->
-      PruneE { keyPath, params, unsureEq, render: render >>> map f }
+hoist1 :: forall m n. Functor n => (m ~> n) -> VNode m -> VNode n
+hoist1 f = case _ of
+  VRawNode x -> VRawNode x
+  VRawHtml x -> VRawHtml x
+  VText x -> VText x
+  VTag { tag, attrs, listeners, fixup, children } ->
+    VTag { tag, attrs
+         , listeners: listeners # map (map f)
+         , fixup: fixup # map (Rev.hoist f)
+         , children: children # map (hoist1 f)
+         }
+  VPrune e -> VPrune $ e # mapExists \(PruneE { keyPath, params, unsureEq, render }) ->
+    PruneE { keyPath, params, unsureEq, render: render >>> hoist1 f }
+
+  where _restore = prop (Proxy :: Proxy "restore")
 
 
 pruneScope :: forall msg. String -> VNode msg -> VNode msg
@@ -107,18 +145,18 @@ pruneScope key = case _ of
            }
 
 
-type CaseVNode = forall msg r.
-     VNode msg
+type CaseVNode = forall m r.
+     VNode m
   -> (DomNode -> r)
   -> (String -> r)
   -> (String -> r)
   -> ({ tag :: String
       , attrs :: Assoc String String
-      , listeners :: Assoc String (DomEvent -> msg)
-      , fixup :: DomNode -> Effect { restore :: Effect Unit }
-      , children :: Array (VNode msg)
+      , listeners :: Assoc String (DomEvent -> m Unit)
+      , fixup :: DomNode -> Revertible m
+      , children :: Array (VNode m)
       } -> r)
-  -> (Exists (PruneE msg) -> r)
+  -> (Exists (PruneE m) -> r)
   -> r
 
 caseVNode :: CaseVNode
@@ -142,10 +180,10 @@ caseVNode node vRawNode vRawHtml vText vTag vPrune =
 -- |   also one representing `<i>text</i><b>text</b>`
 -- |
 -- | - This type can be used with functions like `foldMap` and monoidal `when`,
--- |   which can be extremeley convenient when constructing `Html` values
-newtype Html m s = Html (Array (VNode (Mation m s)))
+-- |   which can be extremely convenient when constructing `Html` values
+newtype Html m s = Html (Array (VNode (MationT m s)))
 
-instance FreeMonoid (Html m s) (VNode (Mation m s))
+instance FreeMonoid (Html m s) (VNode (MationT m s))
 
 derive instance Newtype (Html m s) _
 derive newtype instance Semigroup (Html m s)
@@ -168,8 +206,8 @@ mkText text = FM.singleton $ VText text
 mkTag :: forall m s.
   { tag :: String
   , attrs :: Assoc String String
-  , listeners :: Assoc String (DomEvent -> Mation m s)
-  , fixup :: DomNode -> Effect { restore :: Effect Unit }
+  , listeners :: Assoc String (DomEvent -> MationT m s Unit)
+  , fixup :: DomNode -> Revertible (MationT m s)
   , children :: Array (Html m s)
   }
   -> Html m s
@@ -192,7 +230,7 @@ mkPrune key render params =
   -- FIXME: We treat VPrune nodes as being a <span style="display: contents"> over
   --        their children. This makes diffing easier but is fundamentally a hack.
   --        Note that the diffing algorithm directly uses knowledge of this hack.
-  wrap :: forall n t. Html n t -> VNode (Mation n t)
+  wrap :: forall n t. Html n t -> VNode (MationT n t)
   wrap html = VTag
     { tag: "span"
     , attrs: Assoc.fromFoldable [ "style" /\ "display: contents" ]
@@ -203,12 +241,12 @@ mkPrune key render params =
 
 
 -- | Embed one `Html` within another
-enroot :: forall m large small. Setter' large small -> Html m small -> Html m large
-enroot len (Html arr) = Html $ map (map (Mation.enroot len)) arr
+enroot :: forall m large small. Functor m => Setter' large small -> Html m small -> Html m large
+enroot len (Html arr) = Html $ arr # map (hoist1 (MationT.enroot len))
 
 -- | Transform the underlying monad of an `Html`
 -- |
 -- | The given `m ~> n` is expected to be a monad morphism
-hoist :: forall m n a. (m ~> n) -> Html m a -> Html n a
-hoist f (Html arr) = Html $ arr # map (map (Mation.hoist f))
+hoist :: forall m n a. Functor n => (m ~> n) -> Html m a -> Html n a
+hoist f (Html arr) = Html $ arr # map (hoist1 (MationT.hoist f))
 

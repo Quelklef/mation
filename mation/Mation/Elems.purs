@@ -38,7 +38,7 @@ mkTag = Prop.mkTagFromProps
 
 
 -- | Embed one `Html` within another
-enroot :: forall m large small. Setter' large small -> Html m small -> Html m large
+enroot :: forall m large small. Functor m => Setter' large small -> Html m small -> Html m large
 enroot = Html.enroot
 
 

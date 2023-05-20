@@ -55,10 +55,10 @@ render model =
     [ E.text "Using n="
     , E.input
       [ P.type_ "number"
-      , P.onInput' \val ->
+      , P.onInput' \val step ->
             case Number.fromString val of
-              Nothing -> M.mkNoop
-              Just n -> M.mkPure (_exp .~ n)
+              Nothing -> pure unit
+              Just n -> step (_exp .~ n)
       , P.value (show model.exp)
       , P.style' [ S.width "6ch" ]
       ]
@@ -71,7 +71,7 @@ render model =
     [ E.input
       [ P.type_ "checkbox"
       , P.checked model.fast
-      , P.onInput' \_ -> M.mkPure (_fast %~ not)
+      , P.onInput' \_ step -> step (_fast %~ not)
       , P.id "use-fast"
       ]
     , E.text " "
@@ -126,7 +126,7 @@ tree n string =
     [ E.input
       [ P.type_ "text"
       , P.value string
-      , P.onInput' \val -> M.mkPure (const val)
+      , P.onInput' \val step -> step (const val)
       , P.style'
         [ S.border "none"
         , S.backgroundColor "rgb(255, 220, 255)"
@@ -149,7 +149,8 @@ tree n string =
     ]
 
 doBench :: M.Mation Effect Model
-doBench = M.mkStaged \{ stage, apply } -> do
+doBench step = do
+  { stage, apply } <- M.toBuffered step
   stage (_benchmarks .~ [])
   nTimes 10 do
     stage identity
@@ -160,3 +161,4 @@ doBench = M.mkStaged \{ stage, apply } -> do
   where
 
   nTimes = flip power
+

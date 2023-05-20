@@ -196,7 +196,7 @@ render model =
               , S.padding "1em 0"
               , if isCurrent then S.textDecoration "underline" else mempty
               ]
-            , P.onClick \_ -> M.mkPure (prop (Proxy :: Proxy "page") .~ page)
+            , P.onClick \_ step -> step (prop (Proxy :: Proxy "page") .~ page)
             ]
             [ E.text (pretty page)
             ]
