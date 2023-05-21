@@ -9,10 +9,8 @@ import Data.String.Pattern (Pattern (..)) as Str
 import Data.String.Common (split) as Str
 import Data.List (List (..))
 import Data.List as List
-import Data.Array as Array
 
 import Mation (Html, Prop)
-import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
@@ -376,7 +374,7 @@ emailInput opts =
     # List.fromFoldable
     # case _ of
       Nil -> Nothing  -- impossible
-      Cons all Nil -> Nothing  -- didn't split
+      Cons _all Nil -> Nothing  -- didn't split
       Cons before allAfter -> Just (before /\ intercalate delim allAfter)
 
 

@@ -2,7 +2,6 @@ module Mation.Core.Style where
 
 import Mation.Core.Prelude
 
-import Data.String.Common (joinWith)
 import Data.Function as Fun
 import Data.Map as Map
 
@@ -13,7 +12,7 @@ import Mation.Core.Util.FreeMonoid as FM
 import Mation.Core.Util.Weave (Weave)
 import Mation.Core.Util.Weave as W
 import Mation.Core.Util.Hashable (class Hashable, hash)
-import Mation.Core.Util.IsEndo (class IsEndo, runEndo, toEndo, composeEndoLTR, concatEndo)
+import Mation.Core.Util.IsEndo (class IsEndo, runEndo, toEndo, composeEndoLTR)
 import Mation.Core.Util.Revertible as Rev
 
 

@@ -1,10 +1,9 @@
 module Mation.Core.StyleScopeModifier where
 
 import Mation.Core.Prelude
-import Mation.Core.Style (Style, Style1 (..), Scopes, addScope, composeScopesLTR)
+import Mation.Core.Style (Style, Scopes, addScope, composeScopesLTR)
 import Mation.Core.Util.Weave (Weave)
 import Mation.Core.Util.FreeMonoid as FM
-import Mation.Core.Util.IsEndo (composeEndoRTL)
 
 
 -- | Represents a "style scope modifier", which is a piece of logic

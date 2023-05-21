@@ -17,9 +17,7 @@ module Mation.Props
   , onClickElsewhere
   ) where
 
-import Data.Map (Map)
 import Data.Map as Map
-import Control.Monad.Reader.Class (ask)
   
 import Mation.Core.Prop (Prop, enroot, hoist) as X
 import Mation.Gen.Attributes as X
@@ -36,7 +34,6 @@ import Mation.Core.Style (Style)
 import Mation.Core.Style as Style
 import Mation.Core.Util.Assoc (Assoc)
 import Mation.Core.Util.Assoc as Assoc
-import Mation.Core.Util.Revertible (Revertible)
 import Mation.Core.Util.Revertible as Rev
 
 
@@ -135,4 +132,4 @@ onClickElsewhere f =
 
   where _restore = prop (Proxy :: Proxy "restore")
 
-foreign import onClickElsewhere_f :: forall m s. (DomEvent -> Effect Unit) -> DomNode -> Effect { restore :: Effect Unit }
+foreign import onClickElsewhere_f :: (DomEvent -> Effect Unit) -> DomNode -> Effect { restore :: Effect Unit }

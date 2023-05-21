@@ -5,10 +5,7 @@ module Mation.Core.Html where
   
 import Mation.Core.Prelude
 
-import Data.Either (either)
-import Data.Array as Array
-
-import Mation.Core.MationT (Step, MationT (..))
+import Mation.Core.MationT (MationT)
 import Mation.Core.MationT as MationT
 import Mation.Core.Util.Assoc (Assoc)
 import Mation.Core.Util.Assoc as Assoc

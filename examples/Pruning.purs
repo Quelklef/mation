@@ -2,10 +2,8 @@ module Mation.Examples.Pruning where
 
 import Mation.Core.Prelude
 
-import Data.Lens.Lens.Tuple (_1, _2)
 import Data.Array (range)
 
-import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
@@ -118,7 +116,7 @@ render model =
 
 
 renderExample2 :: { depth :: Int, color :: String } -> E.Html' { depth :: Int, color :: String }
-renderExample2 { depth, color } =
+renderExample2 = \{ depth, color } ->
 
   fold
   [ E.div
@@ -140,12 +138,12 @@ renderExample2 { depth, color } =
       ]
     ]
   , E.br []
-  , doIt depth
+  , doIt depth color
   ]
 
   where
 
-  doIt depth =
+  doIt depth color =
     if depth <= 0
     then
       E.div
@@ -181,7 +179,7 @@ renderExample2 { depth, color } =
         ]
       , P.showUpdates
       ]
-      [ doIt (depth - 1)
+      [ doIt (depth - 1) color
       ]
 
 foreign import parseInt :: String -> Int
@@ -211,6 +209,6 @@ renderSumTest (n /\ tab) =
     , case tab `mod` 3 of
         0 -> flip (E.prune "0") n (\n -> E.span [ P.style "border: 1px solid blue" ] [ E.text (show n <> " ") ])
         1 -> flip (E.prune "1") n (\n -> range 1 n # foldMap \k -> E.text (show k <> " .. "))
-        _ -> flip (E.prune "_") n (\n -> E.span [ P.style "background-color: red; color: white" ] [ E.text "three" ])
+        _ -> flip (E.prune "_") n (\_ -> E.span [ P.style "background-color: red; color: white" ] [ E.text "three" ])
     ]
   ]

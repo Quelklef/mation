@@ -2,9 +2,6 @@ module Mation.Core.Util.Revertible where
 
 import Mation.Core.Prelude
 
-import Data.Array as Array
-import Data.Either (either)
-
 
 -- | A `Revertible m` is an action in the monad `m`
 -- | which can be *undone*. Think of `Revertible m` as roughly like

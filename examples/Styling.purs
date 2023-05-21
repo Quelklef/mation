@@ -7,7 +7,6 @@ import Mation.Props as P
 import Mation.Styles as S
 import Mation.Selectors as Sel
 import Mation.Selectors ((#>>), (#<>))
-import Mation.Core.Util.Weave as W
 
 
 type Model = Unit

@@ -10,7 +10,6 @@ import Mation.Core.StyleScopeModifier (on) as X
 import Mation.Core.Style (Style)
 import Mation.Core.Style as Style
 import Mation.Core.Util.FreeMonoid as FM
-import Mation.Core.Util.Weave (Weave)
 
 
 -- | Construct a style directly from a key/value pair

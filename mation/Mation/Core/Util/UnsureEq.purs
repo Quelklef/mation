@@ -133,6 +133,7 @@ instance (R.Nub r r, RL.RowToList r rl, UnsureEqFields rl r) => UnsureEq (Record
   unsureEq = unsureEqFields (Proxy :: Proxy rl)
 
 -- | Leaked implementation detail for how `UnsureEq` is implemented on record types
+class UnsureEqFields :: forall k. k -> Row Type -> Constraint
 class UnsureEqFields rl r where
   unsureEqFields :: Proxy rl -> Record r -> Record r -> Unsure Boolean
 

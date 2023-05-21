@@ -16,7 +16,6 @@ import Mation.Core.Prelude
 
 import Data.Lens (Lens)
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Unsafe.Coerce (unsafeCoerce)
 
 import Mation.Core.Daemon (Daemon)
 import Mation.Elems (Html)

@@ -18,7 +18,6 @@ import Data.Lens.Record (prop)
 import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
-import Mation.Styles as S
 
 
 -- Each component is written the same as a miniature application,
@@ -37,13 +36,13 @@ renderConcat :: ConcatModel -> E.Html' ConcatModel
 renderConcat (prefix /\ suffix) =
   fold
   [ E.input
-    [ P.onInput' \newPrefix step -> step (\(_oldPrefix /\ suffix) -> newPrefix /\ suffix)
+    [ P.onInput' \newPrefix step -> step (\(_oldPrefix /\ curSuffix) -> newPrefix /\ curSuffix)
     , P.value prefix
     , P.style "width: 10ch"
     ]
   , E.text " + "
   , E.input
-    [ P.onInput' \newSuffix step -> step (\(prefix /\ _oldSuffix) -> prefix /\ newSuffix)
+    [ P.onInput' \newSuffix step -> step (\(curPrefix /\ _oldSuffix) -> curPrefix /\ newSuffix)
     , P.value suffix
     , P.style "width: 10ch"
     ]

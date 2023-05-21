@@ -7,9 +7,7 @@ import Data.Array (range)
 import Mation as M
 import Mation.Elems as E
 import Mation.Styles as S
-import Mation.Core.Style (Style) as S
 import Mation.Props as P
-import Mation.Core.Util.WRef (WRef)
 import Mation.Core.Util.WRef as WRef
 
 

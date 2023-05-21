@@ -6,7 +6,6 @@ import Data.Array (range)
 import Data.Map as Map
 import Data.Lens (lens)
 
-import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
@@ -53,7 +52,7 @@ renderCounter model =
       [ S.display "inline-block"
       , S.minWidth "10ch"
       ]
-    , P.dataset $ range 1 (min model.count 50) # foldMap (\n -> Map.singleton (show n) (show n))
+    , P.dataset $ range 1 (min model.count 50) # foldMap (\n -> [show n /\ show n]) # Map.fromFoldable
     ]
     [ E.text (show model.count)
     ]
@@ -142,7 +141,7 @@ renderTextbox str =
 type PhoneNumber = Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int
 
 renderPhoneNumber :: PhoneNumber -> E.Html' PhoneNumber
-renderPhoneNumber pn =
+renderPhoneNumber = \pn ->
   E.div
   [ P.style'
     [ S.display "flex"
@@ -248,7 +247,7 @@ comComponent =
           [ P.type_ "checkbox"
           , P.id "caps"
           , P.checked caps
-          , P.onInput' \s step -> step (_2 <<< prop (Proxy :: Proxy "caps") %~ not)
+          , P.onInput' \_ step -> step (_2 <<< prop (Proxy :: Proxy "caps") %~ not)
           ]
         , E.text " → "
         , E.text (if caps then toUpperCase string else string)

@@ -3,7 +3,7 @@ module Mation.Core.Prop where
 import Mation.Core.Prelude
 
 import Mation.Core.Mation (Mation)
-import Mation.Core.MationT (Step, MationT (..))
+import Mation.Core.MationT (MationT (..))
 import Mation.Core.MationT as MationT
 import Mation.Core.Dom (DomNode, DomEvent)
 import Mation.Core.Html (Html, mkTag)

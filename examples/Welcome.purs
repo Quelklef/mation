@@ -2,7 +2,6 @@ module Mation.Examples.Welcome where
 
 import Mation.Core.Prelude
 
-import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
