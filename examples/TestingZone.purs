@@ -189,6 +189,31 @@ foreign import parseInt :: String -> Int
 
 --------------------------------------------------------------------------------
 
+type OnClickElsewhere =
+  { here :: Int
+  , notHere :: Int
+  }
+
+viewOnClickElsewhere :: OnClickElsewhere -> E.Html' OnClickElsewhere
+viewOnClickElsewhere { here, notHere } =
+  E.div
+  [ P.onClick \_ step -> step (prop (Proxy :: Proxy "here") %~ (_ + 1))
+  , P.onClickElsewhere \_ step -> step (prop (Proxy :: Proxy "notHere") %~ (_ + 1))
+  , P.style'
+    [ S.fontFamily "sans-serif"
+    , S.padding "1em"
+    , S.border "1px solid black"
+    , S.display "inline-block"
+    , S.margin "1em 0 1em 25px"
+    , S.userSelect "none"
+    ]
+  ]
+  [ E.text $ "clicks inside: " <> show here <> " / " <> "clicks outside: " <> show notHere
+  ]
+
+
+--------------------------------------------------------------------------------
+
 type ComStuff =
   { string :: String
   , caps :: Boolean
@@ -260,6 +285,7 @@ renderRawNodes = case _ of
 
 
 --------------------------------------------------------------------------------
+-- Toplevel logic
 
 type Model =
   { counter1 :: Counter
@@ -267,6 +293,7 @@ type Model =
   , textbox :: String
   , checkbox :: Boolean
   , phoneNumber :: PhoneNumber
+  , onClickElsewhere :: OnClickElsewhere
   , comStuff :: ComStuff
   , rawNodes :: RawNodes
   }
@@ -280,6 +307,7 @@ initialize = do
     , textbox: "type in me"
     , checkbox: false
     , phoneNumber: 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0
+    , onClickElsewhere: { here: 0, notHere: 0 }
     , comStuff
     , rawNodes: Nothing
     }
@@ -315,7 +343,9 @@ render model =
   , E.enroot _phoneNumber $ renderPhoneNumber model.phoneNumber
   , E.enroot _phoneNumber $ renderPhoneNumber model.phoneNumber
   , E.hr []
-  , E.enroot (_unit × prop (Proxy :: Proxy "comStuff")) $ Com.viewC comComponent (unit /\ model.comStuff)
+  , E.enroot _onClickElsewhere $ viewOnClickElsewhere model.onClickElsewhere
+  , E.hr []
+  , E.enroot (_unit × _comStuff) $ Com.viewC comComponent (unit /\ model.comStuff)
   , E.hr []
   , renderRawNodes model.rawNodes
   , E.br [] `power` 25
@@ -328,6 +358,8 @@ render model =
   _textbox = prop (Proxy :: Proxy "textbox")
   _checkbox = prop (Proxy :: Proxy "checkbox")
   _phoneNumber = prop (Proxy :: Proxy "phoneNumber")
+  _onClickElsewhere = prop (Proxy :: Proxy "onClickElsewhere")
+  _comStuff = prop (Proxy :: Proxy "comStuff")
 
 _unit :: forall x. Lens' x Unit
 _unit = lens (const unit) (\v _ -> v)

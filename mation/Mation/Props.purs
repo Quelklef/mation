@@ -14,6 +14,7 @@ module Mation.Props
   , dataset
   , remark
   , showUpdates
+  , onClickElsewhere
   ) where
 
 import Data.Map (Map)
@@ -123,3 +124,15 @@ showUpdates :: forall m s. Prop m s
 showUpdates = fixup showUpdates_f
 
 foreign import showUpdates_f :: DomNode -> Effect { restore :: Effect Unit }
+
+
+-- | Fires when any node is clicked *except* for the target node (or a descendant of it)
+onClickElsewhere :: forall m s. MonadUnliftEffect m => (DomEvent -> Mation m s) -> Prop m s
+onClickElsewhere f =
+  fixupMUnutterable \node step ->
+    withRunInEffect \(toEffect :: m ~> Effect) -> do
+      node # onClickElsewhere_f (\evt -> f evt step # toEffect) # liftEffect # map (_restore %~ liftEffect)
+
+  where _restore = prop (Proxy :: Proxy "restore")
+
+foreign import onClickElsewhere_f :: forall m s. (DomEvent -> Effect Unit) -> DomNode -> Effect { restore :: Effect Unit }

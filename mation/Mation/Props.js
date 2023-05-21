@@ -35,3 +35,13 @@ node => () => {
   return { restore: () => {} };
 };
 
+export const onClickElsewhere_f =
+f => node => () => {
+  let lis; document.addEventListener('click', lis = evt => {
+    if (!node.contains(evt.target))
+      f(evt)()
+  });
+
+  const restore = () => document.removeEventListener('click', lis);
+  return { restore };
+};

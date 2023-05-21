@@ -17,6 +17,7 @@
       foreign
       foldable-traversable
       profunctor-lenses
+      unlift
     ];
 
 }

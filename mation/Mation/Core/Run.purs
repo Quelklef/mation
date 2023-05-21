@@ -34,7 +34,6 @@ runApp' args =
     , render: args.render
     , root: args.root
     , daemon: mempty
-    , toEffect: identity
     }
 
 
@@ -51,7 +50,7 @@ runApp' args =
 -- |
 -- |   Specifies how to display the application
 -- |
--- | - `daemon :: Daemon m s`
+-- | - `daemon :: Daemon Effect s`
 -- |
 -- |   Possibly-long-lived process which has read/write access to
 -- |   the application state and runs in parallel with the application
@@ -79,57 +78,68 @@ runApp' args =
 -- |     mountpoint, be sure that the new one is equivalent to the old
 -- |     one up to details produced by `render`. For various reasons,
 -- |     the Mation rendering algorithm is sensitive to this.
+runApp :: forall s.
+  { initial :: s
+  , render :: s -> Html Effect s
+  , root :: Effect DomNode
+  , daemon :: Daemon Effect s
+  } -> Effect Unit
+runApp = runAppM
+
+
+-- | Like `runApp` but with event handlers living in a user-specified monad `m`.
 -- |
--- | - `toEffect :: m Unit -> Effect Unit`
+-- | The monad `m` is required to instantiate `MonadUnliftEffect`. This is quite a
+-- | stringent requirement, effectively requiring `m` to be a compositions of `IdentityT`
+-- | and `ReaderT`s over `Effect`. If you are wondering how the heck you are
+-- | supposed to do anything with only `ReaderT`, I recommend reading
+-- | [The ReaderT Design Pattern](https://www.fpcomplete.com/blog/2017/06/readert-design-pattern/)
+-- | from FPComplete.
 -- |
--- |   Specifies how to execute the custom monad `m`.
+-- | ***
 -- |
--- |   Note the type of the function, `m Unit -> Effect Unit`. We do not
--- |   require `toEffect` to be satisfy any conditions, such as being
--- |   a monad morphism (see [1]) or even just a natural
--- |   transformation (ie, having type `forall a. m a -> n a`),
---
--- Remark: There are various `hoist` functions in this codebase which
--- are similar to `toEffect` insofar as they transform an underlying
--- monad, but differ in that they *do* require a monad morphism. The
--- rationale behind this difference is that `toEffect` is performed
--- at the very top of the program, meaning that any failure to respect
--- the monad structure is "less bad" as we only actually call `toEffect`
--- a few times, and those callsites are known.
---
+-- | The `MonadUnliftEffect m` constraint comes from the semantics of event
+-- | listeners. Event listeners are invoked by the javascript runtime, which
+-- | lives in `Effect`; if we want listeners to live in `m` then we need some
+-- | way to execute `m` in `Effect`. Hence, we ask for `MonadUnliftEffect`.
 -- |
--- |   This means that, for example, functions such
--- |   as `launchAff_ :: Aff Unit -> Effect Unit` can be supplied as
--- |   values for `toEffect`
+-- | We could potentially weaken this constraint to something
+-- | like `MonadBaseControl Effect stM` (for some `stM`), but hairy questions
+-- | quickly arise from this choice. For example,
 -- |
--- |   However, it is usually in the user's best interest to choose
--- |   a `toEffect` which *is* a monad morphism (specialized to `Unit`).
--- |   Currently `toEffect` is called once to
--- |   execute the given `daemon` and then once per application frame
--- |   to execute the invoked event handler. These details are
--- |   irrelevant if `toEffect` is a monad morphism, but can have subtle
--- |   consequences if it is not. For instance, if `toEffect`
--- |   is `launchAff_`, then mations from one frame may still be in
--- |   progress when an event handler from the next frame is invoked.
+-- | - When an event handler is invoked, from where will it load its initial
+-- |   state? To where will it put its resultant state? (In other words, how do
+-- |   we ensure that `StateT` works as expected?)
 -- |
--- |   [1\]:
--- |     A monad morphism is a function `f :: forall a. m a -> n a`
--- |     between `Monad`s `m` and `n` and mapping monad operations
--- |     in `m` to monad operations in `n`; ie, satisfying both
--- |     `f (return x) = return x` and `f (m >>= g) = f m >>= (f . g)`.
--- |     This condiiton ensures that monad operations performed
--- |     within `m` are not mangled by `f` when mapping into `n`.
---
--- FIXME: `toEffect` didn't used to be a nat trans
-runApp :: forall m s. MonadEffect m =>
+-- | - Should the monadic state be *entirely* shared between all event handlers?
+-- |   (No; that would mean a failure in `EitherT` by one handler nullifies all
+-- |   other handlers.) If not, how do we integrate the state of a completed handler
+-- |   into the states of all other handlers?
+-- |
+-- | - If our monad `m` supports genuine concurrency (ie, builds on `Aff`), how
+-- |   do we deal with divergent states?
+-- |
+-- | Beyond this, I suspect that additional, more technical, challenges would
+-- | arise internal to the framework from an attempt to weaken `MonadUnliftEffect`.
+-- |
+-- | Unlifting custom monads to `Effect` *correctly* is
+-- | [not](https://www.fpcomplete.com/blog/2017/06/tale-of-two-brackets/)
+-- | [an](http://blog.ezyang.com/2012/01/monadbasecontrol-is-unsound/)
+-- | [easy](https://hackage.haskell.org/package/unliftio-0.2.24.0#comparison-to-other-approaches)
+-- | problem (also relevant:
+-- | [this](https://lexi-lambda.github.io/blog/2019/09/07/demystifying-monadbasecontrol/)
+-- | and
+-- | [this](https://www.yesodweb.com/book/monad-control)),
+-- | and until the correct solution is found for mation (if there is one), I'd rather
+-- | overconstrain the user than supply a footgun.
+runAppM :: forall m s. MonadUnliftEffect m =>
   { initial :: s
   , render :: s -> Html m s
   , root :: Effect DomNode
   , daemon :: Daemon m s
-  , toEffect :: m ~> Effect
-  } -> Effect Unit
+  } -> m Unit
 
-runApp args = do
+runAppM args = withRunInEffect \(toEffect :: m ~> Effect) -> do
 
   let
     -- Render to an VNode instead of an Html
@@ -156,7 +166,7 @@ runApp args = do
     execMation :: MationT m s ~> Effect
     execMation mat = do
       step <- WRef.read stepRef
-      args.toEffect $ MationT.runMationT mat (step >>> liftEffect)
+      toEffect $ MationT.runMationT mat (step >>> liftEffect)
 
   -- Render for the first time
   model /\ vNode /\ pruneMap <- do
@@ -196,7 +206,7 @@ runApp args = do
     -- FIXME: this^ is kind of a hack. The invarant between
     --   the three states is broken temporarily until
     --   we call 'step identity'
-  args.toEffect $ (Daemon.enroot _1 args.daemon) ref
+  toEffect $ (Daemon.enroot _1 args.daemon) ref
 
 
 

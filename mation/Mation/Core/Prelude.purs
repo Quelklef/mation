@@ -9,6 +9,8 @@ import Prelude as X
 
 import Effect (Effect) as X
 import Effect.Class (class MonadEffect, liftEffect) as X
+import Effect.Unlift (class MonadUnliftEffect, withRunInEffect) as X
+import Control.Monad.Trans.Control (class MonadBaseControl, liftBaseWith, restoreM) as X
 import Foreign (Foreign) as X
 import Type.Proxy (Proxy (..)) as X
 import Prim.Coerce (class Coercible) as X

@@ -12,5 +12,5 @@ import Mation.Styles (Style) as X
 import Mation.Core.Daemon (Daemon) as X
 import Mation.Core.Dom (DomNode, DomEvent) as X
 import Mation.Core.Mation (Mation, toBuffered) as X
-import Mation.Core.Run (runApp, runApp', onBody, underBody, onHtml) as X
+import Mation.Core.Run (runApp', runApp, runAppM, onBody, underBody, onHtml) as X
 

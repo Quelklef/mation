@@ -247,7 +247,6 @@ main = do
         , D.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "testing")) Examples.TestingZone.daemon
         , D.enroot (prop (Proxy :: Proxy "page")) $ R.sync router
         ]
-    , toEffect: identity
     }
 
 
