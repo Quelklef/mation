@@ -112,8 +112,10 @@ render model =
   , E.br []
   , E.hr []
   , E.br []
-  , let calcTree (exp /\ string) = E.enroot _string $ tree exp string
-    in (if model.fast then E.prune "tree" else identity) calcTree (model.exp /\ model.string)
+  , E.enroot _string
+      $ case model.fast of
+          false -> tree model.exp model.string
+          true -> E.prune "tree" (model.exp /\ model.string) \(exp /\ string) -> tree exp string
   ]
 
 

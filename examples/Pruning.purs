@@ -37,8 +37,8 @@ onDouble :: forall a. UnsureEq a => (a -> E.Html' a) -> (Double a -> E.Html' (Do
 onDouble renderOne model =
   E.div
   []
-  [ E.prune "1" (\n -> box $ E.enroot _1 $ renderOne n) (model ^. _1)
-  , E.prune "2" (\n -> box $ E.enroot _2 $ renderOne n) (model ^. _2)
+  [ E.prune "1" (model ^. _1) (\n -> box $ E.enroot _1 $ renderOne n)
+  , E.prune "2" (model ^. _2) (\n -> box $ E.enroot _2 $ renderOne n)
   ]
 
   where
@@ -67,16 +67,16 @@ render model =
   , E.div
     [ P.addCss "font-size: 0.75em"
     ]
-    [ flip (E.prune "example-1") model.vals (\vals -> E.enroot (prop (Proxy :: Proxy "vals")) $ onDouble (onDouble (onDouble mkCounter)) vals)
+    [ E.prune "example-1" model.vals (\vals -> E.enroot (prop (Proxy :: Proxy "vals")) $ onDouble (onDouble (onDouble mkCounter)) vals)
     ]
   , E.br []
   , E.hr []
   , E.p [ pSty ] [ E.text "Pruning works even when the node moves around the application. Try modifying the number of wrapper <divs> below. Again, updates are shown in red." ]
-  , flip (E.prune "example-2") model.example2 (\ex2 -> E.enroot (prop (Proxy :: Proxy "example2")) $ renderExample2 ex2)
+  , E.prune "example-2" model.example2 (\ex2 -> E.enroot (prop (Proxy :: Proxy "example2")) $ renderExample2 ex2)
   , E.br []
   , E.br []
   , E.hr []
-  , E.enroot (prop (Proxy :: Proxy "sumTest")) $ E.prune "sum-test" renderSumTest model.sumTest
+  , E.enroot (prop (Proxy :: Proxy "sumTest")) $ E.prune "sum-test" model.sumTest renderSumTest
   ]
 
   where
@@ -156,7 +156,7 @@ renderExample2 = \{ depth, color } ->
         , S.padding "1em"
         ]
       ]
-      [ flip (E.prune "the boxes") color \color ->  (_ `power` 60) $
+      [ E.prune "the boxes" color \color ->  (_ `power` 60) $
         E.div
         [ P.addStyles
           [ S.display "inline-block"
@@ -207,8 +207,8 @@ renderSumTest (n /\ tab) =
       ]
     , E.span [ P.addCss "padding: 0 1em" ] [ ]
     , case tab `mod` 3 of
-        0 -> flip (E.prune "0") n (\n -> E.span [ P.addCss "border: 1px solid blue" ] [ E.text (show n <> " ") ])
-        1 -> flip (E.prune "1") n (\n -> range 1 n # foldMap \k -> E.text (show k <> " .. "))
-        _ -> flip (E.prune "_") n (\_ -> E.span [ P.addCss "background-color: red; color: white" ] [ E.text "three" ])
+        0 -> E.prune "0" n (\n -> E.span [ P.addCss "border: 1px solid blue" ] [ E.text (show n <> " ") ])
+        1 -> E.prune "1" n (\n -> range 1 n # foldMap \k -> E.text (show k <> " .. "))
+        _ -> E.prune "_" n (\_ -> E.span [ P.addCss "background-color: red; color: white" ] [ E.text "three" ])
     ]
   ]

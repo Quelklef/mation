@@ -134,34 +134,34 @@ render model =
       [ case model.page of
           Welcome      ->
             E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "welcome")) $
-              E.prune "page-welcome" Examples.Welcome.render model.submodels.welcome
+              E.prune "page-welcome" model.submodels.welcome Examples.Welcome.render
           Counter      ->
             E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "counter")) $
-              E.prune "page-counter" Examples.Counter.render model.submodels.counter
+              E.prune "page-counter" model.submodels.counter Examples.Counter.render
           Components   ->
             E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "components")) $
-              E.prune "page-components" Examples.Components.render model.submodels.components
+              E.prune "page-components" model.submodels.components Examples.Components.render
           AsyncApiCall ->
             E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "asyncApiCall")) $
-              E.prune "page-asyncApiCall" Examples.AsyncApiCall.render model.submodels.asyncApiCall
+              E.prune "page-asyncApiCall" model.submodels.asyncApiCall Examples.AsyncApiCall.render
           Styling      ->
             E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "styling")) $
-              E.prune "page-styling" Examples.Styling.render model.submodels.styling
+              E.prune "page-styling" model.submodels.styling Examples.Styling.render
           Clock        ->
             E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "clock")) $
-              E.prune "page-clock" Examples.Clock.render model.submodels.clock
+              E.prune "page-clock" model.submodels.clock Examples.Clock.render
           Inputs       ->
             E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "inputs")) $
-              E.prune "page-inputs" Examples.Inputs.render model.submodels.inputs
+              E.prune "page-inputs" model.submodels.inputs Examples.Inputs.render
           TestingZone  ->
             E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "testing")) $
-              E.prune "page-testing" Examples.TestingZone.render model.submodels.testing
+              E.prune "page-testing" model.submodels.testing Examples.TestingZone.render
           PerfTest     ->
             E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "perfTest")) $
-              E.prune "page-perfTest" Examples.PerfTest.render model.submodels.perfTest
+              E.prune "page-perfTest" model.submodels.perfTest Examples.PerfTest.render
           Pruning      ->
             E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "pruning")) $
-              E.prune "page-pruning" Examples.Pruning.render model.submodels.pruning
+              E.prune "page-pruning" model.submodels.pruning Examples.Pruning.render
       ]
     ]
   ]

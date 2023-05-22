@@ -58,8 +58,7 @@ enroot = Html.enroot
 -- | For pruning to work correctly, **the user must guarantee** that between two
 -- | frames if two pruned nodes have the same key path then they also have
 -- | the same type `p` and render function `p -> Html m s`.
-prune :: forall m p s. UnsureEq p => String -> (p -> Html m s) -> p -> Html m s
-prune key render param = Html.mkPrune key render param
+prune :: forall m p s. UnsureEq p => String -> p -> (p -> Html m s) -> Html m s
+prune key param render = Html.mkPrune key render param
 
--- FIXME: reverse args for prune?
 -- FIXME: add 'unPrune' (undoes `prune`) and 'pruneKeyed' (adds prune keys but does not prune)
