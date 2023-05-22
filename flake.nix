@@ -122,7 +122,7 @@ outputs = { self, ... }@inputs: let
       function mation.compile {(
         cd "$root" &&
         mkdir -p out/app &&
-        node ./mation/Mation/Gen/generate.js &&
+        node ./mation/Gen/generate.js &&
 
         # Compile the application. Use 'psa' for sophisticated warning/error handling
         psa \
@@ -160,7 +160,7 @@ outputs = { self, ... }@inputs: let
         python3 -m http.server --directory out/docs & trap "kill $!" EXIT
         { find ./mation -name '*.purs' -o -name '*.js' -o -name '*.html'
         } | entr -cs "
-              node ./mation/Mation/Gen/generate.js &&
+              node ./mation/Gen/generate.js &&
               purs-nix-lib-only docs -o out/docs &&
               echo 'Serving on localhost:8000'
           "
