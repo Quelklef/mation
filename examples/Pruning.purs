@@ -188,27 +188,63 @@ foreign import parseInt :: String -> Int
 -- Tests cases where we cycle between different pruned VDOMs
 renderSumTest :: (Int /\ Int) -> E.Html' (Int /\ Int)
 renderSumTest (n /\ tab) =
-  E.div
+  E.p
   []
-  [ E.p
-    []
-    [ E.button
+  [ E.div
+    [ P.addStyles
+      [ S.border "1px solid black"
+      , S.borderBottom "none !important"
+      , S.padding "1em 2em"
+      ]
+    ]
+    [ E.text "Number: "
+    , E.button
       [ P.onClick \_ step -> step (_1 %~ (_ + 1))
-      , P.addCss "padding: 0 1.5em; line-height: 2em"
+      , P.addStyles
+        [ S.padding "0 1.5em"
+        , S.lineHeight "2em"
+        , S.cursor "pointer"
+        ]
       ]
       [ E.text (show n)
       ]
+    , E.text "; "
+    , E.text "Tab: "
+    , mkTab 0 "one"
     , E.text " "
-    , E.button
-      [ P.onClick \_ step -> step (_2 %~ (_ + 1))
-      , P.addCss "padding: 0 1.5em; line-height: 2em"
+    , mkTab 1 "two"
+    , E.text " "
+    , mkTab 2 "three"
+    ]
+  , E.div
+    [ P.addStyles
+      [ S.border "1px solid black"
+      , S.padding "1em 2em"
       ]
-      [ E.text "swap"
-      ]
-    , E.span [ P.addCss "padding: 0 1em" ] [ ]
-    , case tab `mod` 3 of
+    ]
+    [ case tab `mod` 3 of
         0 -> E.prune "0" n (\n -> E.span [ P.addCss "border: 1px solid blue" ] [ E.text (show n <> " ") ])
         1 -> E.prune "1" n (\n -> range 1 n # foldMap \k -> E.text (show k <> " .. "))
         _ -> E.prune "_" n (\_ -> E.span [ P.addCss "background-color: red; color: white" ] [ E.text "three" ])
     ]
   ]
+
+  where
+
+  mkTab idx label =
+    E.span
+    [ P.onClick \_ step -> step (_2 .~ idx)
+    , P.addStyles
+      [ S.cursor "pointer"
+      , S.padding ".35em 1em"
+      , S.display "inline-block"
+      , S.border "1px solid black"
+      ]
+    , guard (tab == idx) $
+        P.addStyles
+          [ S.textDecoration "underline"
+          ]
+    ]
+    [ E.text label
+    ]
+

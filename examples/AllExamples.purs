@@ -8,6 +8,7 @@ import Mation.Styles as S
 import Mation.Props as P
 import Mation.Router as R
 import Mation.Core.Daemon as D
+import Mation.Core.Util.UnsureEq (class UnsureEq, viaEq)
 
 import Mation.Examples.Welcome as Examples.Welcome
 import Mation.Examples.Counter as Examples.Counter
@@ -51,6 +52,9 @@ derive instance Eq Page
 derive instance Ord Page
 instance Show Page where show x = genericShow x
 
+instance UnsureEq Page where
+  unsureEq = viaEq
+
 pretty :: Page -> String
 pretty = case _ of
   Welcome -> "Welcome"
@@ -60,8 +64,8 @@ pretty = case _ of
   Styling -> "Styling"
   Clock -> "Clock"
   Inputs -> "Inputs"
-  TestingZone -> "Testing-zone"
-  PerfTest -> "Perf-test"
+  TestingZone -> "Testing-Zone"
+  PerfTest -> "Perf-Test"
   Pruning -> "Pruning"
 
 unpretty :: String -> Maybe Page
@@ -69,12 +73,12 @@ unpretty = case _ of
   "Welcome" -> Just Welcome
   "Counter" -> Just Counter
   "Components" -> Just Components
-  "Testing-zone" -> Just TestingZone
+  "Testing-Zone" -> Just TestingZone
   "Async" -> Just AsyncApiCall
   "Styling" -> Just Styling
   "Clock" -> Just Clock
   "Inputs" -> Just Inputs
-  "Perf-test" -> Just PerfTest
+  "Perf-Test" -> Just PerfTest
   "Pruning" -> Just Pruning
   _ -> Nothing
 
@@ -169,39 +173,60 @@ render model =
   where
 
   navBar =
+    -- FIXME: this prune shouldn't be necessary, but without it
+    --        we get flickering on the <select> when hovering
+    --        different <options>
+    E.prune "nav" model.page \currentPage ->
     E.div
     [ P.addStyles
       [ S.display "flex"
       , S.justifyContent "center"
       , S.backgroundColor "rgb(50, 50, 50)"
+      , S.padding "1.5em 0"
       ]
     ]
     [ E.div
       [ P.addStyles
           [ S.width pageWidth
-          , S.display "flex"
-          , S.gap "1.5em"
-          , S.alignItems "center"
           , S.fontFamily "sans-serif"
           , S.color "white"
-          , S.padding "0 2em"
           ]
       ]
-      [ intercalate (E.text " ") $ pages >>= \page ->
-          [ let isCurrent = page == model.page in
-            E.span
+      [ E.text "Page: "
+      , E.select
+        [ P.onInputValue \val step ->
+            case unpretty val of
+              Nothing -> pure unit
+              Just page -> step (prop (Proxy :: Proxy "page") .~ page)
+        , P.addStyles
+          [ S.fontSize "inherit"
+          , S.color "inherit"
+          , S.fontFamily "inherit"
+          , S.background "transparent"
+          , S.border "1px solid white"
+          , S.marginLeft "1ch"
+          , S.padding ".35em .5em"
+          ]
+        ]
+        $
+        pages >>= \page ->
+          [ E.option
             [ P.addStyles
               [ S.cursor "pointer"
               , S.textAlign "center"
               , S.padding "1em 0"
-              , if isCurrent then S.textDecoration "underline" else mempty
               ]
-            , P.onClick \_ step -> step (prop (Proxy :: Proxy "page") .~ page)
+            , P.selected (currentPage == page)
             ]
             [ E.text (pretty page)
             ]
           , if page `elem` separateAfter
-            then E.span [ P.addCss "color: rgb(100, 100, 100)" ] [ E.text " | " ]
+            then E.option
+                [ P.addCss "color: rgb(100, 100, 100)"
+                , P.disabled true
+                ]
+                [ E.rawHtml "&mdash;"
+                ]
             else mempty
           ]
       ]

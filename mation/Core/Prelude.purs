@@ -25,7 +25,7 @@ import Data.Tuple.Nested ((/\), type (/\)) as X
 import Data.Either (Either (..)) as X
 import Data.Maybe (Maybe (..), fromMaybe) as X
 import Data.Map (Map) as X
-import Data.Monoid (power) as X
+import Data.Monoid (guard, power) as X
 import Data.Monoid.Endo (Endo (..)) as X
 import Data.Lens.Types (Getter') as X
 import Data.Lens.Lens (Lens') as X
