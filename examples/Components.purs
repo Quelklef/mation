@@ -169,6 +169,6 @@ render (both /\ sharing) =
 
 
 main :: Effect Unit
-main = M.runApp' { initial, render, root: M.underBody }
+main = M.runApp { initial, render, root: M.underBody, daemon: mempty }
 
 foreign import parseNumber :: String -> Int

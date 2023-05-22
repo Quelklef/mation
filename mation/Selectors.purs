@@ -78,3 +78,25 @@ document s = SMAlts [ { block: W.Weave [ W.Elem "@document ", W.Elem s, W.Elem "
 this :: ScopeModifier
 this = SMAlts [ { block: W.Weave [ W.Hole ], selector: W.noop } ]
 
+-- | Create a block modifier directly from a `Weave`
+-- |
+-- | Example:
+-- | ```
+-- | whenPrinting = rawBlockModifer (Weave [ Elem "@media print {", Hole, Elem "}" ])
+-- | ```
+-- |
+-- | This should only rarely be necessary
+rawBlockModifier :: W.Weave String -> ScopeModifier
+rawBlockModifier w = SMAlts [ { block: w, selector: W.noop } ]
+
+-- | Create a selector modifier directly from a `Weave`
+-- |
+-- | Example:
+-- | ```
+-- | onChildren = rawSelectorModifier (Weave [ Hole, Elem " > *" ])
+-- | ```
+-- |
+-- | This should only rarely be necessary
+rawSelectorModifier :: W.Weave String -> ScopeModifier
+rawSelectorModifier w = SMAlts [ { block: W.noop, selector: w } ]
+

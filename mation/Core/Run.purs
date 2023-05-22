@@ -15,81 +15,15 @@ import Mation.Core.Patch as Patch
 import Mation.Core.Util.WRef (WRef)
 import Mation.Core.Util.WRef as WRef
 
--- | Simplified version of `runApp`
--- |
--- | Accepts a record containing the following fields:
--- |
--- | - `initial :: s`: Initial model (ie, state) value
--- | - `render :: s -> Html m s`: How to display the application
--- | - `root :: Effect DomNode`: Where to mount the application (see eg `onBody`)
-runApp' :: forall s.
-  { initial :: s
-  , render :: s -> Html Effect s
-  , root :: Effect DomNode
-  } -> Effect Unit
 
-runApp' args =
-  runApp
-    { initial: args.initial
-    , render: args.render
-    , root: args.root
-    , daemon: mempty
-    }
-
-
--- | Run an application.
+-- | Like `Mation.Run (runApp)` but with event handlers living in a user-specified monad `m`.
 -- |
--- | Accepts a record containing the following fields:
+-- | Use of this function is not recommended, for reasons discussed below.
+-- | The function is provided anyway for those who are sure they want to use it or are
+-- | forced to use it due to integrating with a library or framework that makes use
+-- | of a custom monad.
 -- |
--- | - `initial :: s`
--- |
--- |   The initial model value. The type variable uses the character `s`
--- |   for "state"
--- |
--- | - `render :: s -> Html m s`
--- |
--- |   Specifies how to display the application
--- |
--- | - `daemon :: Daemon Effect s`
--- |
--- |   Possibly-long-lived process which has read/write access to
--- |   the application state and runs in parallel with the application
--- |   itself.
--- |
--- |   The daemon is the only thing that can read the state back
--- |   out of a running application.
--- |
--- |   If the daemon changes the application state, the application
--- |   will re-render.
--- |
--- | - `root :: Effect DomNode`
--- |
--- |   Specifies where the application should be mounted. See `onBody`
--- |   and others below.
--- |
--- |   Remarks:
--- |
--- |   - The process of mounting may replace the given `DomNode`. The
--- |     given `DomNode` only guarantees *where* the mounting occurs in
--- |     the DOM
--- |
--- |   - This is an `Effect DomNode`, meaning that the mountpoint can
--- |     theoretically change between frames. If you do change the
--- |     mountpoint, be sure that the new one is equivalent to the old
--- |     one up to details produced by `render`. For various reasons,
--- |     the Mation rendering algorithm is sensitive to this.
-runApp :: forall s.
-  { initial :: s
-  , render :: s -> Html Effect s
-  , root :: Effect DomNode
-  , daemon :: Daemon Effect s
-  } -> Effect Unit
-runApp = runAppM
-
-
--- | Like `runApp` but with event handlers living in a user-specified monad `m`.
--- |
--- | The monad `m` is required to instantiate `MonadUnliftEffect`. This is quite a
+-- | The custom monad `m` is required to instantiate `MonadUnliftEffect`. This is quite a
 -- | stringent requirement, effectively requiring `m` to be a compositions of `IdentityT`
 -- | and `ReaderT`s over `Effect`. If you are wondering how the heck you are
 -- | supposed to do anything with only `ReaderT`, I recommend reading
@@ -98,10 +32,16 @@ runApp = runAppM
 -- |
 -- | ***
 -- |
--- | The `MonadUnliftEffect m` constraint comes from the semantics of event
--- | listeners. Event listeners are invoked by the javascript runtime, which
--- | lives in `Effect`; if we want listeners to live in `m` then we need some
--- | way to execute `m` in `Effect`. Hence, we ask for `MonadUnliftEffect`.
+-- | ### Why the stringent `MonadUnliftEffect` constraint?
+-- |
+-- | Choosing a custom monad `m` decides what monadic context your application's event
+-- | handlers will live in. The trouble is that, in general, events really do not play nice
+-- | with custom monads.
+-- |
+-- | For starters, events are dispatched by the javascript runtime. This means that
+-- | when an event handler is invoked it is done so from `Effect`, not `m`. Hence
+-- | we need some way to execute `m` from within `Effect`; this gives rise
+-- | to the `MonadUnliftEffect` constraint.
 -- |
 -- | We could potentially weaken this constraint to something
 -- | like `MonadBaseControl Effect stM` (for some `stM`), but hairy questions
@@ -112,11 +52,11 @@ runApp = runAppM
 -- |   we ensure that `StateT` works as expected?)
 -- |
 -- | - Should the monadic state be *entirely* shared between all event handlers?
--- |   (No; that would mean a failure in `EitherT` by one handler nullifies all
--- |   other handlers.) If not, how do we integrate the state of a completed handler
+-- |   (No; that would mean a failure in `EitherT` when handling one event nullifies
+-- |   all handlers.) If not, how do we integrate the state of a completed handler
 -- |   into the states of all other handlers?
 -- |
--- | - If our monad `m` supports genuine concurrency (ie, builds on `Aff`), how
+-- | - If our monad `m` supports genuine concurrency (eg, builds on `Aff`), how
 -- |   do we deal with divergent states?
 -- |
 -- | Beyond this, I suspect that additional, more technical, challenges would
@@ -132,6 +72,91 @@ runApp = runAppM
 -- | [this](https://www.yesodweb.com/book/monad-control)),
 -- | and until the correct solution is found for mation (if there is one), I'd rather
 -- | overconstrain the user than supply a footgun.
+-- |
+-- | ### Why is using a custom monad not recommended?
+-- |
+-- | Due to the reasons discussed above, any custom monad `m` must
+-- | satisfiy `MonadUnliftEffect`. This in turn entails that `m` must be isomorphic
+-- | to `ReaderT env Effect` for some type `env.`
+-- |
+-- | In other words, we know that the custom monad `m` only acts to carry around
+-- | one or more environment objects. Mation already provides a way to carry around
+-- | data like this; namely, storing it in component models and/or threading it
+-- | through component `view`s. Further, this approach has several advantages
+-- | over the `ReaderT` approach:
+-- |
+-- | - It's more explicit: Threading your environment data through your application
+-- |   may be somewhat annoying, but it makes crystal clear how the data moves around
+-- |   the app. Contrarily, using `ReaderT` exhibits a certain kind of "action at a
+-- |   distance": at the *top* level you supply some `env`, and then event listeners
+-- |   very far away in the codebase "automagically" have access to that `env`.
+-- |
+-- | - It's opt-in instead of opt-out: When composing components, the path
+-- |   of least resistance is to to match the underlying
+-- |   monad of the child component with that of the parent component.
+-- |   When using the `ReaderT` approach for an application environment,
+-- |   this means by default providing that environment to the child.
+-- |   (Disallowing access requires `hoist`ing the child component `Html`.)
+-- |
+-- |   Additionally, the path of least resistance when creating a child component
+-- |   is to give it a smaller model rather than a larger one.
+-- |   When using the explicit threading approach for an application environment
+-- |   this means by default *not* providing the child component access to that
+-- |   environment. (Providing access requires adding it to the child state.)
+-- |
+-- | - It's automatically available to the view: State managed in `m` is by
+-- |   default invisible to your application view. Hence if you manage, say,
+-- |   the login state in `m`, and your view needs to decide depending on that
+-- |   state whether to show a "log in" button or a "log out" button, you
+-- |   will have extra work to do.
+-- |
+-- | - Managing readability/writability is easier:
+-- |   A `ReaderT` only "natively" supports local modification
+-- |   to state. To achieve read/write state, one has to store a mutable ref
+-- |   in their `ReaderT` environment.
+-- |   If a parent component has read/write access to some state, and wants to
+-- |   give their child component readonly access, then they'd have to `hoist`
+-- |   the child component and transform the read/write ref into
+-- |   some getter `get :: Effect Thing` function.
+-- |
+-- |   None of this is *bad* but is somewhat awkward. And far less akward using
+-- |   explicit threading. State stored in the model is by default read/write,
+-- |   and choosing whether a child component has read/write access to some state
+-- |   or only readonly access requires simply choosing whether to provide the
+-- |   state as a part of the child model or as a parameter to its view.
+-- |
+-- | ### What should I do instead?
+-- |
+-- | Assuming you have a choice (ie, are not forced to use a custom monad due
+-- | to integrating with some other framework), do the following.
+-- |
+-- | Have your listeners live in `Effect`. Use
+-- | [the ReaderT design pattern](https://www.fpcomplete.com/blog/2017/06/readert-design-pattern/)
+-- | to do everything you'd usually do with a monad stack, except
+-- | instead of using `ReaderT` to pass around the environment object,
+-- | store it in your application model and explicitly thread it through
+-- | your application's component's models/views.
+-- |
+-- | ### But I want my event handlers to live in `Aff` :(
+-- |
+-- | Yeah, me too 😞. Asynchronous event handlers are extremely common and
+-- | not at all problematic. Just turn them into `Effect` with `launchAff_`
+-- | or similar.
+-- |
+-- | The issue is that `m` decides not only where event handlers live but also
+-- | where *fixups* live (see `Mation.Props.Unsafe`). Fixups are allowed to
+-- | perform arbitrary modifications to an element after its rendered, such
+-- | as manually calling `addEventListener`. It's absolutely crucial that this
+-- | work be done synchronously so that the virtual DOM (ie, view) and actual DOM
+-- | remain in sync.
+-- |
+-- | We could potentially allow event listeners to live in `Aff` by
+-- | parameterizing `Html` with two monads, one for fixups and one for listeners;
+-- | or by "allowing" fixups to live in `Aff` but warning *very loudly* that
+-- | they really ought to be synchronous.
+-- |
+-- | But for so much noise all we'd gain is being able to avoid
+-- | writing `launchAff_` at the beginning of our event handlers. Not worth it.
 runAppM :: forall m s. MonadUnliftEffect m =>
   { initial :: s
   , render :: s -> Html m s
@@ -208,14 +233,4 @@ runAppM args = withRunInEffect \(toEffect :: m ~> Effect) -> do
     --   we call 'step identity'
   toEffect $ (Daemon.enroot _1 args.daemon) ref
 
-
-
--- | Mount an application on `<body>`. The application will replace `<body>` each render
-foreign import onBody :: Effect DomNode
-
--- | Mount an application as a child of `<body>`
-foreign import underBody:: Effect DomNode
-
--- | Mount an application on `<html>`. The application will replace `<html>` each render
-foreign import onHtml :: Effect DomNode
 

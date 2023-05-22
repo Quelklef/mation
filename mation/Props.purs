@@ -12,15 +12,11 @@ module Mation.Props
   , data_
   , addDataset
   , onInputValue
-  , fixup
-  , fixupM
-  , fixupEUnutterable
-  , fixupMUnutterable
-  , mkPair
-  , mkListener
   , remark
   , showUpdates
   , onClickElsewhere
+  , rawAttribute
+  , rawListener
   ) where
 
 import Mation.Core.Prop (Prop, enroot, hoist) as X
@@ -33,8 +29,6 @@ import Data.Array as Array
 
 import Mation.Core.Prelude
 import Mation.Core.Mation (Mation)
-import Mation.Core.MationT (Step, MationT (..))
-import Mation.Core.MationT as MationT
 import Mation.Core.Prop (Prop)
 import Mation.Core.Prop as Prop
 import Mation.Core.Dom (DomEvent, DomNode)
@@ -42,8 +36,8 @@ import Mation.Core.Style (Style)
 import Mation.Core.Style as Style
 import Mation.Core.Util.Assoc (Assoc)
 import Mation.Core.Util.Assoc as Assoc
-import Mation.Core.Util.Revertible as Rev
 import Mation.Gen.Attributes as Attr
+import Mation.Props.Unsafe (fixup, fixupM')
 
 
 -- | Override the `style` attribute of a node
@@ -52,7 +46,7 @@ import Mation.Gen.Attributes as Attr
 -- | of overriding them. If you *want* to override,
 -- | use `Mation.Gen.Attributes (style)`.
 style :: forall m s.
-  Warn (Text "Instead of Mation.Props (style), prefer Mation.Props (addCss) or Mation.Props (addStyles) or Mation.Gen.Attributes (style)") =>
+  Warn (Text "Instead of Mation.Props (style), prefer Mation.Props (addCss) or Mation.Props (addStyles); or, explicitly import Mation.Gen.Attributes (style)") =>
   String -> Prop m s
 style = Attr.style
 
@@ -71,7 +65,7 @@ addStyles = Style.toProp
 -- | add class(es) instead of overriding them. If you *want* to override,
 -- | use `Mation.Gen.Attributes (class_)`.
 class_ :: forall m s.
-  Warn (Text "Instead of Mation.Props (class_), prefer Mation.Props (addClasses) or Mation.Gen.Attributes (class_)") =>
+  Warn (Text "Instead of Mation.Props (class_), prefer Mation.Props (addClasses); or, explicitly import Mation.Gen.Attributes (class_)") =>
   String -> Prop m s
 class_ = Attr.class_
 
@@ -79,7 +73,7 @@ class_ = Attr.class_
 -- |
 -- | ***
 -- |
--- | Prefer thise over `Mation.Gen.Attributes (class_)`, which will override existing classes
+-- | Prefer this over `Mation.Gen.Attributes (class_)`, which will override existing classes
 addClass :: forall m s. String -> Prop m s
 addClass = Array.singleton >>> addClasses
 
@@ -96,7 +90,7 @@ foreign import addClasses_f :: Array String -> (DomNode -> Effect { restore :: E
 -- | to the node dataset instead of overriding it. If you *want* to
 -- | override, use `Mation.Gen.Attributes (data_)`.
 data_ :: forall m s.
-  Warn (Text "Instead of Mation.Props (data_), prefer Mation.Props (addDataset) or Mation.Gen.Attributes (data_)") =>
+  Warn (Text "Instead of Mation.Props (data_), prefer Mation.Props (addDataset); or, explicitly import Mation.Gen.Attributes (data_)") =>
   String -> Prop m s
 data_ = Attr.data_
 
@@ -118,46 +112,6 @@ onInputValue f = X.onInput (\ev -> f (getTargetValue ev))
 
 foreign import getTargetValue :: DomEvent -> String
 
--- | Create a `Prop` which will execute a given function on the rendered DOM node
--- | and then execute the given `restore` before rendering the next frame
-fixup :: forall m s. (DomNode -> Effect { restore :: Effect Unit }) -> Prop m s
-fixup f = Prop.mkFixup \node -> Rev.mkRevertibleE (_.restore <$> f node)
-
--- | Like `fixup` but lives in `m`
-fixupM :: forall m s. Functor m => (DomNode -> m { restore :: m Unit }) -> Prop m s
-fixupM f =
-  Prop.mkFixup \node -> Rev.mkRevertibleM $ MationT \_step ->
-    (MationT.lift <<< _.restore) <$> f node
-
--- | Like `fixup` but with access the application `Step s`
--- |
--- | This is very powerful and is generally not needed.
--- |
--- | Apologies for the `MonadEffect` constraint
-fixupEUnutterable :: forall m s. MonadEffect m => (DomNode -> Step s -> Effect { restore :: Effect Unit }) -> Prop m s
-fixupEUnutterable f = fixupMUnutterable (\node step -> f node step # liftEffect # map (_restore %~ liftEffect))
-  where _restore = prop (Proxy :: Proxy "restore")
-
--- | Like `fixup` lives in `m` and the application `Step s`
--- |
--- | This is very powerful and is generally not needed.
-fixupMUnutterable :: forall m s. Functor m => (DomNode -> Step s -> m { restore :: m Unit }) -> Prop m s
-fixupMUnutterable f =
-  Prop.mkFixup \node -> Rev.mkRevertibleM $ MationT \step ->
-    (MationT.lift <<< _.restore) <$> f node step
-
--- | Create a `Prop` directly from an HTML attribute key/value pair
--- |
--- | Generally should not be necessary
-mkPair :: forall m s. String -> String -> Prop m s
-mkPair = Prop.mkPair
-
--- | Create a `Prop` directly from an event listener
--- |
--- | Generally should not be necessary
-mkListener :: forall m s. String -> (DomEvent -> Mation m s) -> Prop m s
-mkListener = Prop.mkListener
-
 
 -- | Adds an arbitrary string to the `data-remark` attribute of an element
 -- |
@@ -173,7 +127,7 @@ remark :: forall m s. String -> Prop m s
 remark rk = addDataset (Map.singleton "remark" rk)
 
 
--- | Gives the node a red border whenever they are updated
+-- | Gives the node a red border whenever it is updated
 -- |
 -- | This is intended for debugging only!
 showUpdates :: forall m s. Prop m s
@@ -185,10 +139,24 @@ foreign import showUpdates_f :: DomNode -> Effect { restore :: Effect Unit }
 -- | Fires when any node is clicked *except* for the target node (or a descendant of it)
 onClickElsewhere :: forall m s. MonadUnliftEffect m => (DomEvent -> Mation m s) -> Prop m s
 onClickElsewhere f =
-  fixupMUnutterable \node step ->
+  fixupM' \node step ->
     withRunInEffect \(toEffect :: m ~> Effect) -> do
       node # onClickElsewhere_f (\evt -> f evt step # toEffect) # liftEffect # map (_restore %~ liftEffect)
 
   where _restore = prop (Proxy :: Proxy "restore")
 
 foreign import onClickElsewhere_f :: (DomEvent -> Effect Unit) -> DomNode -> Effect { restore :: Effect Unit }
+
+
+-- | Create a `Prop` directly from an HTML attribute key/value pair
+-- |
+-- | This should only rarely be necessary
+rawAttribute :: forall m s. String -> String -> Prop m s
+rawAttribute = Prop.mkPair
+
+-- | Create a `Prop` directly from an event listener
+-- |
+-- | This should only rarely be necessary
+rawListener :: forall m s. String -> (DomEvent -> Mation m s) -> Prop m s
+rawListener = Prop.mkListener
+

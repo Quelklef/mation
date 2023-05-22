@@ -44,4 +44,4 @@ render num =
 
 -- | Run the app, mounting within <body>
 main :: Effect Unit
-main = M.runApp' { initial, render, root: M.underBody }
+main = M.runApp { initial, render, root: M.underBody, daemon: mempty }
