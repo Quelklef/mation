@@ -3,6 +3,7 @@
 inputs = {
   nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
   purs-nix.url = "github:purs-nix/purs-nix/ps-0.15";
+
 };
 
 outputs = { self, ... }@inputs: let
@@ -11,67 +12,156 @@ outputs = { self, ... }@inputs: let
   pkgs = inputs.nixpkgs.legacyPackages.${system};
   purs-nix = inputs.purs-nix { inherit system; };
 
-  nixed = purs-nix.purs (import ./package.nix purs-nix);
+  easy-purescript-nix = import
+    (pkgs.fetchFromGitHub {
+      owner = "justinwoo";
+      repo = "easy-purescript-nix";
+      rev = "0c10ff170461aed0c336f5c21ed0f430c2c3574b";
+      sha256 = "sha256-LLqaLPJNiap2U8I77K5XVPGJA/Be30Z8lyGOyYXmBlc=";
+    }) { inherit pkgs; };
 
-  purs-nix-bundle-args = {
-    esbuild.format = "iife";
+  my-purs-nix = purs-nix.purs (import ./package.nix purs-nix);
+
+
+  # nb. We compile our codebase with purescript-psa [1] to have better
+  # compiler error/warning messages. since purs-nix does not itself
+  # support using psa [2], we have to reimplement some of the compilation
+  # and bundling logic ourselves
+  #
+  # the upshot of this is that some compilation/bundling logic is
+  # effectively duplicated. this means that changing bundling/compilation
+  # details, such as modifying some tool's flags, will require both
+  # changing how we invoke purs-nix and changing our own bundling/compilation
+  # implementation.
+  #
+  # [1]: https://www.npmjs.com/package/purescript-psa
+  # [2]: https://github.com/purs-nix/purs-nix/issues/45
+
+  esbuild-format = "iife";
     # ^ necessary in some cases due to js bizareness
     #   compare 'var top = 5; console.log(top);'
     #   with '(function() { var top = 5; console.log(top); })'
-    module = "Mation.Examples.AllExamples";
-  };
 
-  purs-nix-command = nixed.command {
-      srcs = [ "$PWD/mation" "$PWD/experimental" "$PWD/examples" ];
-      bundle = purs-nix-bundle-args;
-      output = "out/purs-cache";
+  main-module = "Mation.Examples.AllExamples";
+
+  # purs-nix command
+  #
+  # At the time of writing we only use this for 'purs-nix srcs', hence
+  # the lack of other options
+  purs-nix-command =
+    my-purs-nix.command {
+      srcs = [ "$PWD/mation" "$PWD/examples" "$PWD/experimental" ];
+      test = "/dev/null";  # using nix 'null' value breaks?
     };
-  purs-nix-command-no-examples =
-    nixed.command {
+
+  # purs-nix command ignoring non-lib code like examples
+  purs-nix-command-lib-only =
+    my-purs-nix.command {
       srcs = [ "$PWD/mation" ];
-      bundle = purs-nix-bundle-args;
+      test = "/dev/null";
       output = "out/purs-cache";
-      name = "purs-nix-no-examples";
+      name = "purs-nix-lib-only";
+      bundle = {
+        esbuild.format = esbuild-format;
+        module = main-module;
+      };
     };
+
+  # Purescript warnings to suppress when compiling the codebase
+  censor-warnings = [
+
+    # Suppress warning on use of '_' in types
+    "WildcardInferredType"
+
+    # Suppress warning when wildcard-importing into a shared module name, eg.
+    #
+    #   import Thing as X
+    #   import Other (thing) as X
+    #
+    # We do this several times when we re-exporting entire Mation.Gen.<Name> modules
+    "ImplicitQualifiedImport"
+
+    # Suppress warning on variable shadowing
+    # Variable shadowing is expected & intended when using 'prune'
+    "ShadowedName"
+
+    # Suppress warning on unused values
+    # This is a temporary exception for Mation.Lenses
+    "UnusedDeclaration"
+
+  ];
 
   # For both development and the live demo
   devt-shell = {
     runtime-deps = [
+
+        # For compiling/bundling the project
         purs-nix-command
-        purs-nix-command-no-examples
+        easy-purescript-nix.psa
+        easy-purescript-nix.purs
+        pkgs.esbuild
+
+        # For compiling the docs
+        purs-nix-command-lib-only
+
+        # For serving the result
         pkgs.python3
+
+        # For running generate.js
         pkgs.nodejs
+
+        # For file watching
         pkgs.entr
-        pkgs.findutils  # find
+        pkgs.findutils  # `find`
+
       ];
 
     shell-hook = ''
       root=$PWD
 
+      function mation.compile {(
+        cd "$root" &&
+        mkdir -p out/app &&
+        node ./mation/Mation/Gen/generate.js &&
+
+        # Compile the application. Use 'psa' for sophisticated warning/error handling
+        psa \
+          --censor-codes=${pkgs.lib.strings.concatStringsSep "," censor-warnings} \
+          --stash=out/.psa-stash \
+          $(purs-nix srcs) --output out/purs-cache
+      )}
+
+      function mation.bundle {(
+        cd "$root" &&
+        mation.compile &&
+        cp examples/index.html out/app/index.html &&
+
+        # Bundle the application
+        echo 'import { main } from "./out/purs-cache/${main-module}/index.js"; main()' \
+          | esbuild \
+              --bundle \
+              --format='${esbuild-format}' \
+              --log-level=warning \
+              --outfile=out/app/main.js
+      )}
+
       function mation.devt {(
         cd "$root" &&
         mkdir -p out/app &&
         python3 -m http.server --directory out/app & trap "kill $!" EXIT
-        { find . -name '*.purs';
-          find mation -name '*.js';
-          find examples -name '*.html';
-        } | entr -cs "
-              node ./mation/Mation/Gen/generate.js &&
-              purs-nix bundle && mv main.js out/app/main.js &&
-              cp examples/index.html out/app/index.html &&
-              echo 'You may need to reload your browser'
-          "
+        export -f mation.compile mation.bundle
+        { find . \( -name '*.purs' -o -name '*.js' -o -name '*.html' \) -a ! -path './out/*'
+        } | entr -cs "mation.bundle && echo 'You may need to reload your browser'"
       )}
 
       function mation.devt.docs {(
         cd "$root" &&
         mkdir -p out/docs &&
         python3 -m http.server --directory out/docs & trap "kill $!" EXIT
-        { find . -name '*.purs';
-          find mation -name '*.js';
+        { find ./mation -name '*.purs' -o -name '*.js' -o -name '*.html'
         } | entr -cs "
               node ./mation/Mation/Gen/generate.js &&
-              purs-nix-no-examples docs -o out/docs &&
+              purs-nix-lib-only docs -o out/docs &&
               echo 'Serving on localhost:8000'
           "
       )}
@@ -81,7 +171,7 @@ outputs = { self, ... }@inputs: let
   docs-deriv = pkgs.stdenv.mkDerivation {
     name = "mation-docs";
     src = ./.;
-    buildInputs = [ purs-nix-command ];
+    buildInputs = [ purs-nix-command-lib-only ];
     installPhase = ''
       purs-nix docs
       mkdir $out
