@@ -3,25 +3,33 @@
 
 module Mation.Props
   ( module X
-  , style'
-  , onInput'
+  , style
+  , addCss
+  , addStyles
+  , class_
+  , addClass
+  , addClasses
+  , data_
+  , addDataset
+  , onInputValue
   , fixup
   , fixupM
   , fixupEUnutterable
   , fixupMUnutterable
   , mkPair
   , mkListener
-  , dataset
   , remark
   , showUpdates
   , onClickElsewhere
   ) where
 
-import Data.Map as Map
-  
 import Mation.Core.Prop (Prop, enroot, hoist) as X
-import Mation.Gen.Attributes as X
+import Mation.Gen.Attributes hiding (style, class_, data_) as X
 import Mation.Gen.Events as X
+
+import Prim.TypeError (class Warn, Text)
+import Data.Map as Map
+import Data.Array as Array
 
 import Mation.Core.Prelude
 import Mation.Core.Mation (Mation)
@@ -35,17 +43,78 @@ import Mation.Core.Style as Style
 import Mation.Core.Util.Assoc (Assoc)
 import Mation.Core.Util.Assoc as Assoc
 import Mation.Core.Util.Revertible as Rev
+import Mation.Gen.Attributes as Attr
 
 
--- | From a collection of `Style` values, produce a `Prop` for the `style` attribute on an `Html` node
-style' :: forall m s. Array Style -> Prop m s
-style' = Style.toProp
+-- | Override the `style` attribute of a node
+-- |
+-- | You probably want `addStyles` instead, which adds styles instead
+-- | of overriding them. If you *want* to override,
+-- | use `Mation.Gen.Attributes (style)`.
+style :: forall m s.
+  Warn (Text "Instead of Mation.Props (style), prefer Mation.Props (addCss) or Mation.Props (addStyles) or Mation.Gen.Attributes (style)") =>
+  String -> Prop m s
+style = Attr.style
+
+-- | Add some inline CSS to a node
+addCss :: forall m s. String -> Prop m s
+addCss css = Style.toProp [Style.mkStyle css]
+
+-- | Add some styles to a node
+addStyles :: forall m s. Array Style -> Prop m s
+addStyles = Style.toProp
+
+
+-- | Override the `class` attribute of a node
+-- |
+-- | You probably want `addClass` or `addClasses` instead, which
+-- | add class(es) instead of overriding them. If you *want* to override,
+-- | use `Mation.Gen.Attributes (class_)`.
+class_ :: forall m s.
+  Warn (Text "Instead of Mation.Props (class_), prefer Mation.Props (addClasses) or Mation.Gen.Attributes (class_)") =>
+  String -> Prop m s
+class_ = Attr.class_
+
+-- | Add a class to a node
+-- |
+-- | ***
+-- |
+-- | Prefer thise over `Mation.Gen.Attributes (class_)`, which will override existing classes
+addClass :: forall m s. String -> Prop m s
+addClass = Array.singleton >>> addClasses
+
+-- | Add multiple classes to a node
+addClasses :: forall m s. Array String -> Prop m s
+addClasses classes = fixup (addClasses_f classes)
+
+foreign import addClasses_f :: Array String -> (DomNode -> Effect { restore :: Effect Unit })
+
+
+-- | Override the `data` attribute of a node
+-- |
+-- | You probably want `addDataset` instead, which adds
+-- | to the node dataset instead of overriding it. If you *want* to
+-- | override, use `Mation.Gen.Attributes (data_)`.
+data_ :: forall m s.
+  Warn (Text "Instead of Mation.Props (data_), prefer Mation.Props (addDataset) or Mation.Gen.Attributes (data_)") =>
+  String -> Prop m s
+data_ = Attr.data_
+
+-- | Add `data-` attributes to an element
+addDataset :: forall m s. Map String String -> Prop m s
+addDataset kvs = fixup $ addDataset_f (kvs # Map.toUnfoldable # asArray # Assoc.fromFoldable)
+  where
+  asArray :: forall x. Array x -> Array x
+  asArray = identity
+
+foreign import addDataset_f :: Assoc String String -> DomNode -> Effect { restore :: Effect Unit }
+
 
 -- | Attach a listener to the `input` event.
 -- |
--- | This differs from `onInput` in type: `onInput` provides a `DomEvent`, but this function provides the value `String`
-onInput' :: forall m s. (String -> Mation m s) -> Prop m s
-onInput' f = X.onInput (\ev -> f (getTargetValue ev))
+-- | This is like `onInput` but retrieves the event value on your behalf
+onInputValue :: forall m s. (String -> Mation m s) -> Prop m s
+onInputValue f = X.onInput (\ev -> f (getTargetValue ev))
 
 foreign import getTargetValue :: DomEvent -> String
 
@@ -90,16 +159,6 @@ mkListener :: forall m s. String -> (DomEvent -> Mation m s) -> Prop m s
 mkListener = Prop.mkListener
 
 
--- | Set `data-` attributes on an element
-dataset :: forall m s. Map String String -> Prop m s
-dataset kvs = fixup $ dataset_f (kvs # Map.toUnfoldable # asArray # Assoc.fromFoldable)
-  where
-  asArray :: forall x. Array x -> Array x
-  asArray = identity
-
-foreign import dataset_f :: Assoc String String -> DomNode -> Effect { restore :: Effect Unit }
-
-
 -- | Adds an arbitrary string to the `data-remark` attribute of an element
 -- |
 -- | Since mation mostly obviates the need for adding classes to elements,
@@ -111,7 +170,7 @@ foreign import dataset_f :: Assoc String String -> DomNode -> Effect { restore :
 -- | with such semantic information. Consider using `remark` to label salient
 -- | points in the DOM tree such as the outermost node of components.
 remark :: forall m s. String -> Prop m s
-remark rk = dataset (Map.singleton "remark" rk)
+remark rk = addDataset (Map.singleton "remark" rk)
 
 
 -- | Gives the node a red border whenever they are updated

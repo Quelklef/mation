@@ -4,7 +4,25 @@ ev => {
   return ev.target.value;
 };
 
-export const dataset_f =
+export const addClasses_f =
+classes => node => () => {
+  const novel = new Set();
+  for (const cls of classes)
+    if (!(node.classList.contains(cls)))
+      novel.add(cls);
+
+  for (cls of classes)
+    node.classList.add(cls);
+
+  const restore = () => {
+    for (const cls of novel)
+      node.classList.remove(cls);
+  };
+
+  return { restore };
+};
+
+export const addDataset_f =
 kvs => node => () => {
 
   const before = { ...node.dataset };

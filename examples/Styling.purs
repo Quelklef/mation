@@ -17,7 +17,7 @@ initial = unit
 render :: forall m. Model -> E.Html m Model
 render _model =
   E.div
-  [ P.style "display: flex; flex-direction: column; gap: 1em;"
+  [ P.addCss "display: flex; flex-direction: column; gap: 1em;"
   ]
   [ mkSelectorExample
       "I style on hover"
@@ -49,7 +49,7 @@ render _model =
           #<> (Sel.not ":hover" #>> Sel.children #>> Sel.lastChild)
           #<> (Sel.this #>> Sel.media "(max-height: 700px)")
 
-  , E.hr [ P.style "width: 100%" ]
+  , E.hr [ P.addCss "width: 100%" ]
 
   , mkPreludeExample mempty
   , mkPreludeExample (S.fontWeight "bold")
@@ -62,7 +62,7 @@ render _model =
     E.div
     []
     [ E.span
-      [ P.style'
+      [ P.addStyles
         [ S.display "inline-block"
         , S.cursor "pointer"
         , S.padding "1em"
@@ -83,7 +83,7 @@ render _model =
 
   mkPreludeExample extraStyle =
     E.div
-    [ P.style'
+    [ P.addStyles
       [ S.withPrelude
           (fold
             [ "@keyframes my-animation {"

@@ -32,7 +32,7 @@ render :: Model -> E.Html' Model
 render { hour, minute, second } =
 
   E.div
-  [ P.style'
+  [ P.addStyles
     [ S.display "flex"
     , S.flexDirection "column"
     , S.justifyContent "center"
@@ -43,7 +43,7 @@ render { hour, minute, second } =
   ]
   [ analog { hour, minute, second }
   , E.div
-    [ P.style'
+    [ P.addStyles
       [ S.fontFamily "monospace"
       , S.fontSize "18px"
       ]
@@ -65,7 +65,7 @@ analog :: Model -> E.Html' Model
 analog { hour, minute, second } =
 
   E.div
-  [ P.style'
+  [ P.addStyles
     [ S.width (show size <> "px")
     , S.height (show size <> "px")
     , S.borderRadius "100%"
@@ -85,7 +85,7 @@ analog { hour, minute, second } =
 
   hand n lengthModifier alignSelf color =
     E.div
-    [ P.style'
+    [ P.addStyles
       [ S.height "2px"
       , S.position "absolute"
       , S.width "50%"
@@ -99,7 +99,7 @@ analog { hour, minute, second } =
       ]
     ]
     [ E.span
-      [ P.style'
+      [ P.addStyles
         [ S.backgroundColor color
         , S.width $ show (size / 2.0 * lengthModifier) <> "px"
         ]

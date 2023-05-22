@@ -140,6 +140,19 @@ instance FreeMonoid Style (Style1 Weave)
 
 
 -- | `Style` constructor
+-- |
+-- | Directly embeds some inline CSS
+mkStyle :: String -> Style
+mkStyle css = FM.singleton $ Style1
+  { css
+  , scopes:
+      { selector: W.noop
+      , block: W.noop
+      }
+  , prelude: ""
+  }
+
+-- | `Style` constructor
 mkPair :: String -> String -> Style
 mkPair k v = FM.singleton $ Style1
   { css: k <> ": " <> v

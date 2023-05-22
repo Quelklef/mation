@@ -15,7 +15,7 @@ initialize = pure unit
 render :: Model -> E.Html' Model
 render _model =
   E.div
-  [ P.style'
+  [ P.addStyles
     [ S.maxWidth "600px"
     , S.fontFamily "sans-serif"
     ]
@@ -40,11 +40,11 @@ render _model =
 
   where
 
-  sLi = P.style'
+  sLi = P.addStyles
     [ S.margin ".5em 0"
     ]
 
-  sCode = P.style'
+  sCode = P.addStyles
     [ S.fontSize "1em"
     , S.backgroundColor "rgb(230, 230, 230)"
     , S.padding "2px 4px"

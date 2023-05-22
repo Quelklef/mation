@@ -59,7 +59,7 @@ mkComponent { name, init, daemon, view } = Com
   , daemon
   , view: \s ->
       E.span
-      [ P.style' [ S.display "contents" ]
+      [ P.addStyles [ S.display "contents" ]
       , P.remark (reflectSymbol name)
       ]
       [ view s

@@ -114,19 +114,19 @@ type Model =
 render :: Model -> E.Html' Model
 render model =
   E.body
-  [ P.style'
+  [ P.addStyles
     [ S.margin "0"
     ]
   ]
   [ navBar
   , E.div
-    [ P.style'
+    [ P.addStyles
       [ S.display "flex"
       , S.justifyContent "center"
       ]
     ]
     [ E.div
-      [ P.style'
+      [ P.addStyles
         [ S.width pageWidth
         , S.padding "2em"
         ]
@@ -170,14 +170,14 @@ render model =
 
   navBar =
     E.div
-    [ P.style'
+    [ P.addStyles
       [ S.display "flex"
       , S.justifyContent "center"
       , S.backgroundColor "rgb(50, 50, 50)"
       ]
     ]
     [ E.div
-      [ P.style'
+      [ P.addStyles
           [ S.width pageWidth
           , S.display "flex"
           , S.gap "1.5em"
@@ -190,7 +190,7 @@ render model =
       [ intercalate (E.text " ") $ pages >>= \page ->
           [ let isCurrent = page == model.page in
             E.span
-            [ P.style'
+            [ P.addStyles
               [ S.cursor "pointer"
               , S.textAlign "center"
               , S.padding "1em 0"
@@ -201,7 +201,7 @@ render model =
             [ E.text (pretty page)
             ]
           , if page `elem` separateAfter
-            then E.span [ P.style "color: rgb(100, 100, 100)" ] [ E.text " | " ]
+            then E.span [ P.addCss "color: rgb(100, 100, 100)" ] [ E.text " | " ]
             else mempty
           ]
       ]

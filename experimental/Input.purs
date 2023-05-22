@@ -139,7 +139,7 @@ render (InputSpec spec) (InputState { model, perturbed }) =
   E.span
   [ P.onFocusout \_ step -> step (_Newtype <<< prop (Proxy :: Proxy "perturbed") .~ true)
   , P.onInput \_ step -> step (_Newtype <<< prop (Proxy :: Proxy "perturbed") .~ true)
-  , P.style'
+  , P.addStyles
     [ S.display "contents"
     ]
   ]
@@ -252,7 +252,7 @@ stdWithErrors errs html =
         []
         [ errs # foldMap \err ->
             E.li
-            [ P.style'
+            [ P.addStyles
               [ S.color "red"
               ]
             ]
@@ -305,7 +305,7 @@ stringInput fromDefaults =
     , render: \s ->
         E.input
         [ P.value s
-        , P.onInput' \s' step -> step (const s')
+        , P.onInputValue \s' step -> step (const s')
         , fold opts.props
           # P.enroot (re _Newtype :: Iso' String StringInputModel)
         ]

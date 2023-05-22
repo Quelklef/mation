@@ -55,12 +55,12 @@ render model =
     [ E.text "Using n="
     , E.input
       [ P.type_ "number"
-      , P.onInput' \val step ->
+      , P.onInputValue \val step ->
             case Number.fromString val of
               Nothing -> pure unit
               Just n -> step (_exp .~ n)
       , P.value (show model.exp)
-      , P.style' [ S.width "6ch" ]
+      , P.addStyles [ S.width "6ch" ]
       ]
     , E.text "."
     , E.text " "
@@ -71,7 +71,7 @@ render model =
     [ E.input
       [ P.type_ "checkbox"
       , P.checked model.fast
-      , P.onInput' \_ step -> step (_fast %~ not)
+      , P.onInputValue \_ step -> step (_fast %~ not)
       , P.id "use-fast"
       ]
     , E.text " "
@@ -81,7 +81,7 @@ render model =
       ]
     ]
   , E.div
-    [ P.style'
+    [ P.addStyles
       [ S.display "flex"
       , S.gap "1em"
       ]
@@ -126,8 +126,8 @@ tree n string =
     [ E.input
       [ P.type_ "text"
       , P.value string
-      , P.onInput' \val step -> step (const val)
-      , P.style'
+      , P.onInputValue \val step -> step (const val)
+      , P.addStyles
         [ S.border "none"
         , S.backgroundColor "rgb(255, 220, 255)"
         ]
@@ -135,14 +135,14 @@ tree n string =
     ]
   else
     E.div
-    [ P.style'
+    [ P.addStyles
       [ S.margin "1px"
       , S.padding "1px"
       , S.border "1px solid black"
       , S.textAlign "center"
       ]
       -- Add some attributes to make the test less trivial
-    , P.class_ "some-class"
+    , P.addClass "some-class"
     ]
     [ tree (n - 1.0) string
     , tree (n - 1.0) string

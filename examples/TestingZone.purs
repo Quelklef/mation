@@ -35,7 +35,7 @@ instance UnsureEq StreamState where
 renderCounter :: Counter -> E.Html' Counter
 renderCounter model =
   E.div
-  [ P.style'
+  [ P.addStyles
     [ S.fontSize "1.5em"
     , S.on (Sel.this #<> Sel.descendantsWhere "button")
       [ S.fontFamily "monospace"
@@ -48,11 +48,13 @@ renderCounter model =
     ]
   ]
   [ E.span
-    [ P.style'
+    [ P.addStyles
       [ S.display "inline-block"
       , S.minWidth "10ch"
       ]
-    , P.dataset $ range 1 (min model.count 50) # foldMap (\n -> [show n /\ show n]) # Map.fromFoldable
+    , P.addDataset $
+        if model.count < 1 then mempty
+        else range 1 (min model.count 50) # foldMap (\n -> [show n /\ show n]) # Map.fromFoldable
     ]
     [ E.text (show model.count)
     ]
@@ -106,7 +108,7 @@ renderCounter model =
   _streamState = prop (Proxy :: Proxy "streamState")
 
   buttonStyle :: forall m s. P.Prop m s
-  buttonStyle = P.style'
+  buttonStyle = P.addStyles
     [ S.borderRadius "0"
     , S.borderColor "red"
     ]
@@ -124,11 +126,11 @@ renderTextbox str =
   []
   [ E.p
     []
-    [ E.input [ P.type_ "text", P.value str, P.onInput' \val step -> step (const val) ]
+    [ E.input [ P.type_ "text", P.value str, P.onInputValue \val step -> step (const val) ]
     , E.text " "
-    , E.input [ P.type_ "text", P.value str, P.onInput' \val step -> step (const val) ]
+    , E.input [ P.type_ "text", P.value str, P.onInputValue \val step -> step (const val) ]
     , E.text " "
-    , E.input [ P.type_ "text", P.value str, P.onInput' \val step -> step (const val) ]
+    , E.input [ P.type_ "text", P.value str, P.onInputValue \val step -> step (const val) ]
     ]
   , E.p [] [ E.text "As text: ", E.text str ]
   , E.p [] [ E.text "As html: ", E.rawHtml str ]
@@ -143,7 +145,7 @@ type PhoneNumber = Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int /
 renderPhoneNumber :: PhoneNumber -> E.Html' PhoneNumber
 renderPhoneNumber = \pn ->
   E.div
-  [ P.style'
+  [ P.addStyles
     [ S.display "flex"
     , S.gap "5px"
     , S.alignItems "center"
@@ -172,7 +174,7 @@ renderPhoneNumber = \pn ->
   digit :: Lens' PhoneNumber Int -> PhoneNumber -> E.Html' PhoneNumber
   digit len pn =
     E.select
-    [ P.onInput' \v step -> step (len .~ (parseInt v))
+    [ P.onInputValue \v step -> step (len .~ (parseInt v))
     , P.remark "phone number digit"
     ]
     [ flip foldMap (range 1 9) \n ->
@@ -198,7 +200,7 @@ viewOnClickElsewhere { here, notHere } =
   E.div
   [ P.onClick \_ step -> step (prop (Proxy :: Proxy "here") %~ (_ + 1))
   , P.onClickElsewhere \_ step -> step (prop (Proxy :: Proxy "notHere") %~ (_ + 1))
-  , P.style'
+  , P.addStyles
     [ S.fontFamily "sans-serif"
     , S.padding "1em"
     , S.border "1px solid black"
@@ -226,7 +228,7 @@ stringComponent =
     , daemon: \_ -> pure unit
     , view: \(_ /\ s) ->
         E.input
-        [ P.onInput' \v step -> step (_2 .~ v)
+        [ P.onInputValue \v step -> step (_2 .~ v)
         , P.value s
         ]
     }
@@ -247,7 +249,7 @@ comComponent =
           [ P.type_ "checkbox"
           , P.id "caps"
           , P.checked caps
-          , P.onInput' \_ step -> step (_2 <<< prop (Proxy :: Proxy "caps") %~ not)
+          , P.onInputValue \_ step -> step (_2 <<< prop (Proxy :: Proxy "caps") %~ not)
           ]
         , E.text " → "
         , E.text (if caps then toUpperCase string else string)
@@ -327,7 +329,7 @@ render model =
   , E.enroot _textbox (renderTextbox model.textbox)
   , E.hr []
   , E.div
-    [ P.style' [ S.fontSize ".8em" ] ]
+    [ P.addStyles [ S.fontSize ".8em" ] ]
     [ flip foldMap (range 1 5) \n ->
         E.p [] [ E.text $ show n <> ": monidal `Html` is great!" ]
     ]

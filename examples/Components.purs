@@ -36,15 +36,15 @@ renderConcat :: ConcatModel -> E.Html' ConcatModel
 renderConcat (prefix /\ suffix) =
   fold
   [ E.input
-    [ P.onInput' \newPrefix step -> step (\(_oldPrefix /\ curSuffix) -> newPrefix /\ curSuffix)
+    [ P.onInputValue \newPrefix step -> step (\(_oldPrefix /\ curSuffix) -> newPrefix /\ curSuffix)
     , P.value prefix
-    , P.style "width: 10ch"
+    , P.addCss "width: 10ch"
     ]
   , E.text " + "
   , E.input
-    [ P.onInput' \newSuffix step -> step (\(curPrefix /\ _oldSuffix) -> curPrefix /\ newSuffix)
+    [ P.onInputValue \newSuffix step -> step (\(curPrefix /\ _oldSuffix) -> curPrefix /\ newSuffix)
     , P.value suffix
-    , P.style "width: 10ch"
+    , P.addCss "width: 10ch"
     ]
   , E.text " = "
   , E.text $ prefix <> suffix
@@ -65,16 +65,16 @@ renderRepeat :: RepeatModel -> E.Html' RepeatModel
 renderRepeat (string /\ count) =
   fold
   [ E.input
-    [ P.onInput' \s step -> step (_1 .~ s)
+    [ P.onInputValue \s step -> step (_1 .~ s)
     , P.value string
-    , P.style "width: 10ch"
+    , P.addCss "width: 10ch"
     ]
   , E.text " × "
   , E.input
     [ P.type_ "number"
-    , P.onInput' \s step -> step (_2 .~ parseNumber s)
+    , P.onInputValue \s step -> step (_2 .~ parseNumber s)
     , P.value (show count)
-    , P.style "width: 5ch"
+    , P.addCss "width: 5ch"
     ]
   , E.text " = "
   , E.text $ string `power` count
@@ -160,7 +160,7 @@ initial = initialBoth /\ initialSharing
 render :: Model -> E.Html' Model
 render (both /\ sharing) =
   E.div
-  [ P.style "font-family: sans-serif; line-height: 1.5em"
+  [ P.addCss "font-family: sans-serif; line-height: 1.5em"
   ]
   [ E.enroot _1 $ renderBoth both
   , E.hr []

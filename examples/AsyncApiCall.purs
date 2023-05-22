@@ -52,7 +52,7 @@ initial =
 render :: Model -> E.Html Effect Model
 render model =
   E.div
-  [ P.style'
+  [ P.addStyles
     [ S.display "flex"
     , S.gap "1em"
     , S.fontFamily "sans-serif"
@@ -64,7 +64,7 @@ render model =
 renderStringReverse :: Model -> E.Html Effect Model
 renderStringReverse model =
   E.div
-  [ P.style "flex: 1"
+  [ P.addCss "flex: 1"
   ]
   [ E.h3 [] [ E.text "String-reverse mock API call" ]
   , E.p
@@ -72,7 +72,7 @@ renderStringReverse model =
     [ E.text "Some input string: "
     , E.input
       [ P.value model.input
-      , P.onInput' \v step -> step (prop (Proxy :: Proxy "input") .~ v)
+      , P.onInputValue \v step -> step (prop (Proxy :: Proxy "input") .~ v)
       , P.disabled $ isInProgress model.requestStatus
       ]
     ]
@@ -109,7 +109,7 @@ renderStringReverse model =
 
         Failure { reason } ->
           E.p
-          [ P.style'
+          [ P.addStyles
               [ S.color "red"
               ]
           ]
@@ -124,7 +124,7 @@ renderSpinner tick =
   let spinnerContainerSize = 30.0
       spinnerSize = 10.0
   in E.span
-  [ P.style'
+  [ P.addStyles
     [ S.display "inline-block"
     , S.verticalAlign "middle"
     , S.margin $ "0 " <> show (spinnerContainerSize / 2.0) <> "px"
@@ -137,7 +137,7 @@ renderSpinner tick =
     ]
   ]
   [ E.div
-    [ P.style'
+    [ P.addStyles
       [ S.display "inline-block"
       , S.background "black"
       , S.width $ show spinnerSize <> "px"

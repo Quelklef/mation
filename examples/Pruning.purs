@@ -45,7 +45,7 @@ onDouble renderOne model =
 
   box el =
     E.div
-    [ P.style'
+    [ P.addStyles
       [ S.display "inline-block"
       , S.border "1px solid lightgrey"
       , S.padding ".2em"
@@ -61,11 +61,11 @@ render :: Model -> E.Html' Model
 render model =
 
   E.div
-  [ P.style "font-family: sans-serif; font-size: 0.9em"
+  [ P.addCss "font-family: sans-serif; font-size: 0.9em"
   ]
   [ E.p [ pSty ] [ E.text "Mation sports a feature called 'pruning' which allows you to avoid updating parts of the application when the relevant state doesn't change. Try incrementing the counters below. Updates are shown in red." ]
   , E.div
-    [ P.style "font-size: 0.75em"
+    [ P.addCss "font-size: 0.75em"
     ]
     [ flip (E.prune "example-1") model.vals (\vals -> E.enroot (prop (Proxy :: Proxy "vals")) $ onDouble (onDouble (onDouble mkCounter)) vals)
     ]
@@ -81,34 +81,34 @@ render model =
 
   where
 
-  pSty = P.style' [ S.maxWidth "600px" ]
+  pSty = P.addStyles [ S.maxWidth "600px" ]
 
   mkCounter :: Int -> E.Html' Int
   mkCounter = \val ->
     E.span
-    [ P.style'
+    [ P.addStyles
       [ S.display "inline-flex"
       , S.padding ".1em"
       , S.alignItems "center"
       ]
     ]
     [ E.span
-      [ P.style "margin-right: 5px" ]
+      [ P.addCss "margin-right: 5px" ]
       [ E.text (show val) ]
     , E.span
-      [ P.style'
+      [ P.addStyles
         [ S.display "inline-flex"
         , S.flexDirection "column"
         ]
       ]
       [ E.button
         [ P.onClick \_ step -> step (_ + 1)
-        , P.style "font-size: 1em; padding: .1em .2em"
+        , P.addCss "font-size: 1em; padding: .1em .2em"
         ]
         [ E.text "↑" ]
       , E.button
         [ P.onClick \_ step -> step (_ - 1)
-        , P.style "font-size: 1em; padding: .1em .2em"
+        , P.addCss "font-size: 1em; padding: .1em .2em"
         ]
         [ E.text "↓" ]
       ]
@@ -125,7 +125,7 @@ renderExample2 = \{ depth, color } ->
     , E.input
       [ P.type_ "number"
       , P.value $ show depth
-      , P.onInput' \v step -> step (prop (Proxy :: Proxy "depth") .~ parseInt v)
+      , P.onInputValue \v step -> step (prop (Proxy :: Proxy "depth") .~ parseInt v)
       ]
     , E.text " "
     , E.button
@@ -147,7 +147,7 @@ renderExample2 = \{ depth, color } ->
     if depth <= 0
     then
       E.div
-      [ P.style'
+      [ P.addStyles
         [ S.display "flex"
         , S.gap "2px"
         , S.maxWidth "450px"
@@ -158,7 +158,7 @@ renderExample2 = \{ depth, color } ->
       ]
       [ flip (E.prune "the boxes") color \color ->  (_ `power` 60) $
         E.div
-        [ P.style'
+        [ P.addStyles
           [ S.display "inline-block"
           , S.minWidth "20px"
           , S.minHeight "20px"
@@ -171,7 +171,7 @@ renderExample2 = \{ depth, color } ->
       ]
     else
       E.div
-      [ P.style'
+      [ P.addStyles
         [ S.display "inline-block"
         , S.border "1px solid lightgrey"
         , S.padding ".4em"
@@ -194,21 +194,21 @@ renderSumTest (n /\ tab) =
     []
     [ E.button
       [ P.onClick \_ step -> step (_1 %~ (_ + 1))
-      , P.style "padding: 0 1.5em; line-height: 2em"
+      , P.addCss "padding: 0 1.5em; line-height: 2em"
       ]
       [ E.text (show n)
       ]
     , E.text " "
     , E.button
       [ P.onClick \_ step -> step (_2 %~ (_ + 1))
-      , P.style "padding: 0 1.5em; line-height: 2em"
+      , P.addCss "padding: 0 1.5em; line-height: 2em"
       ]
       [ E.text "swap"
       ]
-    , E.span [ P.style "padding: 0 1em" ] [ ]
+    , E.span [ P.addCss "padding: 0 1em" ] [ ]
     , case tab `mod` 3 of
-        0 -> flip (E.prune "0") n (\n -> E.span [ P.style "border: 1px solid blue" ] [ E.text (show n <> " ") ])
+        0 -> flip (E.prune "0") n (\n -> E.span [ P.addCss "border: 1px solid blue" ] [ E.text (show n <> " ") ])
         1 -> flip (E.prune "1") n (\n -> range 1 n # foldMap \k -> E.text (show k <> " .. "))
-        _ -> flip (E.prune "_") n (\_ -> E.span [ P.style "background-color: red; color: white" ] [ E.text "three" ])
+        _ -> flip (E.prune "_") n (\_ -> E.span [ P.addCss "background-color: red; color: white" ] [ E.text "three" ])
     ]
   ]
