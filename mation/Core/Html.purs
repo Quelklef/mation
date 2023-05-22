@@ -15,7 +15,7 @@ import Mation.Core.Dom (DomNode, DomEvent)
 import Mation.Core.Util.FreeMonoid (class FreeMonoid)
 import Mation.Core.Util.FreeMonoid as FM
 import Mation.Core.Util.UnsureEq (class UnsureEq, unsureEq, Unsure)
-import Mation.Core.Util.Exists (Exists, mkExists, mapExists)
+import Mation.Core.Util.Exists (Exists, mkExists, mapExists, runExists)
 
 
 -- | A single Virtual Node
@@ -126,7 +126,8 @@ hoist1 f = case _ of
   where _restore = prop (Proxy :: Proxy "restore")
 
 
-pruneScope :: forall msg. String -> VNode msg -> VNode msg
+-- | Append a key to pruning paths of all pruned descendants (including self)
+pruneScope :: forall m. String -> VNode m -> VNode m
 pruneScope key = case _ of
   VRawNode x -> VRawNode x
   VRawHtml x -> VRawHtml x
@@ -140,6 +141,36 @@ pruneScope key = case _ of
            , keyPath: [key] <> keyPath
            , render: render >>> pruneScope key
            }
+
+-- | Remove all contained `VPrune` nodes
+-- |
+-- | Preserves the container <span style="display: contents"> in order to
+-- | minimize difference between a VDom before and after being unpruned
+unPrune1 :: forall m. VNode m -> VNode m
+unPrune1 = case _ of
+  VRawNode x -> VRawNode x
+  VRawHtml x -> VRawHtml x
+  VText x -> VText x
+  VTag { tag, attrs, listeners, fixup, children } ->
+    VTag { tag, attrs, listeners, fixup
+         , children: children # map unPrune1
+         }
+  VPrune e ->
+    e # runExists \(PruneE { params, render }) ->
+          withPruneWrapper [render params]
+
+
+-- FIXME: We treat VPrune nodes as being a <span style="display: contents"> over
+--        their children. This makes diffing easier but is fundamentally a hack.
+--        Note that the diffing algorithm directly uses knowledge of this hack.
+withPruneWrapper :: forall m. Array (VNode m) -> VNode m
+withPruneWrapper children = VTag
+  { tag: "span"
+  , attrs: Assoc.fromFoldable [ "style" /\ "display: contents" ]
+  , listeners: Assoc.fromFoldable []
+  , fixup: mempty
+  , children
+  }
 
 
 type CaseVNode = forall m r.
@@ -215,27 +246,17 @@ mkTag info = Html [ VTag info' ]
 -- | `Html` constructor
 mkPrune :: forall p s m. UnsureEq p => String -> (p -> Html m s) -> p -> Html m s
 mkPrune key render params =
-  FM.singleton $ VPrune $ mkExists $ PruneE
-    { keyPath: [key]
-    , params
-    , unsureEq
-    , render: render >>> wrap >>> pruneScope key
-    }
+  FM.singleton $
+    pruneScope key $  -- Append key to key path of this node and all descendants
+      VPrune $ mkExists $ PruneE
+        { keyPath: []
+        , params
+        , unsureEq
+        , render: render >>> FM.unwrap >>> withPruneWrapper
+        }
 
-  where
-
-  -- FIXME: We treat VPrune nodes as being a <span style="display: contents"> over
-  --        their children. This makes diffing easier but is fundamentally a hack.
-  --        Note that the diffing algorithm directly uses knowledge of this hack.
-  wrap :: forall n t. Html n t -> VNode (MationT n t)
-  wrap html = VTag
-    { tag: "span"
-    , attrs: Assoc.fromFoldable [ "style" /\ "display: contents" ]
-    , listeners: Assoc.fromFoldable []
-    , fixup: mempty
-    , children: FM.unwrap html
-    }
-
+unPrune :: forall m s. Html m s -> Html m s
+unPrune = FM.map unPrune1
 
 -- | Embed one `Html` within another
 enroot :: forall m large small. Functor m => Setter' large small -> Html m small -> Html m large

@@ -27,9 +27,14 @@ import Mation.Core.Util.FreeMonoid as FM
 prune :: forall m p s. UnsureEq p => String -> p -> (p -> Html m s) -> Html m s
 prune key param render = Html.mkPrune key render param
 
+-- | Negates pruning on an `Html` value *and all children*
+-- |
+-- | This may be necessary in order to sure validity of the prune tree when
+-- | embedding some `Html` from an unknown source
+unPrune :: forall m s. Html m s -> Html m s
+unPrune = Html.unPrune
+
 -- | Attaches a pruning key to a node but does not actually perform pruning
 key :: forall m s. String -> Html m s -> Html m s
 key = FM.map <<< Html.pruneScope
-
--- FIXME: add 'unPrune' (undoes `prune`) and 'pruneKeyed' (adds prune keys but does not prune)
 
