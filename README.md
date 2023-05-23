@@ -27,15 +27,6 @@
 - Currently Mation is not the best choice for performance-sensitive applications
 
 
-## Demo
-
-Try it out!
-
-```bash
-nix run github:quelklef/mation/main#demo
-```
-
-
 ## Docs
 
 You can serve the current docs with

@@ -24,7 +24,6 @@ import Mation.Examples.Pruning as Examples.Pruning
 
 data Page
 
-  -- Demo welcome
   = Welcome
 
   -- Examples
