@@ -94,7 +94,7 @@ export const patch_f =
     const info = lookupPrune(oldPruneMap, vPrune);
     if (info) {
       setNode(root, info.node);
-      newPruneMap.merge(oldPruneMap.filterPrefixedBy(vPrune.keyPath));
+      newPruneMap.mergeAt(oldPruneMap, vPrune.keyPath);
         // ^ Add the prune children, which won't otherwise be seen in this diff
       return info.node;
     } else {
@@ -152,7 +152,7 @@ export const patch_f =
           const info = lookupPrune(oldPruneMap, vPrune);
 
           // The prune was rendered last frame, so it must be in the prune map
-          console.assert(!!info, `[mation] prune missing from map`);
+          console.assert(!!info, `[mation] prune missing from map (looking for keypath '${vPrune.keyPath.map(k => '→ ' + k).join(' ')}')`);
 
           // You and I have magic knowledge that all VPrune nodes render to VTag nodes
           const vTag = caseVNode(info.vNode)(_ => null)(_ => null)(_ => null)(x => x)(_ => null);
@@ -302,64 +302,72 @@ function setNode(target, replacement) {
   }
 }
 
+
 // An SMap is a mapping whose keys are string arrays
 // Values in an SMap must never be nully
 class SMap {
+
   constructor(trie) {
-    this.trie = trie || {};
+    this.trie = Trie_new();
   }
 
-  static rose = Symbol();
-
-  get(keys) {
-    let root = this.trie;
-    for (const key of keys)
-      root = root?.[key];
-    return root?.[SMap.rose];
+  get(ks) {
+    return Trie_get(this.trie, ks);
   }
 
-  set(keys, val) {
-    let root = this.trie;
-    for (const key of keys) {
-      if (!(key in root)) root[key] = {};
-      root = root[key];
-    }
-    root[SMap.rose] = val;
+  set(ks, v) {
+    Trie_set(this.trie, ks, v);
   }
 
-  *entries() {
-    yield* go([], this.trie);
-    function* go(ks, root) {
-      if (SMap.rose in root)
-        yield [ks, root[SMap.rose]];
-      for (const [k, v] of Object.entries(root))
-        if (k !== SMap.rose)
-          yield* go([...ks, k], v);
-    }
+  mergeAt(other, ks) {
+    Trie_merge(Trie_zoom(this.trie, ks), Trie_zoom(other.trie, ks));
   }
 
-  *keys() {
-    for (const [ks, v] of this.entries())
-      yield ks;
-  }
+}
 
-  // Merge another SMap into this one
-  merge(other) {
-    // Could be more efficient
-    for (const [ks, v] of other.entries()) {
-      this.set(ks, v);
-    }
-  }
 
-  // Return an SMap consisting of all (keys, value) pairs of
-  // this SMap whose key sequence has the given key sequence
-  // as a prefix
-  filterPrefixedBy(keys) {
-    let root = this.trie;
-    for (const key of keys)
-      root = root?.[key];
-    for (const key of Array.from(keys).reverse())
-      root = { [key]: root };
-    return new SMap(root);
+const Trie_rose = Symbol("Trie_rose");
+
+function Trie_new() {
+  return {};
+}
+
+function Trie_set(trie, ks, v) {
+  Trie_zoom(trie, ks)[Trie_rose] = v;
+}
+
+function Trie_get(trie, ks) {
+  return Trie_peek(trie, ks)?.[Trie_rose];
+}
+
+function Trie_merge(trie, other) {
+  if (Trie_rose in other)
+    trie[Trie_rose] = other[Trie_rose];
+
+  for (const k in other) {
+    if (k === Trie_rose) continue;
+    Trie_merge(Trie_zoom(trie, [k]), other[k]);
   }
 }
+
+// Fetch the sub-trie at a given key path. If none
+// exists, returns nully.
+function Trie_peek(root, ks) {
+  for (const key of ks) {
+    root = root[key];
+    if (!root) return null;
+  }
+  return root;
+}
+
+// Fetch the sub-trie at a given key path. If none
+// exists, create one.
+function Trie_zoom(root, ks) {
+  for (const key of ks) {
+    if (!(key in root))
+      root[key] = {};
+    root = root[key];
+  }
+  return root;
+}
+
