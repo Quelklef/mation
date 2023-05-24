@@ -115,6 +115,11 @@ export const patch_f =
     return paramsEqual ? info : null;
   }
 
+  // Like lookupPrune but skips checking the prune params
+  function lookupPruneUnsafe(pruneMap, vPrune) {
+    return pruneMap.get(vPrune.keyPath);
+  }
+
 
   function tagCase(root, mOldVNode, newVTag) {
     // mOldVNode may be nully
@@ -149,14 +154,12 @@ export const patch_f =
         (text => empty)
         (oldVTag => oldVTag)
         (vPrune => {
-          const info = lookupPrune(oldPruneMap, vPrune);
-
-          // The prune was rendered last frame, so it must be in the prune map
+          // Since the prune was rendered last frame, it must be in the prune map
+          // Also, we need not check the prune params
+          const info = lookupPruneUnsafe(oldPruneMap, vPrune);
           console.assert(!!info, `[mation] prune missing from map (looking for keypath '${vPrune.keyPath.map(k => '→ ' + k).join(' ')}')`);
-
           // You and I have magic knowledge that all VPrune nodes render to VTag nodes
           const vTag = caseVNode(info.vNode)(_ => null)(_ => null)(_ => null)(x => x)(_ => null);
-
           return vTag;
         })
     );
