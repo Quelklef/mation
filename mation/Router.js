@@ -13,3 +13,12 @@ pathStr => () => {
 export const encodeURIComponent = s => window.encodeURIComponent(s);
 export const decodeURIComponent = s => window.decodeURIComponent(s);
 
+export const debounce =
+ms => f => () => {
+  let tid = 0;
+  return x => () => {
+    clearTimeout(tid);
+    tid = setTimeout(() => f(x)(), ms);
+  };
+}
+

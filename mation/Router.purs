@@ -251,6 +251,8 @@ foreign import writePathStr :: String -> Effect Unit
 foreign import encodeURIComponent :: String -> String
 foreign import decodeURIComponent :: String -> String
 
+foreign import debounce :: forall a. Number -> (a -> Effect Unit) -> Effect (a -> Effect Unit)
+
 
 -- | Read the current route
 readRoute :: forall route. Router route -> Effect route
@@ -266,7 +268,8 @@ sync :: forall route. Router route -> Daemon Effect route
 sync router wref = do
 
   -- Sync route->path
-  wref # WRef.onChange (\route -> writeRoute route router)
+  debouncedWriteRoute <- debounce 25.0 (\route -> router # writeRoute route)
+  wref # WRef.onChange debouncedWriteRoute
 
   -- FIXME: sync forward/back buttons
 
