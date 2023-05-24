@@ -50,11 +50,11 @@ outputs = { self, ... }@inputs: let
   # the lack of other options
   purs-nix-command =
     my-purs-nix.command {
-      srcs = [ "$PWD/mation" "$PWD/examples" "$PWD/experimental" ];
+      srcs = [ "$PWD/mation" "$PWD/samples" "$PWD/experimental" ];
       test = "/dev/null";  # using nix 'null' value breaks?
     };
 
-  # purs-nix command ignoring non-lib code like examples
+  # purs-nix command ignoring non-lib code like samples/
   purs-nix-command-lib-only =
     my-purs-nix.command {
       srcs = [ "$PWD/mation" ];
@@ -134,7 +134,7 @@ outputs = { self, ... }@inputs: let
       function mation.bundle {(
         cd "$root" &&
         mation.compile &&
-        cp examples/index.html out/app/index.html &&
+        cp samples/index.html out/app/index.html &&
 
         # Bundle the application
         echo 'import { main } from "./out/purs-cache/${main-module}/index.js"; main()' \
