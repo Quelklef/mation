@@ -1,4 +1,10 @@
 
+// FIXME: It would be good to have some real tests for the fixup
+//   lifecycle. Getting the fixup-restore timing and logic
+//   correct (or as close to correct as it currently is) has proven
+//   rather subtle, and I'm not 100% confident in the current
+//   implementation.
+
 export const patch_f =
 ({ caseMaybe
  , caseUnsure
@@ -11,9 +17,20 @@ export const patch_f =
   const oldPruneMap = caseMaybe(mPruneMap)(Trie_new())(x => x);
   const newPruneMap = Trie_new();
 
+  const oldPruneMapNodes = new Set(mapIter(Trie_values(oldPruneMap), info => info.node));
+
   return ({ mOldVNode, newVNode }) => root => () => {
+
     const mOldVNode_ = caseMaybe(mOldVNode)(undefined)(x => x);
     patch(root, mOldVNode_, newVNode);
+
+    // Fixup-release all nodes present in old prune map but not new one
+    // Such nodes are detached from the DOM and are to be forgotten
+    const newPruneMapNodes = new Set(mapIter(Trie_values(newPruneMap), info => info.node));
+    for (const node of oldPruneMapNodes)
+      if (!newPruneMapNodes.has(node))
+        fixupRelease(node);
+
     return newPruneMap;
   };
 
@@ -40,6 +57,7 @@ export const patch_f =
       caseVNode(newVNode)
         (domNode => {
           setNode(root, domNode);
+          fixupConditionalRelease(root);
           return domNode;
         })
         (html => {
@@ -55,6 +73,7 @@ export const patch_f =
             $div.innerHTML = html;
             $div.style.display = 'contents';
             setNode(root, $div);
+            fixupConditionalRelease(root);
             return $div;
           }
         })
@@ -68,6 +87,7 @@ export const patch_f =
           } else {
             const node = document.createTextNode(text);
             setNode(root, node);
+            fixupConditionalRelease(root);
             return node;
           }
         })
@@ -94,8 +114,10 @@ export const patch_f =
     const info = lookupPrune(oldPruneMap, vPrune);
     if (info) {
       setNode(root, info.node);
+      fixupConditionalRelease(root);
       Trie_mergeAt(newPruneMap, oldPruneMap, vPrune.keyPath);
         // ^ Add the prune children, which won't otherwise be seen in this diff
+        // FIXME: I think this can be replaced with a shallow merge?
       return info.node;
     } else {
       const newVNode = vPrune.render(vPrune.params);
@@ -125,8 +147,7 @@ export const patch_f =
     // mOldVNode may be nully
 
     // Perform fixup-restore from last frame
-    if (root._fixupRestore)
-      root._fixupRestore();
+    fixupRestore(root);
 
     // If root is not a tag of correct type, replace it
     const shouldReplace = (
@@ -141,6 +162,7 @@ export const patch_f =
     if (shouldReplace) {
       const newRoot = document.createElement(newVTag.tag);
       setNode(root, newRoot);
+      fixupConditionalRelease(root);
       root = newRoot;
       mOldVNode = null;  // Need to diff afresh
     }
@@ -168,9 +190,9 @@ export const patch_f =
     patchListeners(root, oldVTag.listeners, newVTag.listeners);
     patchChildren(root, oldVTag.children, newVTag.children);
 
-    const revertible = collapseRevertible(newVTag.fixup(root));
-    const restore = revertible();
-    root._fixupRestore = restore;
+    // Perform fixup & store restoration function
+    const restore = collapseRevertible(newVTag.fixup(root))();
+    fixupAttachRestore(root, restore);
 
     return root;
   }
@@ -281,8 +303,49 @@ export const patch_f =
 
     // Remove excess children
     while (root.childNodes.length > newChildren.length) {
-      root.lastChild.remove();
+      const lastChild = root.lastChild;
+      lastChild.remove();
+      fixupConditionalRelease(lastChild);
     }
+  }
+
+
+  function fixupAttachRestore(node, restore) {
+    node._fixupRestore = restore;
+  }
+
+  function fixupRestore(node) {
+    if (node._fixupRestore) {
+      node._fixupRestore();
+      delete node._fixupRestore;
+        // ^ This ensures we don't ever double-restore
+        //   Strictly speaking doing this should not be necessary, as we could instead
+        //   just make sure we never call fixupRestore() twice on the same node within
+        //   a single patch. But doing it this way is simpler.
+    }
+  }
+
+  // Fixup-restore a node and all its descendants
+  //
+  // Generally this needs to be called whenever we remove a DOM node in order to
+  // ensure all of its descendants complete their fixup lifecycle.
+  //
+  // Exception: if the node appears in the oldPruneMap, then it will not
+  // be fixup-released. This is because a node which is removed from the DOM but
+  // present in the oldPruneMap might still be re-added to the DOM (in the same
+  // frame) later on by a VPrune node, so it is not safe to eagerly fixup-release.
+  // At the end of the patching algorithm we fixup-restore the appropriate subset
+  // of these dubious nodes by comparing oldPruneMap with the final newPruneMap.
+  function fixupConditionalRelease(node) {
+    if (!oldPruneMapNodes.has(node))
+      fixupRelease(node);
+  }
+
+  function fixupRelease(node) {
+    fixupRestore(node);
+    if (node.children)
+      for (const ch of node.children)
+        fixupConditionalRelease(ch);
   }
 
 };
@@ -290,6 +353,11 @@ export const patch_f =
 
 function iife(f) {
   return f();
+}
+
+function* mapIter(it, f) {
+  for (const x of it)
+    yield f(x);
 }
 
 function setNode(target, replacement) {
@@ -353,5 +421,24 @@ function Trie_zoom(root, ks) {
     root = root[key];
   }
   return root;
+}
+
+function* Trie_keys(root) {
+  for (const k in root) {
+    if (k !== Trie_rose) {
+      yield k;
+      yield* Trie_keys(root[k]);
+    }
+  }
+}
+
+function* Trie_values(root) {
+  if (Trie_rose in root)
+    yield root[Trie_rose];
+  for (const k in root) {
+    if (k !== Trie_rose) {
+      yield* Trie_values(root[k]);
+    }
+  }
 }
 

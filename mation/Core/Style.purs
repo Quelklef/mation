@@ -190,12 +190,6 @@ toProp = FM.float >>> toProp'
       { restore: restoreClass } <- putClass node className
       pure $ liftEffect (restoreCss <> restoreClass)
 
-      -- TODO: Pretty sure the `fixup` API has a leak problem right now. If a node
-      --       is removed from the DOM due to its parent being removed (ie, the node
-      --       itself does not get diffed) then the fixup lifecycle will not
-      --       complete. WRT styles this manifests as 'zombie' <style> tags within
-      --       the stylsheet hangout; ie, <style>s which are no longer needed but
-      --       are still present.
 
 foreign import putCss :: { getCss :: Unit -> String, hash :: String } -> Effect { restore :: Effect Unit }
 foreign import putClass :: DomNode -> String -> Effect { restore :: Effect Unit }

@@ -15,7 +15,7 @@ export const putCss =
   const refs = ($hangout._refs ??= {});
   refs[hash] ??= { elem: null, count: 0 };
 
-  if (!refs[hash].count) {
+  if (refs[hash].count === 0) {
     const $sheet = document.createElement('style');
     $sheet.innerText = getCss();
     $hangout.append($sheet);
@@ -25,7 +25,7 @@ export const putCss =
 
   const restore = () => {
     refs[hash].count--;
-    if (!refs[hash].count) {
+    if (refs[hash].count === 0) {
       refs[hash].elem.remove();
       refs[hash].elem = null;
     }
