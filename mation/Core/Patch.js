@@ -8,8 +8,8 @@ export const patch_f =
  , mPruneMap
 }) => {
 
-  const oldPruneMap = caseMaybe(mPruneMap)(new SMap())(x => x);
-  const newPruneMap = new SMap();
+  const oldPruneMap = caseMaybe(mPruneMap)(Trie_new())(x => x);
+  const newPruneMap = Trie_new();
 
   return ({ mOldVNode, newVNode }) => root => () => {
     const mOldVNode_ = caseMaybe(mOldVNode)(undefined)(x => x);
@@ -94,13 +94,13 @@ export const patch_f =
     const info = lookupPrune(oldPruneMap, vPrune);
     if (info) {
       setNode(root, info.node);
-      newPruneMap.mergeAt(oldPruneMap, vPrune.keyPath);
+      Trie_mergeAt(newPruneMap, oldPruneMap, vPrune.keyPath);
         // ^ Add the prune children, which won't otherwise be seen in this diff
       return info.node;
     } else {
       const newVNode = vPrune.render(vPrune.params);
       const mountedOn = patch(root, mOldVNode, newVNode);
-      newPruneMap.set(vPrune.keyPath, { params: vPrune.params, node: mountedOn, vNode: newVNode });
+      Trie_set(newPruneMap, vPrune.keyPath, { params: vPrune.params, node: mountedOn, vNode: newVNode });
       return mountedOn;
     }
   }
@@ -108,7 +108,7 @@ export const patch_f =
   // Lookup a vPrune node in the prune map
   // Returns null on absence
   function lookupPrune(pruneMap, vPrune) {
-    const info = pruneMap.get(vPrune.keyPath);
+    const info = Trie_get(pruneMap, vPrune.keyPath);
     if (!info) return null;
     const unsureEq = vPrune.unsureEq;
     const paramsEqual = caseUnsure(unsureEq(vPrune.params)(info.params))(x => x)(false);
@@ -117,7 +117,7 @@ export const patch_f =
 
   // Like lookupPrune but skips checking the prune params
   function lookupPruneUnsafe(pruneMap, vPrune) {
-    return pruneMap.get(vPrune.keyPath);
+    return Trie_get(pruneMap, vPrune.keyPath);
   }
 
 
@@ -306,29 +306,6 @@ function setNode(target, replacement) {
 }
 
 
-// An SMap is a mapping whose keys are string arrays
-// Values in an SMap must never be nully
-class SMap {
-
-  constructor(trie) {
-    this.trie = Trie_new();
-  }
-
-  get(ks) {
-    return Trie_get(this.trie, ks);
-  }
-
-  set(ks, v) {
-    Trie_set(this.trie, ks, v);
-  }
-
-  mergeAt(other, ks) {
-    Trie_merge(Trie_zoom(this.trie, ks), Trie_zoom(other.trie, ks));
-  }
-
-}
-
-
 const Trie_rose = Symbol("Trie_rose");
 
 function Trie_new() {
@@ -351,6 +328,10 @@ function Trie_merge(trie, other) {
     if (k === Trie_rose) continue;
     Trie_merge(Trie_zoom(trie, [k]), other[k]);
   }
+}
+
+function Trie_mergeAt(trie, other, ks) {
+  Trie_merge(Trie_zoom(trie, ks), Trie_zoom(other, ks));
 }
 
 // Fetch the sub-trie at a given key path. If none
