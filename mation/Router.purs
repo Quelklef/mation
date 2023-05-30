@@ -187,7 +187,7 @@ printPath uriEncode { parts, params, fragment } =
   fold
   [ parts
       # intercalate "/"
-      # prefixIfNonempty "/"
+      # prefix "/"
   , params
       # Assoc.toArray
       # map (\(k /\ mv) -> case mv of
@@ -203,6 +203,7 @@ printPath uriEncode { parts, params, fragment } =
   where
 
   prefixIfNonempty pref s = if s == mempty then s else pref <> s
+  prefix pref s = pref <> s
 
 
 parsePath :: (String -> String) -> String -> Maybe Path
@@ -247,6 +248,7 @@ parsePath uriDecode str = do
 
 foreign import readPathStr :: Effect String
 foreign import writePathStr :: String -> Effect Unit
+foreign import onPathStrChange :: (String -> Effect Unit) -> Effect Unit
 
 foreign import encodeURIComponent :: String -> String
 foreign import decodeURIComponent :: String -> String
@@ -264,15 +266,11 @@ writeRoute route (Router { toPathStr }) = writePathStr (toPathStr route)
 
 -- | Initialize a two-way sync between your custom-defined `route`
 -- | type and the browser URL
+-- |
+-- | Each change to the route will append to the browser history
 sync :: forall route. Router route -> Daemon Effect route
-sync router wref = do
-
-  -- Sync route->path
-  debouncedWriteRoute <- debounce 25.0 (\route -> router # writeRoute route)
-  wref # WRef.onChange debouncedWriteRoute
-
-  -- FIXME: sync forward/back buttons
-
-  -- Push path->route
-  readRoute router >>= (\route -> WRef.write route wref)
+sync (Router { fromPathStr, toPathStr }) wref = do
+  syncdWrite <- wref # WRef.sync (toPathStr >>> writePathStr)
+  readPathStr >>= (fromPathStr >>> pure) >>= syncdWrite
+  onPathStrChange (fromPathStr >>> syncdWrite)
 

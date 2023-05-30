@@ -1,13 +1,27 @@
 
 export const readPathStr =
 () => {
-  const url = new URL(window.location.href);
-  return url.pathname + url.search + url.hash;
+  return getPath(window.location.href);
 };
+
+function getPath(href) {
+  const url = new URL(href);
+  return url.pathname + url.search + url.hash;
+}
 
 export const writePathStr =
 pathStr => () => {
-  history.pushState(null, '', window.location.origin + pathStr);
+  if (pathStr === readPathStr()) return;
+  history.pushState({ isMation: true, path: pathStr }, '', window.location.origin + pathStr);
+};
+
+export const onPathStrChange =
+listener => () => {
+  window.addEventListener('popstate', ev => {
+    if (!ev.state.isMation) return;  // Ignore out-of-framework route changes
+    const pathStr = ev.state.path;
+    listener(pathStr)();
+  });
 };
 
 export const encodeURIComponent = s => window.encodeURIComponent(s);

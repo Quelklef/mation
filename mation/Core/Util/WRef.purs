@@ -104,6 +104,49 @@ onChange' f ref = do
     f { old: oldVal, new: newVal }
 
 
+-- | Create a two-way binding with a WRef
+-- |
+-- | Differs from creating a two-way binding with `onChange` and `push` in
+-- | that bindings created with `sync` will not invoke themselves.
+-- |
+-- | ***
+-- |
+-- | A first attempt at creating a two-way sync is to use `onChange` for
+-- | one direction of the sync (or `onChange'`) and `write` for the other
+-- | direction of the sync.
+-- |
+-- | The trouble with this is that it causes unnecessary round-tripping.
+-- | When the non-`WRef` state changes, it will invoke `write`, which
+-- | will invoke the `onChange` listener, which is redundant. Likewise,
+-- | when the `WRef` state changes, it will invoke the `onChange` listener,
+-- | which will update the non-`WRef` state, which will invoke `write`,
+-- | which is redundant.
+-- |
+-- | In fact, if one uses `onChange` this should cause an infinite loop.
+-- | (The other option is to use `onChange'` and using `==` to test in
+-- | the listener for if the state has actually changed)
+-- |
+-- | The value add of `sync` is that it avoids this round-tripping. You
+-- | pass in a `listen :: a -> Effect Unit` (as you would to `onChange`)
+-- | and recieve a `tell :: a -> Effect Unit` (akin to `write`) and
+-- | when they are invoked they will avoid invoking the other.
+sync :: forall a. (a -> Effect Unit) -> WRef a -> Effect (a -> Effect Unit)
+sync onPush wref = do
+  rDont <- make false
+  wref # onChange \newVal -> sync'd rDont (onPush newVal)
+  pure \val -> sync'd rDont (wref # write val)
+
+  where
+
+  sync'd rDont action = do
+    read rDont >>= case _ of
+      true -> pure unit
+      false -> do
+        rDont # write true
+        action
+        rDont # write false
+
+
 -- | Create a `WRef` that acts as a view into a part of another `WRef`.
 -- | The two `WRef`s will be two-way synchronized: if one changes, the
 -- | other will update accordingly.

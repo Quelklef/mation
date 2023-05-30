@@ -83,6 +83,8 @@ infixr 4 product' as ⊗
 -- | let r = { n: 1, s: "two" }
 -- | (a :: { n :: Int }) /\ (b :: { s :: String }) = split r
 -- | ```
+--
+-- FIXME just do this with a foreign import lmao
 class
   Split (x :: Row Type) (y :: Row Type) xy
     | x -> x, y -> y  -- (ab)uses <https://github.com/purescript/purescript/issues/4474>
