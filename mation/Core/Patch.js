@@ -239,6 +239,16 @@ export const patch_f =
       return;
     }
 
+    case 'selected': {
+      const alreadyGood =
+        node.getAttribute('selected') === value && node.selected === !!value;
+      if (!alreadyGood) {
+        node.setAttribute('selected', value);
+        node.selected = !!value;
+      }
+      return;
+    }
+
     default: {
       const alreadyGood = node.getAttribute(name) === value;
       if (!alreadyGood)
@@ -262,6 +272,12 @@ export const patch_f =
       const alreadyGood = !node.checked;
       if (!alreadyGood)
         node.checked = false;
+    }
+
+    case 'selected': {
+      const alreadyGood = !node.selected;
+      if (!alreadyGood)
+        node.selected = false;
     }
 
     default: {
