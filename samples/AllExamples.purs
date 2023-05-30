@@ -116,55 +116,61 @@ type Model =
 
 render :: Model -> E.Html' Model
 render model =
-  E.body
-  [ P.addStyles
-    [ S.margin "0"
-    ]
-  ]
-  [ navBar
-  , E.div
+  E.html
+  []
+  [ E.head
+    []
+    []
+  , E.body
     [ P.addStyles
-      [ S.display "flex"
-      , S.justifyContent "center"
+      [ S.margin "0"
       ]
     ]
-    [ E.div
+    [ navBar
+    , E.div
       [ P.addStyles
-        [ S.width pageWidth
-        , S.padding "2em"
+        [ S.display "flex"
+        , S.justifyContent "center"
         ]
       ]
-      [ case model.page of
-          Welcome      ->
-            E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "welcome")) $
-              E.prune "page-welcome" model.submodels.welcome Examples.Welcome.render
-          Counter      ->
-            E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "counter")) $
-              E.prune "page-counter" model.submodels.counter Examples.Counter.render
-          Components   ->
-            E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "components")) $
-              E.prune "page-components" model.submodels.components Examples.Components.render
-          AsyncApiCall ->
-            E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "asyncApiCall")) $
-              E.prune "page-asyncApiCall" model.submodels.asyncApiCall Examples.AsyncApiCall.render
-          Styling      ->
-            E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "styling")) $
-              E.prune "page-styling" model.submodels.styling Examples.Styling.render
-          Clock        ->
-            E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "clock")) $
-              E.prune "page-clock" model.submodels.clock Examples.Clock.render
-          Inputs       ->
-            E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "inputs")) $
-              E.prune "page-inputs" model.submodels.inputs Examples.Inputs.render
-          TestingZone  ->
-            E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "testing")) $
-              E.prune "page-testing" model.submodels.testing Examples.TestingZone.render
-          PerfTest     ->
-            E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "perfTest")) $
-              E.prune "page-perfTest" model.submodels.perfTest Examples.PerfTest.render
-          Pruning      ->
-            E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "pruning")) $
-              E.prune "page-pruning" model.submodels.pruning Examples.Pruning.render
+      [ E.div
+        [ P.addStyles
+          [ S.width pageWidth
+          , S.padding "2em"
+          ]
+        ]
+        [ case model.page of
+            Welcome      ->
+              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "welcome")) $
+                E.prune "page-welcome" model.submodels.welcome Examples.Welcome.render
+            Counter      ->
+              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "counter")) $
+                E.prune "page-counter" model.submodels.counter Examples.Counter.render
+            Components   ->
+              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "components")) $
+                E.prune "page-components" model.submodels.components Examples.Components.render
+            AsyncApiCall ->
+              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "asyncApiCall")) $
+                E.prune "page-asyncApiCall" model.submodels.asyncApiCall Examples.AsyncApiCall.render
+            Styling      ->
+              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "styling")) $
+                E.prune "page-styling" model.submodels.styling Examples.Styling.render
+            Clock        ->
+              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "clock")) $
+                E.prune "page-clock" model.submodels.clock Examples.Clock.render
+            Inputs       ->
+              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "inputs")) $
+                E.prune "page-inputs" model.submodels.inputs Examples.Inputs.render
+            TestingZone  ->
+              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "testing")) $
+                E.prune "page-testing" model.submodels.testing Examples.TestingZone.render
+            PerfTest     ->
+              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "perfTest")) $
+                E.prune "page-perfTest" model.submodels.perfTest Examples.PerfTest.render
+            Pruning      ->
+              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "pruning")) $
+                E.prune "page-pruning" model.submodels.pruning Examples.Pruning.render
+        ]
       ]
     ]
   ]
@@ -265,7 +271,7 @@ main = do
   M.runApp
     { initial
     , render
-    , root: M.onBody
+    , root: M.onHtml
     , daemon: fold
         [ D.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "clock")) Examples.Clock.daemon
         , D.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "testing")) Examples.TestingZone.daemon

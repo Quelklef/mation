@@ -40,6 +40,7 @@ function getHangout() {
   if (!$hangout) {
     $hangout = document.createElement('div');
     $hangout.id = hangoutId;
+    $hangout.dataset.mationNoPatch = true;
     document.head.append($hangout);
   }
   return $hangout;

@@ -14,5 +14,5 @@ export const underBody =
 
 export const onHtml =
 () => {
-  return document.html;
+  return document.body.parentNode;
 };

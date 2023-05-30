@@ -308,21 +308,32 @@ export const patch_f =
   }
 
   function patchChildren(root, oldChildren, newChildren) {
+    // Patch child list
+    // Ignores children with data-mation-no-patch=true
+
+    let di = 0;  // DOM index
+    let vi = 0;  // VDOM index
+
     // Add new children + patch existing ones
-    for (let i = 0; i < newChildren.length; i++) {
+    while (vi < newChildren.length) {
       // Ensure that a child exists
-      if (root.childNodes.length <= i) root.append('');
+      if (di >= root.childNodes.length) root.append('');
+      // Fetch the child
+      const ch = root.childNodes[di];
+      if (ch.dataset?.mationNoPatch) { di++; continue; }
       // Patch the child
-      const child = root.childNodes[i];
-      patch(child, oldChildren[i], newChildren[i]);
+      patch(ch, oldChildren[vi], newChildren[vi]);
+      di++; vi++;
     }
 
     // Remove excess children
-    while (root.childNodes.length > newChildren.length) {
-      const lastChild = root.lastChild;
-      lastChild.remove();
-      fixupConditionalRelease(lastChild);
+    while (di < root.childNodes.length) {
+      const ch = root.childNodes[di];
+      if (ch.dataset?.mationNoPatch) { di++; continue; }
+      ch.remove();
+      fixupConditionalRelease(ch);
     }
+
   }
 
 

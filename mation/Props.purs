@@ -127,6 +127,22 @@ remark :: forall m s. String -> Prop m s
 remark rk = addDataset (Map.singleton "remark" rk)
 
 
+-- | Prevents a node from being patched.
+-- |
+-- | This can also be achieved by setting the data
+-- | attribute `mation-no-patch` to `true`
+-- |
+-- | Typically  patch-prevention will be initiated
+-- | by *third-party* (ie, non-Mation) code, which will
+-- | have no notion of a `Prop` and therefore want to
+-- | use datasets rather than `dontPatch`.
+-- | However, this `Prop` can be handy to easily prevent
+-- | the document `<head>` from being
+-- | patched (if you're using on `onHtml`)
+dontPatch :: forall m s. Prop m s
+dontPatch = addDataset (Map.singleton "mation-no-patch" "true")
+
+
 -- | Gives the node a red border whenever it is updated
 -- |
 -- | This is intended for debugging only!
