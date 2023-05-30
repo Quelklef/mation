@@ -1,7 +1,7 @@
 
 -- | Provides two-way sync between a rich route type and the browser address
 
-module Mation.Router
+module Mation.Additional.Router
   ( QueryParams
   , lookup
   , lookup'

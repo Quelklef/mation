@@ -50,14 +50,14 @@ outputs = { self, ... }@inputs: let
   # the lack of other options
   purs-nix-command =
     my-purs-nix.command {
-      srcs = [ "$PWD/mation" "$PWD/samples" "$PWD/experimental" ];
+      srcs = [ "$PWD/mation" "$PWD/additional" "$PWD/samples" "$PWD/experimental" ];
       test = "/dev/null";  # using nix 'null' value breaks?
     };
 
   # purs-nix command ignoring non-lib code like samples/
   purs-nix-command-lib-only =
     my-purs-nix.command {
-      srcs = [ "$PWD/mation" ];
+      srcs = [ "$PWD/mation" "$PWD/additional" ];
       test = "/dev/null";
       output = "out/purs-cache";
       name = "purs-nix-lib-only";
