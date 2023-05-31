@@ -6,8 +6,8 @@ module Mation.Lenses
   , (×)
   , product'
   , (⊗)
-  , class Split
-  , split
+  , class Keys  -- forced export
+  , keys        -- forced export
   , field
   , field'
   , fieldRelabelled
@@ -22,11 +22,13 @@ module Mation.Lenses
 import Prelude
 
 import Record as Rec
-import Prim.Row (class Union, class Nub, class Cons, class Lacks)
-import Prim.RowList (class RowToList, Cons)
+import Prim.Row (class Union, class Nub, class Cons)
+import Prim.RowList (class RowToList)
+import Prim.RowList as RL
 import Type.Proxy (Proxy (..))
 import Data.Tuple.Nested (type (/\), (/\))
-import Data.Symbol (class IsSymbol)
+import Data.Array as Array
+import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Lens (Lens, Lens', view, lens, set)
 import Data.Lens.Iso (Iso, iso)
 import Data.Lens.Record (prop)
@@ -64,8 +66,7 @@ infixr 4 product as ×
 -- | ```
 product' ::
   forall s (a :: Row Type) (b :: Row Type) ab.
-  Union a b ab => Nub ab ab =>
-  Split a b ab =>
+  Union a b ab => Nub ab ab => Keys a => Keys b =>
   Lens' s (Record a) -> Lens' s (Record b) -> Lens' s (Record ab)
 product' la lb = lens
   (\s -> view la s `Rec.merge` view lb s)
@@ -81,67 +82,36 @@ infixr 4 product' as ⊗
 -- | Example:
 -- | ```
 -- | let r = { n: 1, s: "two" }
--- | (a :: { n :: Int }) /\ (b :: { s :: String }) = split r
+-- | (a :: { n :: Int }) /\ (b :: { s :: String }) = split Proxy Proxy r
 -- | ```
 --
--- FIXME just do this with a foreign import lmao
-class
-  Split (x :: Row Type) (y :: Row Type) xy
-    | x -> x, y -> y  -- (ab)uses <https://github.com/purescript/purescript/issues/4474>
-                      -- FIXME: use RowToList instead?
-where
-  split :: Proxy x -> Proxy y -> Record xy -> Record x /\ Record y
+-- Implementation derived from [1]
+-- [1]: <https://github.com/rowtype-yoga/purescript-record-studio/blob/6269003c6bc4b241ffde6144958cbc1fa960851a/src/Record/Studio/Shrink.purs>
+split :: forall a b ab.
+  Union a b ab => Nub ab ab => Keys a => Keys b =>
+  Proxy a -> Proxy b -> Record ab -> Record a /\ Record b
+split Proxy Proxy record =
+  (/\)
+    (unsafeTake (keys (Proxy :: Proxy a)) record)
+    (unsafeTake (keys (Proxy :: Proxy b)) record)
 
-instance Split () y y where
-  split Proxy Proxy y = {} /\ y
+-- | Extracts a set of keys from a given record and unsafely casts the result
+foreign import unsafeTake :: forall a a'. Array String -> Record a -> Record a'
 
-else instance Split x () x where
-  split Proxy Proxy x = x /\ {}
+-- | Reify the keys of a row type as a value-level string array
+class Keys :: forall k. k -> Constraint
+class Keys a where
+  keys :: Proxy a -> Array String
+instance (RowToList a l, KeysRL l) => Keys a where
+  keys Proxy = keysRL (Proxy :: Proxy l)
 
-else instance
-
-      -- Let 'xlabel' be the label of the first row in 'x'
-  ( RowToList x (Cons xlabel _xlisthead _xlisttail)
-      -- Deconstruct 'x' into 'xhead' and 'xtail' via 'xlabel'
-  , Cons xlabel xhead xtail x
-      -- Witness to 'xlabel' being a symbol
-  , IsSymbol xlabel
-      -- Needed for 'insert'
-  , Lacks xlabel xtail
-
-      -- Do all the same on 'y'-stuff
-  , RowToList y (Cons ylabel _ylisthead _ylisttail)
-  , Cons ylabel yhead ytail y
-  , IsSymbol ylabel
-  , Lacks ylabel ytail
-
-      -- Deconstruct 'xy' into a value from 'x', a value from 'y', and a tail
-  , Cons xlabel xhead xytail1 xy
-  , Cons ylabel yhead xytail xytail1
-      -- Needed for 'delete'
-  , Lacks xlabel xytail1
-  , Lacks ylabel xytail
-
-      -- Recur
-  , Split xtail ytail xytail
-
-) => Split x y xy where
-
-  split Proxy Proxy (xy :: Record xy) =
-    let
-
-      (xy' :: Record xytail1) = Rec.delete (Proxy :: Proxy xlabel) xy
-      (xy'' :: Record xytail) = Rec.delete (Proxy :: Proxy ylabel) xy'
-
-      (xhead :: xhead) = Rec.get (Proxy :: Proxy xlabel) xy
-      (yhead :: yhead) = Rec.get (Proxy :: Proxy ylabel) xy'
-      (xrest :: Record xtail) /\ (yrest :: Record ytail) =
-        split (Proxy :: Proxy xtail) (Proxy :: Proxy ytail) xy''
-
-    in
-      (/\)
-        (Rec.insert (Proxy :: Proxy xlabel) xhead xrest)
-        (Rec.insert (Proxy :: Proxy ylabel) yhead yrest)
+class KeysRL :: forall k. k -> Constraint
+class KeysRL l where
+  keysRL :: Proxy l -> Array String
+instance (IsSymbol label, KeysRL rest) => KeysRL (RL.Cons label _item rest) where
+  keysRL Proxy = Array.cons (reflectSymbol (Proxy :: Proxy label)) (keysRL (Proxy :: Proxy rest))
+else instance KeysRL RL.Nil where
+  keysRL Proxy = []
 
 
 -- | Construct a lens targeting a field of a record
@@ -251,7 +221,7 @@ fieldRelabelled l l' = field l <<< labelled l'
 -- | subrecordLens = subrecord
 -- | ```
 subrecord :: forall a b ab.
-  Union a b ab => Nub ab ab => Split a b ab =>
+  Union a b ab => Nub ab ab => Keys a => Keys b =>
   Lens' (Record ab) (Record a)
 subrecord = lens
   (split (Proxy :: Proxy a) (Proxy :: Proxy b) >>> fst)
@@ -264,7 +234,7 @@ subrecord = lens
 
 -- | Like `subrecord` but accepts the target subrecord type as a `Proxy`
 subrecord' :: forall a b ab.
-  Union a b ab => Nub ab ab => Split a b ab =>
+  Union a b ab => Nub ab ab => Keys a => Keys b =>
   Proxy (Record a) -> Lens' (Record ab) (Record a)
 subrecord' Proxy = subrecord
 
