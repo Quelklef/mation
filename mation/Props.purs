@@ -3,6 +3,7 @@
 
 module Mation.Props
   ( module X
+  , Prop'
   , style
   , addCss
   , addStyles
@@ -38,6 +39,9 @@ import Mation.Core.Util.Assoc (Assoc)
 import Mation.Core.Util.Assoc as Assoc
 import Mation.Gen.Attributes as Attr
 import Mation.Props.Unsafe (fixup, fixupM')
+
+
+type Prop' s = Prop Effect s
 
 
 -- | Override the `style` attribute of a node

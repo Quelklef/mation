@@ -19,6 +19,8 @@ import Mation.Core.Util.WRef as WRef
 -- | first executes `d1` and then executes `d2`.
 type Daemon m s = WRef s -> m Unit
 
+type Daemon' s = Daemon Effect s
+
 enroot :: forall m large small. Lens' large small -> Daemon m small -> Daemon m large
 enroot len f = f <<< WRef.mkView len
 
