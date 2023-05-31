@@ -39,6 +39,12 @@ import Effect.Ref as Ref
 -- | read the model state. All I have is an intuition, and I'm going with it!)
 type Mation m s = Step s -> m Unit
 
+hoist :: forall m n s. (m ~> n) -> Mation m s -> Mation n s
+hoist f = (_ >>> f)
+
+enroot :: forall m large small. Setter' large small -> Mation m small -> Mation m large
+enroot lens = (enrootStep lens >>> _)
+
 
 {-
 
