@@ -47,6 +47,7 @@ type Path =
   , fragment :: Maybe String
   }
 
+-- | URL query parameters
 type QueryParams = Assoc String (Maybe String)
 
 emptyPath :: Path
@@ -56,7 +57,7 @@ emptyPath =
   , fragment: Nothing
   }
 
--- | Look up a key in some query params
+-- | Look up a key in some query parameters
 -- |
 -- | Returns:
 -- | * `Nothing` if the key is not present
@@ -80,10 +81,9 @@ data Router route = Router
 
 -- | Create a router
 -- |
--- | Note that `fromPath` is total; the return value must
--- | be `route` rather than eg. `Maybe route`. This means that your
--- | route type must be able to represent bad routes, for instance
--- | by including a 404 page.
+-- | Note that `fromPath` is required to be total; the return type is `route`
+-- | rather than, say, `Maybe route`. This means that your route type must be able
+-- | to represent bad routes, for instance by including a 404 page.
 mkRouter :: forall route. { toPath :: route -> Path, fromPath :: Path -> route } -> Router route
 mkRouter { toPath, fromPath } = Router
   { toPathStr: toPath >>> printPath encodeURIComponent
@@ -109,7 +109,7 @@ mkRouter { toPath, fromPath } = Router
 -- | ```
 -- | import Mation.Core.Util.Assoc as A
 -- | { parts: ["app", "foods"]
--- | , params: A.fromFoldable [ A.mkPair "veggie" "cabbage" ]
+-- | , params: A.fromFoldable [ "veggie" /\ "cabbage" ]
 -- | , fragment: "delicious"
 -- | }
 -- | ```
@@ -126,7 +126,7 @@ mkRouter { toPath, fromPath } = Router
 -- | ```
 -- | import Mation.Core.Util.Assoc as A
 -- | { parts: ["app", "foods"]
--- | , params: A.fromFoldable [ A.mkPair "veggie" "cabbage" ]
+-- | , params: A.fromFoldable [ "veggie" /\ "cabbage" ]
 -- | }
 -- | ```
 -- |
@@ -143,10 +143,10 @@ type VirtualPath =
 emptyVirtualPath :: VirtualPath
 emptyVirtualPath =
   { parts: []
-  , params: Assoc.empty
+  , params: mempty
   }
 
--- | Create a router which represents paths virtually (using the URL fragment)
+-- | Create a router which represents paths virtually (ie, using the URL fragment)
 -- |
 -- | The given `error` is used if the URL fragment fails to parse as a virtual path.
 mkVirtualRouter :: forall route.

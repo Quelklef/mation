@@ -1,8 +1,5 @@
 
--- | Mation is a frontend framework for Purescript.
--- | See [the Github repo](https://github.com/quelklef/mation)
--- |
--- | This module is entirely a convenience module, containing exports from other modules
+-- | Top-level convenience module, containing only re-exports
 
 module Mation (module X) where
   

@@ -18,9 +18,9 @@ import Mation.Core.Util.FreeMonoid as FM
 -- |
 -- | The setup CSS is *global*, meaning two things:
 -- |
--- | 1. Name conflicts are possible: if you use `withPrelude` to
--- |    make two `@keyframes` both using the name `my-anim`, then
--- |    one will likely override the other.
+-- | 1. Name conflicts are possible: if two calls to `withPrelude`
+-- |    both make `@keyframes` using the name `my-anim`, then one
+-- |    will likely override the other.
 -- |
 -- |    (Sorry, I wanted the framework to be able to provide some
 -- |    help here, but it turns out to be a tough problem)

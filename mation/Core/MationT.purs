@@ -21,11 +21,11 @@ newtype MationT m s a = MationT (Step s -> m a)
 runMationT :: forall m s a. MationT m s a -> (Step s -> m a)
 runMationT (MationT m) = m
 
--- | Semigroup ala action sequencing
+-- | `Semigroup` ala action sequencing
 instance (Applicative m, Monoid a) => Semigroup (MationT m s a) where
   append (MationT m) (MationT n) = MationT (\st -> append <$> m st <*> n st)
 
--- | Monoid ala action sequencing
+-- | `Monoid` ala action sequencing
 instance (Applicative m, Monoid a) => Monoid (MationT m s a) where
   mempty = MationT (\_ -> pure mempty)
 

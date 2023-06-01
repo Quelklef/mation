@@ -1,7 +1,6 @@
 
--- | Like Data.Exists
--- | We roll our own to account for any extra needs (arity-2 `Exists`,
--- | or `Exists` with constraints, etc)
+-- | Like Data.Exists, but we roll our own in cae we need anything
+-- | fancy (eg. arity-2 existentials, constrained existentials, ...)
 
 module Mation.Core.Util.Exists where
 

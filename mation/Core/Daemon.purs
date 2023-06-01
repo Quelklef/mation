@@ -10,13 +10,6 @@ import Mation.Core.Util.WRef as WRef
 -- |
 -- | This is to be contrasted with a `Mation m s` which
 -- | has write/update access but not read access
--- |
--- | Note that `Daemon`s have a convenient `Monoid` instance
--- | inherited from `(->)`.
--- | Namely, as long as the underlying monad `m` has a `Monoid`
--- | instance akin to `Effect`, then for daemons `mempty` is the
--- | daemon which does nothing and `d1 <> d2` is the daemon which
--- | first executes `d1` and then executes `d2`.
 type Daemon m s = WRef s -> m Unit
 
 type Daemon' s = Daemon Effect s

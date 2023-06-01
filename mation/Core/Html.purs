@@ -19,6 +19,12 @@ import Mation.Core.Util.Exists (Exists, mkExists, mapExists, runExists)
 
 
 -- | A single Virtual Node
+-- |
+-- | Parameterized by one type variable `m` which gives the monad
+-- | in which event listeners and fixups live
+-- |
+-- | `Html` will be the free monoid over `VNode`, so one might
+-- | also name this type `Html1`.
 data VNode m
 
     -- | Embed an existing DomNode directly into the virtual dom
@@ -43,9 +49,10 @@ data VNode m
       , listeners :: Assoc String (DomEvent -> m Unit)
 
       -- | Arbitrary revertible change on the mounted `DomNode`,
-      -- | such as adding a class. The change is applied after
-      -- | the node is mounted and then is reverted right before
-      -- | the next re-render.
+      -- | such as adding a class. The change is applied on each
+      -- | render and reverted immediately before the next render.
+      -- | (This is actually not quite accurate but is a fine
+      -- | mental model to have)
       -- |
       -- | Fixups give a highly generic type of VNode "property".
       -- |
@@ -63,7 +70,7 @@ data VNode m
       -- | instantiated with `m ~ MationT s n` for some user-defined
       -- | `n`. We expect `n` to instantiate `MonadEffect` since it
       -- | has to be able to execute the Mation runtime (see the
-      -- | long comment on `Mation.Core.Mation (Mation)`), meaning
+      -- | comment on `Mation.Core.Mation (Mation)`), meaning
       -- | that working in `n` does give us our desired access
       -- | to `Effect`. Additionally, via `MationT s` it will
       -- | give us access to the application `Step s`, which is useful
@@ -74,28 +81,23 @@ data VNode m
       , children :: Array (VNode m)
       }
 
-    -- | The user can "prune" a virtual node by supplying, instead of an actual
-    -- | virtual node, a value of type `param` and a function that can turn it
-    -- | into a virtual node. In other words, a deferred computation for a virtual
-    -- | node. The user also must supply an `UnsureEq` instance for `param` as well
-    -- | as a so-called "key" for the pruned node.
+    -- | A node can be "pruned" by supplying, instead of an actual virtual node,
+    -- | a value `params :: p` (for some `p`) plus a function `render : p -> VNode m`.
+    -- | Together this pair forms a *deferred* computation of a virtual node.
     -- |
-    -- | By considering the keys of all pruned nodes in an entire virtual dom, we
-    -- | may assign pruned nodes with a so-called "key path", which is the sequence
-    -- | of pruned keys from the VDOM root down to the given pruned node.
+    -- | To prune, one must also supply an `UnsureEq` instance for `p` and
+    -- | a so-called "key path" of type `Array String`. This allows for caching.
     -- |
-    -- | The user is required to ensure that, over the lifetime of a Mation
-    -- | application, whenever two virtual nodes have the same key paths, then
-    -- | they also have the same `param` type and computation function.
+    -- | Approximately speaking, we store a mapping from key paths to prune nodes
+    -- | between frames, and we use the `UnsureEq` instance to detect when a `params`
+    -- | value has changed between frames. When it hasn't, we don't bother to
+    -- | compute `render params` at all -- we just re-use the node from the
+    -- | previous frame.
     -- |
-    -- | The punchline to all this is as follows. When we perform VDOM diffing,
-    -- | we build up a mapping from pruning keypaths to parameter values. The
-    -- | next time we diff and we reach a pruned node, we check that mapping,
-    -- | using the prune key path to fetch the parameter value fromt the previous
-    -- | frame. If the parameter values match, then--since the computation
-    -- | function is not allowed to change--we know that the deferred comptuations
-    -- | are exactly equal, and we skip diffing entirely by just re-using the
-    -- | DOM node from last frame.
+    -- | For this all to work, it must be ensured that for two adjacent render
+    -- | frames, if a key path appears in both frames, then its parameter
+    -- | type `p`, `UnsureEq p` instance, and render function `render` are equal
+    -- | between the frames.
   | VPrune (Exists (PruneE m))
 
 
@@ -103,12 +105,13 @@ newtype PruneE m p = PruneE
   { keyPath :: Array String
   , params :: p
   , unsureEq :: p -> p -> Unsure Boolean
-    -- ^ Typeclass instance. Manually managed because Purescript doesn't have
-    --   native support for existentials (not to mention constrained existentials)
+      -- ^ Typeclass instance. Manually managed because Purescript doesn't have
+      --   native support for existentials (not to mention constrained existentials)
   , render :: p -> VNode m
   }
 
 
+-- | Change the underlying monad of a virtual node
 hoist1 :: forall m n. Functor n => (m ~> n) -> VNode m -> VNode n
 hoist1 f = case _ of
   VRawNode x -> VRawNode x
@@ -126,23 +129,24 @@ hoist1 f = case _ of
   where _restore = prop (Proxy :: Proxy "restore")
 
 
--- | Append a key to pruning paths of all pruned descendants (including self)
-pruneScope :: forall m. String -> VNode m -> VNode m
-pruneScope key = case _ of
+-- | Prepend a key to pruning paths of all pruned descendants (including self)
+addPruneKey :: forall m. String -> VNode m -> VNode m
+addPruneKey key = case _ of
   VRawNode x -> VRawNode x
   VRawHtml x -> VRawHtml x
   VText x -> VText x
   VTag { tag, attrs, listeners, fixup, children } ->
     VTag { tag, attrs, fixup, listeners
-         , children: children # map (pruneScope key)
+         , children: children # map (addPruneKey key)
          }
   VPrune e -> VPrune $ e # mapExists \(PruneE { keyPath, params, unsureEq, render }) ->
     PruneE { params, unsureEq
            , keyPath: [key] <> keyPath
-           , render: render >>> pruneScope key
+           , render: render >>> addPruneKey key
            }
 
--- | Remove all contained `VPrune` nodes
+-- | Remove all contained `VPrune` nodes, collapsing their deferred
+-- | computation.
 -- |
 -- | Preserves the container <span style="display: contents"> in order to
 -- | minimize difference between a VDom before and after being unpruned
@@ -247,7 +251,7 @@ mkTag info = Html [ VTag info' ]
 mkPrune :: forall p s m. UnsureEq p => String -> (p -> Html m s) -> p -> Html m s
 mkPrune key render params =
   FM.singleton $
-    pruneScope key $  -- Append key to key path of this node and all descendants
+    addPruneKey key $  -- Append key to key path of this node and all descendants
       VPrune $ mkExists $ PruneE
         { keyPath: []
         , params
@@ -255,6 +259,7 @@ mkPrune key render params =
         , render: render >>> FM.unwrap >>> withPruneWrapper
         }
 
+-- | Remove pruning from all contained VNodes
 unPrune :: forall m s. Html m s -> Html m s
 unPrune = FM.map unPrune1
 

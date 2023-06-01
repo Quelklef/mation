@@ -15,7 +15,8 @@ import Mation.Core.Util.FreeMonoid as FM
 -- | Find modifiers in `Mation.Selectors`
 --
 -- Represented as an array of "alternative" scopes. Applying the scope
--- modifier consists of composing a given scope with these scopes.
+-- modifier consists of composing a given scope with these alternatives;
+-- see `on`.
 newtype ScopeModifier = SMAlts (Array (Scopes Weave))
 
 

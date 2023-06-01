@@ -6,66 +6,34 @@ import Mation.Core.Prelude hiding (map)
 import Data.Array as Array
 
 
--- | In a number of places in this codebase, we follow a certain pattern. We have
--- | some datatype which at callsites will typically be consumed as an array, so
--- | we want to make that datatype a monoid.
--- | 
--- | For instance, we have type `Style ≅ String /\ String` which is consumed by
--- | eg `style' :: Array Style -> Prop m s`. It would be useful for `Style` to be
--- | an instance of `Monoid` so that we may write things like
+-- | Instances `FreeMonoid t t1` witness that `t` is a newtype
+-- | over `Array t1` (which is the canonical free monoid construction)
 -- |
--- | ```purs
--- | style'
--- |   [ styleOne
--- |   , styleTwo
--- |   , when condition
--- |       someConditionalStyle
--- |   , flip foldMap someFoldable
--- |       \item -> someDynamicStyle
--- |   ]
--- | ```
--- | 
--- | We do this by renaming the type `T` to `T1`, representing "just one" `T`, and then
--- | defining `T ≅ Array T1` with a `Monoid` instance inherited from `Array`.
--- | 
--- | For instance with `Style` we get the redefinition
+-- | We talk about "`t` being the free monoid over `t1`" rather than saying
+-- | more directly that "`t` is `Array t1`" in order to emphasize that we don't
+-- | plan to do anything special with the array structure (such as sort it)
 -- |
--- | ```purs
--- | type Style1 ≅ String /\ String
--- | type Style ≅ Array Style1
--- | instance Monoid Style where ...
--- | ```
--- | 
--- | 
--- | The `FreeMonoid` typeclass (below) is intended to act as a focal point for this pattern.
--- | An instance of the pattern using types `Thing` and `Thing1` should
--- | instantiate `FreeMonoid` as
+-- | Typically instances of `FreeMonoid` follow the `-1` naming convention,
+-- | where if the element type is called `Thing` then the free monoid
+-- | type is named `Thing1`.
 -- |
--- | ```purs
--- | instance FreeMonoid Thing Thing1
--- | ```
--- | 
--- | The typeclass `FreeMonoid` does not contain much logic. The value is more in providing
--- | a name for the pattern (`FreeMonoid`), a single place to talk about it (this module),
--- | as well a place to put any logic there does happen to be.
--- | 
--- | 
--- | One may wonder why we use a `FreeMonoid` class instead of defining a datatype
+-- | ***
 -- |
--- | ```purs
--- | newtype FreeMonoid a = FreeMonoid (Array a)
--- | ```
--- | 
--- | and then write e.g.
+-- | In the mation framework, `Html` is a free monoid over a more
+-- | fundamental "single HTML (v)node" type. This means that every `Html` value
+-- | is actually an "html fragment" which may contain zero or more actual
+-- | HTML (v)nodes. This itself can be handy. Additionally, `Html` being
+-- | a free monoid means functions like `foldMap` and `guard` can be used when
+-- | creating `Html` values, which turns out to be exceedingly nifty.
 -- |
--- | ```purs
--- | type Style a = FreeMonoid (Style1 a)
--- | ```
--- | 
--- | The reason for this is that, in this codebase, most such "many types" (eg `Style`)
--- | are exported and exposed to the user. Preferring a datatype over a type alias
--- | means that the user does not have to worry about (or even know!) what
--- | a '`FreeMonoid`' is.
+-- | Likewise for some other types
+-- |
+-- | ***
+-- |
+-- | The reason that `FreeMonoid` is a typeclass rather than a
+-- | newtype `newtype FreeMonoidNT a = FreeMonoid (Array a)` is simply so
+-- | that instances `FreeMonoid Thing Thing1` get to choose their `Thing`
+-- | type instead of being stuck with `FreeMonoidNT Thing`.
 class
     -- | Should be compiler-derived
   ( Newtype t (Array t1)
@@ -78,14 +46,17 @@ class
   | t -> t1
 
 
--- | Flatten upwards
+-- | Flatten
 -- |
 -- | Since a `t` is an array of `t1`, then a `Array t` is actually
 -- | an `Array (Array t1)`. This turns it into an `Array t1`.
+-- |
+-- | This is called `float` rather than `flatten` since we
+-- | are "losing the inner array" rather than "losing the outer
+-- | array"; it is an "upward flattening"
 float :: forall t t1. FreeMonoid t t1 => Array t -> Array t1
 float arr = arr >>= coerce
 
--- | Inject
 singleton :: forall t t1. FreeMonoid t t1 => t1 -> t
 singleton = Array.singleton >>> coerce
 

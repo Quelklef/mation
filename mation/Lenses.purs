@@ -6,15 +6,14 @@ module Mation.Lenses
   , (×)
   , product'
   , (⊗)
-  , class Keys  -- forced export
-  , keys        -- forced export
   , field
   , field'
-  , fieldRelabelled
   , subrecord
   , subrecord'
   , labelled
   , relabelled
+  , class Keys  -- forced export
+  , keys        -- forced export
   ) where
 
 -- FIXME tests for this module would be good
@@ -55,8 +54,8 @@ infixr 4 product as ×
 
 -- | Combine two record lenses.
 -- |
--- | The records must be disjoint (ie, share no fields). If the records share
--- | fields, you will get a compiler error.
+-- | The records must be disjoint (ie, share no fields), or you will
+-- | get a compiler error. (`Nub` will fail to be satisfied)
 -- |
 -- | Example:
 -- | ```
@@ -75,43 +74,6 @@ product' la lb = lens
 
 infixr 4 product' as @@
 infixr 4 product' as ⊗
-
-
--- | Supplies `split`, which splits a record into two
--- |
--- | Example:
--- | ```
--- | let r = { n: 1, s: "two" }
--- | (a :: { n :: Int }) /\ (b :: { s :: String }) = split Proxy Proxy r
--- | ```
---
--- Implementation derived from [1]
--- [1]: <https://github.com/rowtype-yoga/purescript-record-studio/blob/6269003c6bc4b241ffde6144958cbc1fa960851a/src/Record/Studio/Shrink.purs>
-split :: forall a b ab.
-  Union a b ab => Nub ab ab => Keys a => Keys b =>
-  Proxy a -> Proxy b -> Record ab -> Record a /\ Record b
-split Proxy Proxy record =
-  (/\)
-    (unsafeTake (keys (Proxy :: Proxy a)) record)
-    (unsafeTake (keys (Proxy :: Proxy b)) record)
-
--- | Extracts a set of keys from a given record and unsafely casts the result
-foreign import unsafeTake :: forall a a'. Array String -> Record a -> Record a'
-
--- | Reify the keys of a row type as a value-level string array
-class Keys :: forall k. k -> Constraint
-class Keys a where
-  keys :: Proxy a -> Array String
-instance (RowToList a l, KeysRL l) => Keys a where
-  keys Proxy = keysRL (Proxy :: Proxy l)
-
-class KeysRL :: forall k. k -> Constraint
-class KeysRL l where
-  keysRL :: Proxy l -> Array String
-instance (IsSymbol label, KeysRL rest) => KeysRL (RL.Cons label _item rest) where
-  keysRL Proxy = Array.cons (reflectSymbol (Proxy :: Proxy label)) (keysRL (Proxy :: Proxy rest))
-else instance KeysRL RL.Nil where
-  keysRL Proxy = []
 
 
 -- | Construct a lens targeting a field of a record
@@ -186,28 +148,6 @@ field' ::
 field' l = field l <<< labelled l
 
 
--- | Construct a lens targeting a field of a record.
--- | Wrap the lens target in a single-field record with a specified label.
--- |
--- | Example:
--- | ```
--- | type Cat = { name :: String, ageYears :: Number }
--- |
--- | nameLens :: Lens' Cat { catName :: String }
--- | nameLens = fieldRelabelled (Proxy :: Proxy "name") (Proxy :: Proxy "catName")
--- | ```
--- |
--- | The lens `fieldRelabelled l l'` will be somewhat more performant
--- | than `field' l <<< relabelled l'`
-fieldRelabelled ::
-  forall label label' r a b ra rb justA justB.
-  IsSymbol label => IsSymbol label' =>
-  Cons label a r ra => Cons label b r rb =>
-  Cons label' a () justA => Cons label' b () justB =>
-  Proxy label -> Proxy label' -> Lens (Record ra) (Record rb) (Record justA) (Record justB)
-fieldRelabelled l l' = field l <<< labelled l'
-
-
 -- | Construct a lens targeting a subrecord.
 -- |
 -- | The constructed lens is not type-changing. (I'm not sure a type-changing
@@ -240,6 +180,44 @@ subrecord' Proxy = subrecord
 
 
 
+-- | `split` splits a record into two
+-- |
+-- | Example:
+-- | ```
+-- | let r = { n: 1, s: "two" }
+-- | (a :: { n :: Int }) /\ (b :: { s :: String }) = split Proxy Proxy r
+-- | ```
+--
+-- Implementation derived from [1]
+-- [1]: <https://github.com/rowtype-yoga/purescript-record-studio/blob/6269003c6bc4b241ffde6144958cbc1fa960851a/src/Record/Studio/Shrink.purs>
+split :: forall a b ab.
+  Union a b ab => Nub ab ab => Keys a => Keys b =>
+  Proxy a -> Proxy b -> Record ab -> Record a /\ Record b
+split Proxy Proxy record =
+  (/\)
+    (unsafeTake (keys (Proxy :: Proxy a)) record)
+    (unsafeTake (keys (Proxy :: Proxy b)) record)
+
+-- | Extracts a set of keys from a given record and unsafely casts the result
+foreign import unsafeTake :: forall a a'. Array String -> Record a -> Record a'
+
+-- | Reify the keys of a row type as a value-level string array
+class Keys :: forall k. k -> Constraint
+class Keys a where
+  keys :: Proxy a -> Array String
+instance (RowToList a l, KeysRL l) => Keys a where
+  keys Proxy = keysRL (Proxy :: Proxy l)
+
+class KeysRL :: forall k. k -> Constraint
+class KeysRL l where
+  keysRL :: Proxy l -> Array String
+instance (IsSymbol label, KeysRL rest) => KeysRL (RL.Cons label _item rest) where
+  keysRL Proxy = Array.cons (reflectSymbol (Proxy :: Proxy label)) (keysRL (Proxy :: Proxy rest))
+else instance KeysRL RL.Nil where
+  keysRL Proxy = []
+
+
+
 -- "tests" --
 
 data A = A
@@ -261,7 +239,4 @@ t4 = field' (Proxy :: Proxy "c") @@ field' (Proxy :: Proxy "b") @@ field' (Proxy
 
 t5 :: Lens' ABC { a :: A, c :: C }
 t5 = subrecord
-
-t6 :: Lens' ABC { a :: C, b :: B }
-t6 = fieldRelabelled (Proxy :: Proxy "c") (Proxy :: Proxy "a") @@ field' (Proxy :: Proxy "b")
 

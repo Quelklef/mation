@@ -1,7 +1,7 @@
 
 -- | This is the prelude used internally in the Mation codebase
 -- |
--- | This module is not intended to be consumed by clients
+-- | This module is not intended to be consumed by framework users
 
 module Mation.Core.Prelude (module X, module Mation.Core.Prelude) where
   

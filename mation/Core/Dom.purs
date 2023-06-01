@@ -7,6 +7,8 @@
 -- | However, the user may choose what types those are; if they implement
 -- | the below typeclasses then this framework will happily accept them.
 
+-- FIXME: we don't actually *use* IsDom{Node,Event} anywhere tho
+
 module Mation.Core.Dom where
   
 import Mation.Core.Prelude
@@ -32,9 +34,7 @@ newtype DomNode = DomNode Foreign
 derive instance Newtype DomNode _
 instance IsDomNode DomNode
 
--- FIXME: Eq instance
-
--- | Equality ala `===`
+-- | Instance given by `viaPrim`
 instance UnsureEq DomNode where
   unsureEq = viaPrim
 
@@ -46,9 +46,7 @@ newtype DomEvent = DomEvent Foreign
 derive instance Newtype DomEvent _
 instance IsDomEvent DomEvent
 
--- FIXME: Eq instance
-
--- | Equality ala `===`
+-- | Instance given by `viaPrim`
 instance UnsureEq DomEvent where
   unsureEq = viaPrim
 

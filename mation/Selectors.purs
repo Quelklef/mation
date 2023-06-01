@@ -71,7 +71,7 @@ document s = SMAlts [ { block: W.Weave [ W.Elem "@document ", W.Elem s, W.Elem "
 -- | This is sometimes useful to be able to do e.g.
 -- |
 -- | ```
--- | Sel.on (Sel.this <> Sel.children) [ myStyle ]
+-- | Sel.on (Sel.this #<> Sel.children) [ myStyle ]
 -- | ```
 -- |
 -- | To attach some style to both the targeted node and its children

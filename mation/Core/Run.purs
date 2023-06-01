@@ -35,10 +35,10 @@ import Mation.Core.Util.WRef as WRef
 -- | ### Why the stringent `MonadUnliftEffect` constraint?
 -- |
 -- | Choosing a custom monad `m` decides what monadic context your application's event
--- | handlers will live in. The trouble is that, in general, events really do not play nice
--- | with custom monads.
+-- | handlers will live in. The trouble is that events are asynchronous, which
+-- | does not paly well with many kinds of monads.
 -- |
--- | For starters, events are dispatched by the javascript runtime. This means that
+-- | Events are dispatched by the javascript runtime. This means that
 -- | when an event handler is invoked it is done so from `Effect`, not `m`. Hence
 -- | we need some way to execute `m` from within `Effect`; this gives rise
 -- | to the `MonadUnliftEffect` constraint.
@@ -62,7 +62,7 @@ import Mation.Core.Util.WRef as WRef
 -- | Beyond this, I suspect that additional, more technical, challenges would
 -- | arise internal to the framework from an attempt to weaken `MonadUnliftEffect`.
 -- |
--- | Unlifting custom monads to `Effect` *correctly* is
+-- | Interpolating custom monads with `Effect` *correctly* is
 -- | [not](https://www.fpcomplete.com/blog/2017/06/tale-of-two-brackets/)
 -- | [an](http://blog.ezyang.com/2012/01/monadbasecontrol-is-unsound/)
 -- | [easy](https://hackage.haskell.org/package/unliftio-0.2.24.0#comparison-to-other-approaches)
@@ -80,16 +80,16 @@ import Mation.Core.Util.WRef as WRef
 -- | to `ReaderT env Effect` for some type `env.`
 -- |
 -- | In other words, we know that the custom monad `m` only acts to carry around
--- | one or more environment objects. Mation already provides a way to carry around
+-- | onsome environment data. Mation already provides a way to carry around
 -- | data like this; namely, storing it in component models and/or threading it
--- | through component `view`s. Further, this approach has several advantages
--- | over the `ReaderT` approach:
+-- | through component `view`s. Further, this "threading" approach has several
+-- | advantages over the `ReaderT` approach:
 -- |
 -- | - It's more explicit: Threading your environment data through your application
 -- |   may be somewhat annoying, but it makes crystal clear how the data moves around
 -- |   the app. Contrarily, using `ReaderT` exhibits a certain kind of "action at a
--- |   distance": at the *top* level you supply some `env`, and then event listeners
--- |   very far away in the codebase "automagically" have access to that `env`.
+-- |   distance": at the *top* of your application you supply some `env`, and then event
+-- |   listeners far away in the codebase "automagically" have access to that `env`.
 -- |
 -- | - It's opt-in instead of opt-out: When composing components, the path
 -- |   of least resistance is to to match the underlying
@@ -100,15 +100,15 @@ import Mation.Core.Util.WRef as WRef
 -- |
 -- |   Additionally, the path of least resistance when creating a child component
 -- |   is to give it a smaller model rather than a larger one.
--- |   When using the explicit threading approach for an application environment
+-- |   When using the threading approach for an application environment
 -- |   this means by default *not* providing the child component access to that
 -- |   environment. (Providing access requires adding it to the child state.)
 -- |
--- | - It's automatically available to the view: State managed in `m` is by
--- |   default invisible to your application view. Hence if you manage, say,
--- |   the login state in `m`, and your view needs to decide depending on that
--- |   state whether to show a "log in" button or a "log out" button, you
--- |   will have extra work to do.
+-- | - The environment is automatically available to the view: State managed in
+-- |   a custom monad `m` is by default visible to your event handlers but
+-- |   invisible to your application view. Hence if you manage, say,
+-- |   the login state as part of your environment in `m`, and if your view
+-- |   needs to know if the user is logged in, you will have extra work to do.
 -- |
 -- | - Managing readability/writability is easier:
 -- |   A `ReaderT` only "natively" supports local modification
@@ -140,8 +140,8 @@ import Mation.Core.Util.WRef as WRef
 -- | ### But I want my event handlers to live in `Aff` :(
 -- |
 -- | Yeah, me too 😞. Asynchronous event handlers are extremely common and
--- | not at all problematic. Just turn them into `Effect` with `launchAff_`
--- | or similar.
+-- | not at all problematic. Just use `launchAff_` or similar to discharge
+-- | your handlers into `Effect`.
 -- |
 -- | The issue is that `m` decides not only where event handlers live but also
 -- | where *fixups* live (see `Mation.Props.Unsafe`). Fixups are allowed to

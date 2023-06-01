@@ -33,7 +33,7 @@ import Mation.Core.Run (runAppM)
 -- |   If the daemon changes the application state, the application
 -- |   will re-render.
 -- |
--- |   If you're not sure what to supply for this, use `\_ -> pure unit`
+-- |   An "empty" daemon is given by `\_ -> pure unit`
 -- |
 -- | - `root :: Effect DomNode`
 -- |
@@ -57,8 +57,8 @@ import Mation.Core.Run (runAppM)
 -- | ***
 -- |
 -- | If you want to live in a monad other than `Effect`,
--- | see `Mation.Core.Run (runAppM)`. Using this is not recommended, for
--- | reasons discussed on the doc comment for `runAppM`
+-- | see `Mation.Core.Run (runAppM)`. Using `runAppM` is not recommended,
+-- | for reasons discussed in its documentation
 runApp :: forall s.
   { initial :: s
   , render :: s -> Html Effect s

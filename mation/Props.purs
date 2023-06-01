@@ -133,23 +133,23 @@ remark rk = addDataset (Map.singleton "remark" rk)
 
 -- | Prevents a node from being patched.
 -- |
--- | This can also be achieved by setting the data
--- | attribute `mation-no-patch` to `true`
+-- | Useful if, for instance, some third-party javascript adds a `<style>`
+-- | tag to the document and you want to ensure that mation doesn't
+-- | delete it.
 -- |
--- | Typically  patch-prevention will be initiated
--- | by *third-party* (ie, non-Mation) code, which will
--- | have no notion of a `Prop` and therefore want to
--- | use datasets rather than `dontPatch`.
--- | However, this `Prop` can be handy to easily prevent
--- | the document `<head>` from being
--- | patched (if you're using on `onHtml`)
+-- | One can also mark a node as to-be-ignored by
+-- | setting its `data-mation-no-patch` attribute to `true`.
+-- |
+-- | (Usually that is how you will want to do it, rather than using
+-- | this `Prop`. However, this `Prop` can be handy to, for instance,
+-- | mark the document `<head>` as no-patch.)
 dontPatch :: forall m s. Prop m s
 dontPatch = addDataset (Map.singleton "mation-no-patch" "true")
 
 
 -- | Gives the node a red border whenever it is updated
 -- |
--- | This is intended for debugging only!
+-- | This is intended for debugging
 showUpdates :: forall m s. Prop m s
 showUpdates = fixup showUpdates_f
 

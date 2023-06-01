@@ -24,6 +24,12 @@ import Mation.Core.Util.Revertible as Rev
 -- | This type has one parameter, called `endo`. We expect that `endo`
 -- | homomorphs into `Endo (->)`; specifically, we expect
 -- | an `IsEndo endo` instance to exist.
+-- |
+-- | We use different instantiations of `endo` throughout
+-- | the codebase. Most of the time we use `endo ~ Weave`, which gives
+-- | us `Eq (endo String)` and `Hashable (endo String)` instances.
+-- | We also use `endo ~ Endo (->)` when finally turning our styles
+-- | into CSS.
 newtype Style1 :: (Type -> Type) -> Type
 newtype Style1 endo = Style1
 
@@ -35,19 +41,11 @@ newtype Style1 endo = Style1
 
     -- | Style prelude
     -- |
+    -- | Emitted right before the style block in the result CSS
+    -- |
     -- | E.g. `"@keyframes my-animation { 0% { color: red; } 100% { color: blue; } }"`
   , prelude :: String
   }
-
--- | Note that this `Eq` instance treats the style CSS as a string, so
--- | if two `Style1` values are the same except that the CSS of one
--- | has a trailing semicolon, then the values will be considered inequal.
-instance Eq (endo String) => Eq (Style1 endo) where
-  eq = eq `Fun.on` \(Style1 s) -> s
-
-instance Hashable (endo String) => Hashable (Style1 endo) where
-  hash = hash <<< \(Style1 s) -> s.css /\ s.scopes.selector /\ s.scopes.block /\ s.prelude
-
 
 --- | Represents block- and selector-level scopings for CSS styles.
 --- |
@@ -65,6 +63,15 @@ type Scopes endo =
   , block :: endo String
   }
 
+-- | Note that this `Eq` instance treats the style CSS as a string, so
+-- | if two `Style1` values are the same except that the CSS of one
+-- | has a trailing semicolon, then the values will be considered inequal.
+instance Eq (endo String) => Eq (Style1 endo) where
+  eq = eq `Fun.on` \(Style1 s) -> s
+
+instance Hashable (endo String) => Hashable (Style1 endo) where
+  hash = hash <<< \(Style1 s) -> s.css /\ s.scopes.selector /\ s.scopes.block /\ s.prelude
+
 composeScopesLTR :: forall endo. IsEndo (endo String) String => Scopes endo -> Scopes endo -> Scopes endo
 composeScopesLTR s s' =
   { selector: composeEndoLTR s.selector s'.selector
@@ -75,8 +82,8 @@ composeScopesLTR s s' =
 -- |
 -- | The given function ought to be a monoid morphism in order to preserve
 -- | the `Style1` invariant wrt `endo`
-hoistStyle1 :: forall endo endo'. (endo String -> endo' String) -> Style1 endo -> Style1 endo'
-hoistStyle1 f (Style1 { css, scopes: { selector, block }, prelude }) = Style1
+changeEndo1 :: forall endo endo'. (endo String -> endo' String) -> Style1 endo -> Style1 endo'
+changeEndo1 f (Style1 { css, scopes: { selector, block }, prelude }) = Style1
   { css, scopes: { selector: f selector, block: f block }, prelude }
 
 
@@ -89,19 +96,19 @@ addPrelude :: forall endo. String -> (Style1 endo -> Style1 endo)
 addPrelude p (Style1 { css, scopes, prelude }) = Style1 { css, scopes, prelude: prelude <> p }
 
 
--- | Given a unique identifier and a selector (eg `"#my-element"`), render a `Style1`
--- | to a CSS string targeting that selector
+-- | Given a selector (eg `"#my-element"`), render a `Style1` to a CSS string targeting that selector
 toCss :: String -> Style1 (Endo (->)) -> String
 toCss selec0 (Style1 { css, scopes, prelude }) =
-
-    prelude <> (runEndo scopes.block $ runEndo scopes.selector selec0 <> " { " <> css <> " }")
+  prelude <> (runEndo scopes.block $ runEndo scopes.selector selec0 <> " { " <> css <> " }")
 
 
 -- | Combine same-scoped styles
 -- |
 -- | So if there are two styles which both happen to target exactly `#my-id:hover`, then
 -- | they will be combined (and eventually emitted as a single CSS block)
-collate :: forall endo. IsEndo (endo String) String => Ord (endo String) => Array (Style1 endo) -> Array (Style1 endo)
+collate :: forall endo.
+  IsEndo (endo String) String => Ord (endo String) =>
+  Array (Style1 endo) -> Array (Style1 endo)
 collate = collateBy
   { key: \(Style1 { scopes }) -> scopes
   , merge: \(Style1 sty1) (Style1 sty2) -> Style1
@@ -126,7 +133,7 @@ collate = collateBy
     >>> map (\(_ /\ v) -> v)
 
 
--- | Represents a bunch of styles
+-- | Represents some CSS styles
 newtype Style = Style (Array (Style1 Weave))
 
 derive newtype instance Eq Style
@@ -179,13 +186,13 @@ toProp = FM.float >>> toProp'
         -- Collate styles
         # collate
         -- Change `Weave` to `Endo (->)`
-        # map (hoistStyle1 toEndo)
+        # map (changeEndo1 toEndo)
         -- Turn each style into a CSS string
         # map (toCss ("." <> className))
         -- Combine them
         # intercalate "\n"
 
-    in mkFixup \node -> Rev.mkRevertibleE $ liftEffect do
+    in mkFixup \node -> Rev.mkRevertibleE do
       { restore: restoreCss } <- putCss { getCss, hash: styleHash }
       { restore: restoreClass } <- putClass node className
       pure $ liftEffect (restoreCss <> restoreClass)

@@ -8,32 +8,40 @@ import Mation.Core.Util.Hashable (class Hashable, hash)
 import Mation.Core.Util.IsEndo (class IsEndo, concatEndo)
 
 
--- | Given a type `A` instantiating `Monoid`, this gives a concrete
--- | representation to those functions of type `A -> A` which are a chain
--- | of applications of `<>` awaiting some single argument, eg
+-- | Given a type `A` instantiating `Monoid`, the type `Weave A` is a
+-- | concrete representation of functions `f :: A -> A` of the form
 -- |
 -- | ```
--- | f = \x -> a1 <> x <> a2 <> a3 <> x
--- |   = \x -> fold [ a1, x, a2, a3, x ]
+-- | f x = a1 <> x <> a2 <> x <> a3 <> x <> ...
 -- | ```
 -- |
--- | This concrete representation exhibits desirable features
--- | like existince of a well-formed `Eq` instance.
+-- | for some `a1`, `a2`, `a3`, ...
 -- |
--- | A `Weave A` is represented as an array of elements, each of
--- | which is either an element of `A` or a `Hole`, which represents
--- | the awaited argument. For instance, the above function `f`
--- | would be expressed as
+-- | Such a function `f` is represented specifically as the array
 -- |
 -- | ```
--- | w = Weave [ Elem a1, Hole, Elem a2, Elem a3, Hole ]
+-- | [ Just a1, Nothing, Just a2, Nothing, ... ]
 -- | ```
+-- |
+-- | Where a `Just` gives a known value of type `a` and a `Nothing`
+-- | value represents the function parameter.
+-- |
+-- | ***
+-- |
+-- | Actually, we don't use `Maybe` but an isomorphic type
+-- | called `Elem`, and we allow repeated `x` terms and adjacent `a_n`
+-- | terms. But it's all equivalent.
 newtype Weave a = Weave (Array (Elem a))
 
+-- | `Hole` represents the parameter of the represented function,
+-- | and `Elem a` represents a fixed value `a :: a`
 data Elem a = Hole | Elem a
 
 derive instance Generic (Weave a) _
 derive instance Eq a => Eq (Weave a)
+  -- ^ Technically this instance is invalid because it doesn't normalize,
+  --   so for instance it considers `Weave []` distinct from `Weave [mempty]`.
+  --   This isn't a problem for our use-sites though.
 instance Ord a => Ord (Weave a) where compare = genericCompare
 instance Show a => Show (Weave a) where show = genericShow
 derive newtype instance Hashable a => Hashable (Weave a)
@@ -97,7 +105,7 @@ empty = Weave [ Elem mempty ]
 this :: forall a. a -> Weave a
 this a = Weave [ Elem a ]
 
--- | Represents a function parameter / `Weave` "hole"
+-- | Represents a function parameter (aka `Weave` "hole")
 that :: forall a. Weave a
 that = Weave [ Hole ]
 

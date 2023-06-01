@@ -3,28 +3,33 @@ module Mation.Core.Util.Revertible where
 import Mation.Core.Prelude
 
 
--- | A `Revertible m` is an action in the monad `m`
--- | which can be *undone*. Think of `Revertible m` as roughly like
+-- | A `Revertible m` is an action in the monad `m` which can be *undone*.
+-- |
+-- | Think of `Revertible m` as roughly like
 -- | the type `m (m Unit)`, where an action `act :: m (m Unit)` does
 -- | something and returns a value `rev :: m Unit` which undoes `act`.
+-- |
+-- | Laws, identifying `Revertible m` with `m (m Unit)`
+-- |
+-- | - `join r = pure unit` where `r` is `Revertible`
 -- |
 -- | ***
 -- |
 -- | `Revertible m` differs from `m (m Unit)` in the following ways:
 -- |
 -- | - The `Monoid` instance for `Revertible` implements sequencing,
--- |   whereas many `Monoid` instances for `Monad`s implement pointwise-`<>`
+-- |   whereas many `Monoid` instances for `Monad`s do not
 -- |
 -- | - One can sequence `Revertible m` values without
 -- |   an `Applicative m` constraint, and can create a `Revertible m`
 -- |   out of an `Effect (Effect Unit)` without a `MonadEffect m` constraint
 -- |
--- |   Actually, these constraints aren't entirely obviated, but are
--- |   deferred until the `collapse` destructor.
+-- |   These constraints aren't obviated; they are only deferred
+-- |   until the `collapse` destructor.
 -- |
 -- | This second bullet is somewhat enigmatic but actually very important
--- | for the Mation codebase. By using `Revertible1, the
--- | framework is able to avoid a `MonadEffect` constraint many
+-- | for the mation framework. By using `Revertible`, the
+-- | framework is able to avoid a `MonadEffect` constraint on many
 -- | API affordances, instead deferring the constraint to the point
 -- | where the user actually runs their application.
 data Revertible m

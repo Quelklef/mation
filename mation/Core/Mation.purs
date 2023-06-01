@@ -5,139 +5,77 @@ import Mation.Core.Prelude
 import Effect.Ref as Ref
 
 
--- | A `Mation m s` is a computation within `m` with the ability to update some
--- | state value of type `s` as it pleases.
+-- | A `Mation m s` is a computation living in `m` with the ability to execute
+-- | pure updates on some state of type `s`. (ie, it can discharge functions
+-- | of type `s -> s`)
+-- |
+-- | ***
 -- | 
--- | 
--- | The most common form of mation are those which perform a single state update
+-- | The most common form of Mation are those which perform a single state update
 -- | in a synchronous manner and then terminate. Most event handlers will fall
 -- | into this category. For instance, an `onClick` handler may increment a UI model
--- | and then terminate.
+-- | and then immediately terminate.
 -- | 
--- | However, mations in general can be far more complex. A mation may be a
+-- | However, in general Mations can be far more complex. A Mation may be a
 -- | long-running process, perhaps performing network requests and incrementally
 -- | updating state as the network requests continue, finally terminating when
 -- | its job is complete.
+-- |
+-- | ***
 -- | 
--- | 
--- | It's worth noting that although a mation is able to update its target state,
--- | it is NOT able to read that state. Usually that means that a mation only has
+-- | It's worth noting that although a Mation is able to update its target state,
+-- | it is NOT able to read that state. Usually that means that a Mation only has
 -- | knowledge of the state at the time it was created as well as knowledge of any
 -- | updates it itself has applied to the state.
 -- | 
--- | This restriction is intentional. Chiefely mations are used as event handlers
--- | in HTML; since we want most state to be handled explicitly within the model
+-- | This restriction is intentional. Chiefely Mations are used as event handlers;
+-- | since we want most state to be handled explicitly within the model
 -- | it behooves us to be conservative with how much power is given to event
--- | handlers. The choice made by this framework is to allow a mation to hold its
--- | own state, but only as a limited measure to complete some single task.
+-- | handlers. The choice made by this framework is to allow a Mation to hold its
+-- | own state, but only as a limited measure to complete some small task.
 -- | 
--- | If it is absolutely necessary for a mation to be able to listen to state
+-- | If it is absolutely necessary for a Mation to be able to listen to state
 -- | updates, one can construct it as a closure over a reference to the state.
--- | 
--- | (nb. I'm sorry to say I don't have any concrete examples or a pointed
--- | explanation of why it would indeed be bad for an event handler to be able to
--- | read the model state. All I have is an intuition, and I'm going with it!)
 type Mation m s = Step s -> m Unit
 
 type Mation' s = Mation Effect s
 
+-- | Change the underlying monad of a `Mation`
 hoist :: forall m n s. (m ~> n) -> Mation m s -> Mation n s
 hoist f = (_ >>> f)
 
+-- | Embed a `Mation`
 enroot :: forall m large small. Setter' large small -> Mation m small -> Mation m large
 enroot lens = (enrootStep lens >>> _)
 
 
-{-
-
-FIXME. For what it's worth, Mation and Daemon are quite similar:
-
-  Daemon m a ≈ (ReadWriteRef a -> m Unit)
-  Mation m a ≈ (   UpdateRef a -> m Unit)
-
-for sufficient types ReadWriteRef, UpdateRef.
-
-Might be worthwhile -- or at the very least fun -- to create a module
-with the different Ref kinds and then turn Daemon and Mation into
-simple type aliases.
-
--}
-
-
--- | Applies a single state update
+-- | A `Step s` is a function that knows how to discharge state updates of
+-- | type `s -> s` into `Effect`. In the mation framework, this "discharging"
+-- | consists of updating some state reference that lives in `Effect`.
 -- |
--- | ***
+-- | The coupling to `Effect` is intentional. In general a `Step s` is created
+-- | by some computation `d` that knows how to discharge `s -> s` values;
+-- | the `Step s` is passed off to some other computation `c` which actually
+-- | suplies the `s -> s` values. In principle `d` and `c` could live in any
+-- | monads, even different ones, as long as `c`'s monad can interpret `d`'s (since
+-- | it has to be able to execute the return value of `Step`).
 -- |
--- | Note the coupling with `MonadEffect` here.
--- |
--- | A `Mation` value is a correspondence between agents that may live in different
--- | monadic contexts. One agent has access to the state and knows how to apply
--- | state updates of type `s -> s`. This agent produces a `Step s`. The other agent
--- | then consumes this `Step s`, invoking it as it pleases.
--- |
--- | We would be wrongly coupling these two agents to assume that they perform their
--- | computations within the same monad. Why should they? Perhaps the stepping agent
--- | only needs `State` to perform a state update but the consuming agent needs
--- | to do some I/O in order to produce state updates for the stepping agent to
--- | consume, and hence the consuming agent lives in `Effect`.
--- |
--- | However, it would also be wrong to *completely* decouple the monads of the two
--- | agents, asserting that they can be any two monads with no restrictions. This
--- | is wrong because the consuming agent needs to be able to actually perform
--- | the `Step s` provided by the stepping agent. That is, when the stepping agent
--- | produces an `(s -> s) -> M Unit` (for some `M`), the consuming agent is going
--- | to be calling it, meaning it needs to know how to execute an `M` in whatever
--- | monad it's working in.
--- |
--- | Hence, the most correct definition for `Mation` and `Step` would look something
--- | like this:
+-- | The most general form of `Step`, then, would look something like
 -- |
 -- | ```
--- | class CanExec sm cm where
--- |   exec :: forall a. sm a -> cm a
--- |
--- | -- `s` is state type; `sm` is stepping agent monad; `cm` is consuming
--- | -- agent monad
--- | type Mation sm cm s = Step sm s -> cm Unit
--- | type Step sm s = (s -> s) -> sm Unit
+-- | type Step m s = forall n. CanExec m n => (s -> s) -> n Unit
 -- | ```
 -- |
--- | However, juggling two monad parameters sounds annoying. So, we use a simplified
--- | version of this instead.
+-- | where `CanExec m n` asks for a monad homomorphism `m ~> n`.
 -- |
--- | We know that the stepping agent will be the Mation framework runtime, and that
--- | that runtime runs in `Effect`. So we fix `sm = Effect` and can swap `CanExec sm`
--- | out with `MonadEffect`.
+-- | Within the mation framework, though, we know in particular that the
+-- | "discharging computation" `d` is the mation runtime, which lives in `Effect`.
+-- | Hence, we specialize the type of `Step` to `Effect`.
 -- |
--- | ***
--- |
--- | To recap. There are at least three options for how to deal with the monads
--- | relevant to a mation computation. (1) is to conflate the stepping monad `sm`
--- | with the consuming monad `cm` (ie, assume `sm = cm`). (2) is to decouple them
--- | the "right" way using two type parameters and `CanExec`. (3) is like (2) but
--- | we set specifically `sm = Effect` and `CanExec sm = MonadEffect`.
--- |
--- | Concretely, two effects of choosing (3) (or (2)) over (1) are as follows:
--- |
--- | - Sometimes creating a `Mation m a` will require a `MonadEffect` on the `m`
--- |   (resp. would require a `CanExec sm`). (See `Mation` constructors elsewhere in
--- |   this module.) This can be somewhat annoying.
--- |
--- | - We can write a `hoist` function for mations with type
--- |
--- |   ```
--- |   hoist :: forall m n a. (forall b. m b -> n b) -> Mation m a -> Mation n a
--- |   ```
--- |
--- |   This hoist function only requires a transformation `m ~> n`. If we had
--- |   conflated `sm = cm` as in option (1), then writing this hoist function
--- |   would require something stronger, perhaps even a monad *isomorphism*, which
--- |   would make it practically useless.
--- |
--- |   Having this hoist function is important!
---
--- FIXME: Maybe the `CanExec` solution ought to be used after all? Just for the
---        sake of full generality for the `Mation` type?
+-- | We also know that the "child computations" `c` are user event handlers, which
+-- | live in some user-chosen monad `n`. Since the event handlers will need to
+-- | interpret the results of `Step s`, we will expect that `n`
+-- | instantiate `MonadEffect`.
 type Step s = forall n. MonadEffect n => (s -> s) -> n Unit
 
 -- | `Step` enroot. Covariant

@@ -5,7 +5,7 @@ module Mation.Core.Util.WRef where
 import Mation.Core.Prelude
 
 
--- | A `WRef a` is a mutable reference to a value of type `s`
+-- | A `WRef a` is a mutable reference to a value of type `a`
 -- |
 -- | The `WRef` API is very similar to the `Effect.Ref` API.
 -- | However, `WRef`s are more powerful, providing affordances
@@ -41,7 +41,7 @@ foreign import data WRef :: Type -> Type
 make :: forall a. a -> Effect (WRef a)
 make = make_f <<< const
 
--- | Create a new `WRef` with a value which can close over the `WRef
+-- | Create a new `WRef` with a value which can close over the `WRef`
 make' :: forall a. (WRef a -> a) -> Effect (WRef a)
 make' = make_f
 
@@ -70,23 +70,24 @@ modify' f ref = do
 -- |
 -- | The provided callback will only be called once. If you want to
 -- | continue waiting for value changes after the next one, you must
--- | call `nextChange` again (or use another API method)
+-- | call `nextChange` again (or use something else, like `onChange`)
 -- |
 -- | Change listeners are executed in the order that they were attached
 foreign import nextChange :: forall a. Effect Unit -> WRef a -> Effect Unit
 
--- | Call a callback every time the value changes.
+-- | Invoke a callback every time the value changes.
 -- | Provides the callback with the new value.
 -- |
 -- | Remarks:
 -- |
 -- | - A `WRef` "changing" doesn't mean its value is necessarily
--- |   actually any different!
+-- |   actually any different! A "change" just means that `write`
+-- |   was called.
 -- |
 -- | - A callback provided to `onChange` is not guaranteed to see every
 -- |   single state update. If one change listener modifies the state
 -- |   before another change listener is invoked, the second listener
--- |   will recieve the doubly-modified state.
+-- |   will recieve the state after *both* modifications.
 onChange :: forall a. (a -> Effect Unit) -> WRef a -> Effect Unit
 onChange f ref =
   ref # nextChange do
@@ -107,7 +108,7 @@ onChange' f ref = do
 -- | Create a two-way binding with a WRef
 -- |
 -- | Differs from creating a two-way binding with `onChange` and `push` in
--- | that bindings created with `sync` will not invoke themselves.
+-- | that bindings created with `sync` will not self-invoke.
 -- |
 -- | ***
 -- |
@@ -161,3 +162,4 @@ foreign import mkView_f ::
   { getter :: a -> b
   , setter :: b -> a -> a
   } -> WRef a -> WRef b
+

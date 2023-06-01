@@ -14,7 +14,7 @@ import Mation.Core.Util.Revertible as Rev
 import Mation.Core.Util.Assoc as Assoc
 
 
--- | A single vnode property
+-- | A single VNode property
 data Prop1 m
 
     -- | Some string HTML attribute, like 'id' or 'style'
@@ -34,16 +34,13 @@ data Prop1 m
   | PNoop
 
 
+-- | Change the underlying monad of a property
 hoist1 :: forall m n. Functor n => (m ~> n) -> Prop1 m -> Prop1 n
 hoist1 f = case _ of
   PPair k v -> PPair k v
   PListener k lis -> PListener k (f <$> lis)
   PFixup fu -> PFixup (fu # map (Rev.hoist f))
   PNoop -> PNoop
-
-  where
-  _restore = prop (Proxy :: Proxy "restore")
-
 
 
 -- | Virtual node properties
@@ -77,6 +74,7 @@ mkNoop :: forall m s. Prop m s
 mkNoop = FM.singleton $ PNoop
 
 
+-- | Enlargen the state type of a `Prop`
 enroot :: forall m large small. Functor m => Setter' large small -> Prop m small -> Prop m large
 enroot lens (Prop arr) = Prop $ arr # map (hoist1 (MationT.enroot lens))
 
@@ -85,11 +83,6 @@ enroot lens (Prop arr) = Prop $ arr # map (hoist1 (MationT.enroot lens))
 -- | The given `m ~> n` is expected to be a monad morphism
 hoist :: forall m n a. Functor n => (m ~> n) -> Prop m a -> Prop n a
 hoist f (Prop arr) = Prop $ arr # map (hoist1 (MationT.hoist f))
-
-
--- FIXME: is there a good abstraction for the repeated play
---        between Functor and FreeMonoid and enroot and hoist in both Prop and Html?
-
 
 -- | Create an `Html` from an array of `Prop`s
 mkTagFromProps :: forall m s. String -> Array (Prop m s) -> Array (Html m s) -> Html m s

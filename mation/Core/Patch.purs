@@ -14,13 +14,16 @@ import Mation.Core.Util.Revertible as Rev
 foreign import data PruneMapRef :: Type
 
 
--- | Instead of patching onto a DOM Node directly, we diff the old and new state
--- | to generate a patch function which is then applied to a DOM node.
+-- | Patch a VDOM onto a DOM Node
 -- |
--- | This is so that the patching algorithm does not react to changes made to
--- | the DOM by external javascript. If, for instance, external javascript adds
--- | some "_secretInfo" attribute to a DOM node, we will not remove it during
--- | patching.
+-- | To tell what needs to be modified, the paching algorithm does not compare
+-- | the given VDOM to the DOM. Instead, it compares the given VDOM to
+-- | the *old* VDOM, modifying the actual DOM where differences exist.
+-- |
+-- | This is so that the patching algorithm plays well with third-party
+-- | javascript. If, for instance, external javascript adds some "_secretInfo"
+-- | attribute to a DOM node, we will not remove it during patching as long
+-- | as it isn't also added and removed in the VDOM.
 -- |
 -- | (There is a discussion to be had about whether the programmer making use of
 -- | a "_secretInfo" attribute is a good idea or not. However, that's up to

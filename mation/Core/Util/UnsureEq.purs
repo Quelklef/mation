@@ -23,12 +23,34 @@ import Prim.Row (class Nub) as R
 import Record.Unsafe (unsafeGet) as R
 import Prim.RowList as RL
 import Data.Generic.Rep as G
+import Data.HeytingAlgebra (tt, ff)
 
 
+-- FIXME: I think some of the UnsureEq instances in here
+--   are not short-circuiting. Maybe use the HeytingAlgebra instance
+--   for Data.Lazy (Lazy) to streamline creating short-circuiting
+--   instances? Could possibly make existing short-circuiting instances
+--   more readable as well. (or perhaps less readable!)
+
+
+-- | Intended to be used with `a ~ Boolean` to create
+-- | a three-valued logic
 data Unsure a = Unsure | Surely a
 
 derive instance Eq a => Eq (Unsure a)
+derive instance Functor Unsure
 
+-- | Ala `Maybe`
+instance Apply Unsure where
+  apply Unsure _ = Unsure
+  apply _ Unsure = Unsure
+  apply (Surely f) (Surely a) = Surely (f a)
+
+-- | Ala `Maybe`
+instance Applicative Unsure where
+  pure = Surely
+
+-- | `Surely false < Unsure < Surely true`
 instance Ord (Unsure Boolean) where
   compare = compare `on` case _ of
     Surely false -> 0
@@ -38,6 +60,26 @@ instance Ord (Unsure Boolean) where
 instance Bounded (Unsure Boolean) where
   bottom = Surely false
   top = Surely true
+
+-- | Lifts the boolean `HeytingAlgebra` structure into
+-- | an `Unsure` context.
+-- |
+-- | I'm not sure how better to explain this instance in words,
+-- | so instead here's its definition:
+-- |
+-- | - `ff = bottom`
+-- | - `tt = top`
+-- | - `conj = min`
+-- | - `disj = max`
+-- | - `not = map not`
+-- | - `implies p q = if p <= q then top else q`
+instance HeytingAlgebra (Unsure Boolean) where
+  ff = bottom
+  tt = top
+  conj = min
+  disj = max
+  not = map not
+  implies p q = if p <= q then top else q
 
 -- | Interprets `Unsure` as `true`
 perhaps :: Unsure Boolean -> Boolean
@@ -54,8 +96,7 @@ surely = case _ of
   Surely true -> true
 
 
-
--- | Like `Eq`, but allows a type implement partial equality.
+-- | Like `Eq` but allows comparison to produce "I don't know"
 -- |
 -- | The canonical example is function types, where if two functions
 -- | are identical as references, we know they must be equivalent, but
@@ -63,10 +104,13 @@ surely = case _ of
 -- |
 -- | ***
 -- |
--- | The Mation framework uses UnsureEq to perform certain kinds of
--- | caching. It can compare the new and old cache keys using `unsureEq`
--- | and will recompute the cache value if the result is anything
--- | other than `Surely true`. The benefit of choosing to use `UnsureEq`
+-- | The mation framework uses UnsureEq to perform caching in some
+-- | contexts. When looking up a value, it will compare the lookup
+-- | key with the cached key using `unsureEq`. If the result is
+-- | anything other than `Surely true`, then the result will
+-- | be recomputed.
+-- |
+-- | The benefit of choosing to use `UnsureEq`
 -- | for this instead of `Eq` is that we are able to perform a "best
 -- | effort" caching on types which can *sometimes* compute equality,
 -- | such as
@@ -87,13 +131,14 @@ instance UnsureEq Void where unsureEq _ _ = Surely true
 instance UnsureEq (Proxy s) where unsureEq _ _ = Surely true
 
 instance (UnsureEq a, UnsureEq b) => UnsureEq (a /\ b) where
+  -- Looks complex due to short-circuiting
   unsureEq ab xy =
-    if primEq ab xy then top
+    if primEq ab xy then tt
     else let a /\ b = ab
              x /\ y = xy
          in case unsureEq a x of
               Surely false -> Surely false
-              other -> other `min` unsureEq b y
+              other -> other && unsureEq b y
 
 instance UnsureEq a => UnsureEq (Maybe a) where
   unsureEq (Just a) (Just b) = unsureEq a b
@@ -104,8 +149,8 @@ instance UnsureEq a => UnsureEq (Maybe a) where
 instance UnsureEq a => UnsureEq (Array a) where
   unsureEq a b =
     case primEq a b, Array.length a == Array.length b of
-      true, _ -> top
-      _, false -> bottom
+      true, _ -> tt
+      _, false -> ff
       _, _ -> unsureEqArrayImpl a b
 
 
@@ -113,9 +158,9 @@ instance UnsureEq a => UnsureEq (Array a) where
 unsureEqArrayImpl :: forall a. UnsureEq a => Array a -> Array a -> Unsure Boolean
 unsureEqArrayImpl = unsureEqArrayImpl_f
   { unsureEq
-  , and: min
-  , isSurelyFalse: (_ == bottom)
-  , surelyTrue: top
+  , and: (&&)
+  , isSurelyFalse: (_ == ff)
+  , surelyTrue: tt
   }
 
 foreign import unsureEqArrayImpl_f :: forall a.
@@ -138,15 +183,15 @@ class UnsureEqFields rl r where
   unsureEqFields :: Proxy rl -> Record r -> Record r -> Unsure Boolean
 
 instance UnsureEqFields RL.Nil r where
-  unsureEqFields _ _ _ = top
+  unsureEqFields _ _ _ = tt
 
 else instance (IsSymbol lbl, UnsureEq head, UnsureEqFields tail rows) => UnsureEqFields (RL.Cons lbl head tail) rows where
   unsureEqFields _ rec1 rec2 =
-    if primEq rec1 rec2 then top else
+    if primEq rec1 rec2 then tt else
     let lbl = reflectSymbol (Proxy :: Proxy lbl)
         head1 = (R.unsafeGet lbl rec1 :: head)
         head2 = (R.unsafeGet lbl rec2 :: head)
-    in unsureEq head1 head2 `min` unsureEqFields (Proxy :: Proxy tail) rec1 rec2
+    in unsureEq head1 head2 && unsureEqFields (Proxy :: Proxy tail) rec1 rec2
 
 
 -- The strategy for implementing `UnsureEq` on `Generic` types is essentially copied from [2]
@@ -169,7 +214,7 @@ instance (UnsureEqGeRep a, UnsureEqGeRep b) => UnsureEqGeRep (G.Sum a b) where
   gUnsureEq _ _ = Surely false
 
 instance (UnsureEqGeRep a, UnsureEqGeRep b) => UnsureEqGeRep (G.Product a b) where
-  gUnsureEq (G.Product a b) (G.Product a' b') = gUnsureEq a a' `min` gUnsureEq b b'
+  gUnsureEq (G.Product a b) (G.Product a' b') = gUnsureEq a a' && gUnsureEq b b'
 
 instance UnsureEqGeRep a => UnsureEqGeRep (G.Constructor name a) where
   gUnsureEq = gUnsureEq `on` case _ of G.Constructor a -> a
@@ -183,11 +228,16 @@ instance UnsureEqGeRep a => UnsureEqGeRep (G.Argument a) where
 viaEq :: forall a. Eq a => (a -> a -> Unsure Boolean)
 viaEq a b = Surely (a == b)
 
-
 -- | Implementation for `unsureEq` via primitive triple-equals equality
+-- |
+-- | If `===` produces `true` then `viaPrim` produces `Surely true`.
+-- | If `===` produces `false` then `viaPrim` produces `Unsure`, since
+-- | it could still be possible that the two value sare structurally
+-- | equal.
 viaPrim :: forall a. (a -> a -> Unsure Boolean)
 viaPrim a b = case primEq a b of
   true -> Surely true
   false -> Unsure
 
 foreign import primEq :: forall a b. a -> b -> Boolean
+
