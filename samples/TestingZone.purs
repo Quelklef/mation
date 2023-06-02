@@ -6,8 +6,10 @@ import Data.Array (range)
 import Data.Map as Map
 import Data.Lens (lens)
 
+import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
+import Mation.Props.Unsafe as P
 import Mation.Styles as S
 import Mation.Selectors as Sel
 import Mation.Selectors ((#<>))
@@ -77,7 +79,7 @@ renderCounter model =
       NotStreaming -> fold
         [ E.button
           [ P.onClick \_ step -> do
-              { cancel } <- repeatedly (step $ _count %~ (_ + 1))
+              { cancel } <- everyNSeconds 0.05 (step $ _count %~ (_ + 1))
               step (_streamState .~ Streaming { cancel })
           , buttonStyle
           ]
@@ -86,7 +88,7 @@ renderCounter model =
         , E.text " "
         , E.button
           [ P.onClick \_ step -> do
-              { cancel } <- repeatedly (step $ _count %~ ((_ - 1) >>> max 0))
+              { cancel } <- everyNSeconds 0.05 (step $ _count %~ ((_ - 1) >>> max 0))
               step (_streamState .~ Streaming { cancel })
           , buttonStyle
           ]
@@ -113,7 +115,7 @@ renderCounter model =
     , S.borderColor "red"
     ]
 
-foreign import repeatedly :: Effect Unit -> Effect { cancel :: Effect Unit }
+foreign import everyNSeconds :: Number -> Effect Unit -> Effect { cancel :: Effect Unit }
 
 
 --------------------------------------------------------------------------------
@@ -213,6 +215,84 @@ viewOnClickElsewhere { here, notHere } =
   ]
 
 
+{- -----------------------------------------------------------------------------
+
+Test: select flickering
+
+Bug: Under certain conditions, if a <select> is patched when it is open then it
+will flicker and its over state will be reset, even if it hasn't changed since the
+previous frame.
+
+- Sufficient conditions for this to occur are:
+    - The <select> is not pruned
+    - The <select> has a fixup prop that adds a class via either `.setAttribute('class', ...)`
+      or via `.classList.add(...)`. The fixup prop's restoration function need not remove the
+      class. (Corollary: the fixup need not be valid!)
+- By "hover state" I mean the DOM-native hover state. In chrome, this is a blue
+  background behind the hovered <option>
+
+Cause: Repros on Firefox but not Chrome. Potentially an FF issue?
+
+-} --
+
+
+type SelectFlicker =
+  { selected :: String
+  , time :: Int
+  }
+
+initialSelectFlicker :: SelectFlicker
+initialSelectFlicker =
+  { selected: "A"
+  , time: 0
+  }
+
+daemonSelectFlicker :: M.Daemon' SelectFlicker
+daemonSelectFlicker wref = do
+  _ <- everyNSeconds 0.75 do
+    wref # WRef.modify (prop (Proxy :: Proxy "time") %~ (_ + 1))
+  pure unit
+
+viewSelectFlicker :: SelectFlicker -> E.Html' SelectFlicker
+viewSelectFlicker model =
+  E.div
+  [ P.addStyles
+    [ S.display "grid"
+    , S.gridTemplateColumns "200px 100px 100px"
+    , S.alignItems "center"
+    , S.gap "1em"
+    ]
+  ]
+  [ E.p
+    []
+    [ E.text "The  ", E.code [] [ E.text "<select>" ], E.text " should not flicker when open"
+    ]
+  , E.div
+    []
+    [ E.select
+      [ P.fixup \node -> do
+          node # addClass "princess"
+          pure { restore: pure unit }
+      , P.onInputValue \val step -> step (prop (Proxy :: Proxy "selected") .~ val)
+      ]
+      [ ["A", "B", "C"] # foldMap \opt ->
+        E.option
+        [ P.value opt
+        , P.selected (opt == model.selected)
+        ]
+        [ E.text ("Option " <> opt)
+        ]
+      ]
+    ]
+  , E.p
+    []
+    [ E.text ("Time: " <> show model.time)
+    ]
+  ]
+
+foreign import addClass :: String -> DomNode -> Effect Unit
+
+
 --------------------------------------------------------------------------------
 
 type ComStuff =
@@ -295,6 +375,7 @@ type Model =
   , checkbox :: Boolean
   , phoneNumber :: PhoneNumber
   , onClickElsewhere :: OnClickElsewhere
+  , selectFlicker :: SelectFlicker
   , comStuff :: ComStuff
   , rawNodes :: RawNodes
   }
@@ -309,6 +390,7 @@ initialize = do
     , checkbox: false
     , phoneNumber: 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0
     , onClickElsewhere: { here: 0, notHere: 0 }
+    , selectFlicker: initialSelectFlicker
     , comStuff
     , rawNodes: Nothing
     }
@@ -316,6 +398,7 @@ initialize = do
 daemon :: Daemon Effect Model
 daemon = fold
   [ D.enroot (prop (Proxy :: Proxy "rawNodes")) daemonRawNodes
+  , D.enroot (prop (Proxy :: Proxy "selectFlicker")) daemonSelectFlicker
   , D.enroot (_unit × prop (Proxy :: Proxy "comStuff")) (Com.daemonC comComponent)
   ]
 
@@ -346,6 +429,8 @@ render model =
   , E.hr []
   , E.enroot _onClickElsewhere $ viewOnClickElsewhere model.onClickElsewhere
   , E.hr []
+  , E.enroot _selectFlicker $ viewSelectFlicker model.selectFlicker
+  , E.hr []
   , E.enroot (_unit × _comStuff) $ Com.viewC comComponent (unit /\ model.comStuff)
   , E.hr []
   , renderRawNodes model.rawNodes
@@ -360,7 +445,9 @@ render model =
   _checkbox = prop (Proxy :: Proxy "checkbox")
   _phoneNumber = prop (Proxy :: Proxy "phoneNumber")
   _onClickElsewhere = prop (Proxy :: Proxy "onClickElsewhere")
+  _selectFlicker = prop (Proxy :: Proxy "selectFlicker")
   _comStuff = prop (Proxy :: Proxy "comStuff")
 
 _unit :: forall x. Lens' x Unit
 _unit = lens (const unit) (\v _ -> v)
+

@@ -1,8 +1,8 @@
 
-export const repeatedly =
-eff => () => {
+export const everyNSeconds =
+n => eff => () => {
   eff();
-  const id = setInterval(eff, 20);
+  const id = setInterval(eff, n * 1000);
   const cancel = () => clearInterval(id);
   return { cancel };
 };
@@ -17,6 +17,11 @@ s => {
 };
 
 export const toUpperCase = s => s.toUpperCase();
+
+export const addClass =
+cls => node => () => {
+  node.classList.add(cls);
+};
 
 export const mkTextRawNode =
 () => {

@@ -178,9 +178,11 @@ render model =
   where
 
   navBar =
-    -- FIXME: this prune shouldn't be necessary, but without it
+    -- FIXME: This prune shouldn't be necessary, but without it
     --        we get flickering on the <select> when hovering
     --        different <options>
+    --        Possibly an FF issue. See "select flickering" section
+    --        of TestingZone.
     E.prune "nav" model.page \currentPage ->
     E.div
     [ P.addStyles
