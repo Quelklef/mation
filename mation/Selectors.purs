@@ -45,6 +45,14 @@ next sel = SMAlts [ { selector: W.Weave [ W.Hole, W.Elem " + ", W.Elem sel ], bl
 following :: Selector -> ScopeModifier
 following sel = SMAlts [ { selector: W.Weave [ W.Hole, W.Elem " ~ ", W.Elem sel ], block: W.noop } ]
 
+-- | `{sel}::before` pseudo-element
+before :: ScopeModifier
+before = SMAlts [ { selector: W.Weave [ W.Hole, W.Elem "::before" ], block: W.noop } ]
+
+-- | `{sel}::after` pseudo-element
+after :: ScopeModifier
+after = SMAlts [ { selector: W.Weave [ W.Hole, W.Elem "::after" ], block: W.noop } ]
+
 -- | CSS `@media` at-rule
 -- |
 -- | Any necessary parentheses need to be passed in by you.
