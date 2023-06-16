@@ -1,4 +1,4 @@
-module Mation.Examples.Styling where
+module Mation.Samples.Styling where
 
 import Mation.Core.Prelude
 

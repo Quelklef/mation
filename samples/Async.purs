@@ -1,4 +1,4 @@
-module Mation.Examples.AsyncApiCall where
+module Mation.Samples.AsyncApiCall where
 
 import Prelude
 

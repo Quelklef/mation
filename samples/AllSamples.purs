@@ -1,4 +1,4 @@
-module Mation.Examples.AllExamples where
+module Mation.Samples.AllSamples where
 
 import Mation.Core.Prelude
 
@@ -10,41 +10,58 @@ import Mation.Core.Daemon as D
 import Mation.Core.Util.UnsureEq (class UnsureEq, viaEq)
 import Mation.Additional.Router as R
 
-import Mation.Examples.Welcome as Examples.Welcome
-import Mation.Examples.Counter as Examples.Counter
-import Mation.Examples.Components as Examples.Components
-import Mation.Examples.AsyncApiCall as Examples.AsyncApiCall
-import Mation.Examples.Styling as Examples.Styling
-import Mation.Examples.Clock as Examples.Clock
-import Mation.Examples.Inputs as Examples.Inputs
-import Mation.Examples.TestingZone as Examples.TestingZone
-import Mation.Examples.PerfTest as Examples.PerfTest
-import Mation.Examples.Pruning as Examples.Pruning
+import Data.Map as Map
+
+import Mation.Samples.Welcome as Samples.Welcome
+import Mation.Samples.Counter as Samples.Counter
+import Mation.Samples.Components as Samples.Components
+import Mation.Samples.AsyncApiCall as Samples.AsyncApiCall
+import Mation.Samples.Styling as Samples.Styling
+import Mation.Samples.Clock as Samples.Clock
+import Mation.Samples.Inputs as Samples.Inputs
+import Mation.Samples.TestingZone as Samples.TestingZone
+import Mation.Samples.PerfTest as Samples.PerfTest
+import Mation.Samples.Pruning as Samples.Pruning
+import Mation.Samples.Kittens as Samples.Kittens
 
 
 data Page
 
   = Welcome
-
-  -- Examples
   | Counter
   | Components
   | AsyncApiCall
   | Styling
+  | Kittens
   | Clock
   | Inputs
-
-  -- Testing stuff
   | TestingZone
   | PerfTest
   | Pruning
 
-separateAfter :: Array Page
-separateAfter = [ Welcome, Inputs ]
-
 pages :: Array Page
-pages = [ Welcome, Counter, Components, AsyncApiCall, Styling, Clock, Inputs, TestingZone, PerfTest, Pruning ]
-  -- Don't want to add a whole dep for Enum for a testing module
+pages =
+  -- Canonical page order. Could be given by a derived Enum instance, but I don't
+  -- want to add a new dep just for this module
+  [ Welcome
+  , Counter
+  , Components
+  , AsyncApiCall
+  , Styling
+  , Clock
+  , Kittens
+  , Inputs
+  , TestingZone
+  , PerfTest
+  , Pruning
+  ]
+
+separateAfter :: Map Page String
+separateAfter = Map.fromFoldable
+  [ Welcome /\ "basics"
+  , Styling /\ "things"
+  , Inputs /\ "testing"
+  ]
 
 derive instance Generic Page _
 derive instance Eq Page
@@ -66,19 +83,22 @@ pretty = case _ of
   TestingZone -> "Testing-Zone"
   PerfTest -> "Perf-Test"
   Pruning -> "Pruning"
+  Kittens -> "Kittens"
 
 unpretty :: String -> Maybe Page
 unpretty = case _ of
   "Welcome" -> Just Welcome
   "Counter" -> Just Counter
   "Components" -> Just Components
-  "Testing-Zone" -> Just TestingZone
   "Async" -> Just AsyncApiCall
+  "Testing-Zone" -> Just TestingZone
   "Styling" -> Just Styling
   "Clock" -> Just Clock
   "Inputs" -> Just Inputs
   "Perf-Test" -> Just PerfTest
   "Pruning" -> Just Pruning
+  "Kittens" -> Just Kittens
+
   _ -> Nothing
 
 router :: R.Router Page
@@ -100,16 +120,17 @@ router = R.mkVirtualRouter { toPath, fromPath, error }
 type Model =
   { page :: Page
   , submodels ::
-    { welcome :: Examples.Welcome.Model
-    , counter :: Examples.Counter.Model
-    , components :: Examples.Components.Model
-    , asyncApiCall :: Examples.AsyncApiCall.Model
-    , styling :: Examples.Styling.Model
-    , clock :: Examples.Clock.Model
-    , inputs :: Examples.Inputs.Model
-    , testing :: Examples.TestingZone.Model
-    , perfTest :: Examples.PerfTest.Model
-    , pruning :: Examples.Pruning.Model
+    { welcome :: Samples.Welcome.Model
+    , counter :: Samples.Counter.Model
+    , components :: Samples.Components.Model
+    , asyncApiCall :: Samples.AsyncApiCall.Model
+    , styling :: Samples.Styling.Model
+    , clock :: Samples.Clock.Model
+    , inputs :: Samples.Inputs.Model
+    , testing :: Samples.TestingZone.Model
+    , perfTest :: Samples.PerfTest.Model
+    , pruning :: Samples.Pruning.Model
+    , kittens :: Samples.Kittens.Model
     }
   }
 
@@ -142,34 +163,37 @@ render model =
         [ case model.page of
             Welcome      ->
               E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "welcome")) $
-                E.prune "page-welcome" model.submodels.welcome Examples.Welcome.render
+                E.prune "page-welcome" model.submodels.welcome Samples.Welcome.render
             Counter      ->
               E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "counter")) $
-                E.prune "page-counter" model.submodels.counter Examples.Counter.render
+                E.prune "page-counter" model.submodels.counter Samples.Counter.render
             Components   ->
               E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "components")) $
-                E.prune "page-components" model.submodels.components Examples.Components.render
+                E.prune "page-components" model.submodels.components Samples.Components.render
             AsyncApiCall ->
               E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "asyncApiCall")) $
-                E.prune "page-asyncApiCall" model.submodels.asyncApiCall Examples.AsyncApiCall.render
+                E.prune "page-asyncApiCall" model.submodels.asyncApiCall Samples.AsyncApiCall.render
             Styling      ->
               E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "styling")) $
-                E.prune "page-styling" model.submodels.styling Examples.Styling.render
+                E.prune "page-styling" model.submodels.styling Samples.Styling.render
             Clock        ->
               E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "clock")) $
-                E.prune "page-clock" model.submodels.clock Examples.Clock.render
+                E.prune "page-clock" model.submodels.clock Samples.Clock.render
             Inputs       ->
               E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "inputs")) $
-                E.prune "page-inputs" model.submodels.inputs Examples.Inputs.render
+                E.prune "page-inputs" model.submodels.inputs Samples.Inputs.render
             TestingZone  ->
               E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "testing")) $
-                E.prune "page-testing" model.submodels.testing Examples.TestingZone.render
+                E.prune "page-testing" model.submodels.testing Samples.TestingZone.render
             PerfTest     ->
               E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "perfTest")) $
-                E.prune "page-perfTest" model.submodels.perfTest Examples.PerfTest.render
+                E.prune "page-perfTest" model.submodels.perfTest Samples.PerfTest.render
             Pruning      ->
               E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "pruning")) $
-                E.prune "page-pruning" model.submodels.pruning Examples.Pruning.render
+                E.prune "page-pruning" model.submodels.pruning Samples.Pruning.render
+            Kittens ->
+              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "kittens")) $
+                E.prune "page-readme-sample" model.submodels.kittens Samples.Kittens.render
         ]
       ]
     ]
@@ -227,14 +251,17 @@ render model =
             ]
             [ E.text (pretty page)
             ]
-          , if page `elem` separateAfter
-            then E.option
+          , Map.lookup page separateAfter # foldMap \label ->
+              E.option
                 [ P.addCss "color: rgb(100, 100, 100)"
                 , P.disabled true
                 ]
                 [ E.rawHtml "&mdash;"
+                , E.text " "
+                , E.text label
+                , E.text " "
+                , E.rawHtml "&mdash;"
                 ]
-            else mempty
           ]
       ]
     ]
@@ -245,8 +272,8 @@ render model =
 initialize :: Effect Model
 initialize = do
 
-  welcome <- Examples.Welcome.initialize
-  testing <- Examples.TestingZone.initialize
+  welcome <- Samples.Welcome.initialize
+  testing <- Samples.TestingZone.initialize
 
   page <- R.readRoute router
 
@@ -254,15 +281,16 @@ initialize = do
     { page
     , submodels:
       { welcome
-      , counter: Examples.Counter.initial
-      , components: Examples.Components.initial
+      , counter: Samples.Counter.initial
+      , components: Samples.Components.initial
       , testing
-      , asyncApiCall: Examples.AsyncApiCall.initial
-      , styling: Examples.Styling.initial
-      , clock: Examples.Clock.initial
-      , inputs: Examples.Inputs.initial
-      , perfTest: Examples.PerfTest.initial
-      , pruning: Examples.Pruning.initial
+      , asyncApiCall: Samples.AsyncApiCall.initial
+      , styling: Samples.Styling.initial
+      , clock: Samples.Clock.initial
+      , inputs: Samples.Inputs.initial
+      , perfTest: Samples.PerfTest.initial
+      , pruning: Samples.Pruning.initial
+      , kittens: Samples.Kittens.initial
       }
     }
 
@@ -275,8 +303,8 @@ main = do
     , render
     , root: M.onHtml
     , daemon: fold
-        [ D.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "clock")) Examples.Clock.daemon
-        , D.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "testing")) Examples.TestingZone.daemon
+        [ D.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "clock")) Samples.Clock.daemon
+        , D.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "testing")) Samples.TestingZone.daemon
         , D.enroot (prop (Proxy :: Proxy "page")) $ R.sync router
         ]
     }

@@ -1,4 +1,4 @@
-module Mation.Examples.TestingZone where
+module Mation.Samples.TestingZone where
 
 import Mation.Core.Prelude
 

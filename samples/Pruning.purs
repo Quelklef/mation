@@ -1,4 +1,4 @@
-module Mation.Examples.Pruning where
+module Mation.Samples.Pruning where
 
 import Mation.Core.Prelude
 

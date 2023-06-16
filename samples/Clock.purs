@@ -1,4 +1,4 @@
-module Mation.Examples.Clock where
+module Mation.Samples.Clock where
 
 import Mation.Core.Prelude
 import Data.Int (floor, toNumber)

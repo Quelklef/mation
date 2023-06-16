@@ -3,7 +3,6 @@
 inputs = {
   nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
   purs-nix.url = "github:purs-nix/purs-nix/ps-0.15";
-
 };
 
 outputs = { self, ... }@inputs: let
@@ -42,7 +41,7 @@ outputs = { self, ... }@inputs: let
     #   compare 'var top = 5; console.log(top);'
     #   with '(function() { var top = 5; console.log(top); })'
 
-  main-module = "Mation.Examples.AllExamples";
+  main-module = "Mation.Samples.AllSamples";
 
   # purs-nix command
   #
@@ -128,7 +127,11 @@ outputs = { self, ... }@inputs: let
         psa \
           --censor-codes=${pkgs.lib.strings.concatStringsSep "," censor-warnings} \
           --stash=out/.psa-stash \
-          $(purs-nix srcs) --output out/purs-cache
+          $(purs-nix srcs) --output out/purs-cache \
+          &&
+
+        # The readme sample compiles, so reup the readme
+        node ./readme/gen-README.js
       )}
 
       function mation.bundle {(
@@ -150,7 +153,8 @@ outputs = { self, ... }@inputs: let
         mkdir -p out/app &&
         python3 -m http.server --directory out/app & trap "kill $!" EXIT
         export -f mation.compile mation.bundle
-        { find . \( -name '*.purs' -o -name '*.js' -o -name '*.html' \) -a ! -path './out/*'
+        { find . \( -name '*.purs' -o -name '*.js' -o -name '*.html' -o -name '*.md' \) \
+                 -a ! -path './out/*'
         } | entr -cs "mation.bundle && echo 'You may need to reload your browser'"
       )}
 
@@ -168,8 +172,8 @@ outputs = { self, ... }@inputs: let
     '';
   };
 
-  docs-deriv = pkgs.stdenv.mkDerivation {
-    name = "mation-docs";
+  generated-docs-deriv = pkgs.stdenv.mkDerivation {
+    name = "mation-gendocs";
     src = ./.;
     buildInputs = [ purs-nix-command-lib-only ];
     installPhase = ''
@@ -184,14 +188,14 @@ in {
   # -- development shell -- #
   devShells.${system}.default = devt-shell;
 
-  # -- documentation -- #
-  packages.${system}.docs =
+  # -- generated documentation -- #
+  packages.${system}.generated-docs =
     docs-deriv;
 
   apps.${system} = {
-    # -- documentation -- #
-    docs.type = "app";
-    docs.program = builtins.toString (
+    # -- generated documentation -- #
+    generated-docs.type = "app";
+    generated-docs.program = builtins.toString (
       pkgs.writeScript "mation-serve-docs" ''
         ${pkgs.python3}/bin/python3 -m http.server --directory ${docs-deriv}
       ''

@@ -1,4 +1,4 @@
-module Mation.Examples.Welcome where
+module Mation.Samples.Welcome where
 
 import Mation.Core.Prelude
 

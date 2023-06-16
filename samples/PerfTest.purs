@@ -1,4 +1,4 @@
-module Mation.Examples.PerfTest where
+module Mation.Samples.PerfTest where
 
 {- Sample "application" for testing performance
 

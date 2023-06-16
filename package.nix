@@ -18,6 +18,8 @@
       foldable-traversable
       profunctor-lenses
       unlift
+
+      aff-promise  # for one of the samples ...
     ];
 
 }

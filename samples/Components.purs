@@ -1,7 +1,4 @@
-
-{- | Example of Mation components -}
-
-module Mation.Examples.Components where
+module Mation.Samples.Components where
   
 import Prelude
 import Effect (Effect)
