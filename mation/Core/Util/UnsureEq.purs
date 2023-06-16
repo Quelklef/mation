@@ -219,8 +219,8 @@ instance (UnsureEqGeRep a, UnsureEqGeRep b) => UnsureEqGeRep (G.Product a b) whe
 instance UnsureEqGeRep a => UnsureEqGeRep (G.Constructor name a) where
   gUnsureEq = gUnsureEq `on` case _ of G.Constructor a -> a
 
-instance UnsureEqGeRep a => UnsureEqGeRep (G.Argument a) where
-  gUnsureEq = gUnsureEq `on` case _ of G.Argument a -> a
+instance UnsureEq a => UnsureEqGeRep (G.Argument a) where
+  gUnsureEq = unsureEq `on` case _ of G.Argument a -> a
 
 
 
