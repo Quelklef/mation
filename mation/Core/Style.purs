@@ -89,7 +89,7 @@ changeEndo1 f (Style1 { css, scopes: { selector, block }, prelude }) = Style1
 
 -- | `Style1` modifier
 addScope :: forall endo. IsEndo (endo String) String => Scopes endo -> (Style1 endo -> Style1 endo)
-addScope sco (Style1 { css, scopes, prelude }) = Style1 { css, scopes: composeScopesLTR scopes sco, prelude }
+addScope sco (Style1 { css, scopes, prelude }) = Style1 { css, scopes: composeScopesLTR sco scopes, prelude }
 
 -- | `Style1` modifier
 addPrelude :: forall endo. String -> (Style1 endo -> Style1 endo)
