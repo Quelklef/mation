@@ -24,10 +24,14 @@ export const putCss =
   refs[hash].count++;
 
   const restore = () => {
+    if (!(hash in refs)) {
+      console.warn('[mation] unexpected absence from css refmap');
+      return;
+    }
     refs[hash].count--;
     if (refs[hash].count === 0) {
       refs[hash].elem.remove();
-      refs[hash].elem = null;
+      delete refs[hash];
     }
   }
 
