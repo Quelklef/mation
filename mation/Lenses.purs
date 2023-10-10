@@ -12,8 +12,12 @@ module Mation.Lenses
   , subrecord'
   , labelled
   , relabelled
-  , class Keys  -- forced export
-  , keys        -- forced export
+
+  -- The classes must be exported for some lens combinators to work
+  , class Keys
+  , keys
+  , class KeysRL
+  , keysRL
   ) where
 
 -- FIXME tests for this module would be good
@@ -239,4 +243,11 @@ t4 = field' (Proxy :: Proxy "c") @@ field' (Proxy :: Proxy "b") @@ field' (Proxy
 
 t5 :: Lens' ABC { a :: A, c :: C }
 t5 = subrecord
+
+t6 :: Lens' ABC { x :: A }
+t6 = field (Proxy :: Proxy "a") <<< labelled (Proxy :: Proxy "x")
+
+t7 :: Lens' ABC { x :: A, y :: B }
+t7 = (field (Proxy :: Proxy "a") <<< labelled (Proxy :: Proxy "x"))
+        @@ (field (Proxy :: Proxy "b") <<< labelled (Proxy :: Proxy "y"))
 
