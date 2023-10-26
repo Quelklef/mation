@@ -23,6 +23,7 @@ module Mation.Props
 import Mation.Core.Prop (Prop, enroot, hoist) as X
 import Mation.Gen.Attributes hiding (style, class_, data_) as X
 import Mation.Gen.Events as X
+import Mation.Lenses (field)
 
 import Prim.TypeError (class Warn, Text)
 import Data.Map as Map
@@ -163,7 +164,7 @@ onClickElsewhere f =
     withRunInEffect \(toEffect :: m ~> Effect) -> do
       node # onClickElsewhere_f (\evt -> f evt step # toEffect) # liftEffect # map (_restore %~ liftEffect)
 
-  where _restore = prop (Proxy :: Proxy "restore")
+  where _restore = field @"restore"
 
 foreign import onClickElsewhere_f :: (DomEvent -> Effect Unit) -> DomNode -> Effect { restore :: Effect Unit }
 

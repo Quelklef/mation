@@ -8,6 +8,7 @@ import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
 import Mation.Core.Util.UnsureEq (class UnsureEq)
+import Mation.Lenses (field)
 
 
 type Double a = a /\ a
@@ -67,16 +68,16 @@ render model =
   , E.div
     [ P.addCss "font-size: 0.75em"
     ]
-    [ E.prune "example-1" model.vals (\vals -> E.enroot (prop (Proxy :: Proxy "vals")) $ onDouble (onDouble (onDouble mkCounter)) vals)
+    [ E.prune "example-1" model.vals (\vals -> E.enroot (field @"vals") $ onDouble (onDouble (onDouble mkCounter)) vals)
     ]
   , E.br []
   , E.hr []
   , E.p [ pSty ] [ E.text "Pruning works even when the node moves around the application. Try modifying the number of wrapper <divs> below. Again, updates are shown in red." ]
-  , E.prune "example-2" model.example2 (\ex2 -> E.enroot (prop (Proxy :: Proxy "example2")) $ renderExample2 ex2)
+  , E.prune "example-2" model.example2 (\ex2 -> E.enroot (field @"example2") $ renderExample2 ex2)
   , E.br []
   , E.br []
   , E.hr []
-  , E.enroot (prop (Proxy :: Proxy "sumTest")) $ E.prune "sum-test" model.sumTest renderSumTest
+  , E.enroot (field @"sumTest") $ E.prune "sum-test" model.sumTest renderSumTest
   ]
 
   where
@@ -125,11 +126,11 @@ renderExample2 = \{ depth, color } ->
     , E.input
       [ P.type_ "number"
       , P.value $ show depth
-      , P.onInputValue \v step -> step (prop (Proxy :: Proxy "depth") .~ parseInt v)
+      , P.onInputValue \v step -> step (field @"depth" .~ parseInt v)
       ]
     , E.text " "
     , E.button
-      [ P.onClick \_ step -> step $ prop (Proxy :: Proxy "color") %~ case _ of
+      [ P.onClick \_ step -> step $ field @"color" %~ case _ of
             "lightgreen" -> "teal"
             "teal" -> "lightgreen"
             _ -> "yellow"

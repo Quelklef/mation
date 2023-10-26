@@ -4,9 +4,7 @@ import Prelude
 
 import Effect (Effect)
 import Effect.Ref as Ref
-import Type.Proxy (Proxy (..))
 import Data.Foldable (fold)
-import Data.Lens.Record (prop)
 import Data.Lens.Setter ((%~), (.~))
 
 import Mation as M
@@ -14,6 +12,7 @@ import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
 import Mation.Core.Util.UnsureEq (class UnsureEq, unsureEq, Unsure (..), viaPrim)
+import Mation.Lenses (field)
 
 
 type Model =
@@ -72,7 +71,7 @@ renderStringReverse model =
     [ E.text "Some input string: "
     , E.input
       [ P.value model.input
-      , P.onInputValue \v step -> step (prop (Proxy :: Proxy "input") .~ v)
+      , P.onInputValue \v step -> step (field @"input" .~ v)
       , P.disabled $ isInProgress model.requestStatus
       ]
     ]
@@ -92,7 +91,7 @@ renderStringReverse model =
           , E.button
             [ P.onClick \_ step -> do
                   cancel
-                  step (prop (Proxy :: Proxy "requestStatus") .~ NotStarted)
+                  step (field @"requestStatus" .~ NotStarted)
             ]
             [ E.text "Cancel"
             ]
@@ -158,20 +157,20 @@ doReverse string step = do
   let fps = 60.0
   { cancel: cancelSpinner } <-
     everyNSeconds (1.0 / fps) do
-      step (prop (Proxy :: Proxy "spinnerTick") %~ (_ + 6))
+      step (field @"spinnerTick" %~ (_ + 6))
 
   { cancel: cancelApi } <-
     launchApiCall
       { onSuccess: \result -> do
           cancelSpinner
-          step (prop (Proxy :: Proxy "requestStatus") .~ Success { result })
+          step (field @"requestStatus" .~ Success { result })
       , onFailure: \reason -> do
           cancelSpinner
-          step (prop (Proxy :: Proxy "requestStatus") .~ Failure { reason })
+          step (field @"requestStatus" .~ Failure { reason })
       , input: string
       }
 
-  step (prop (Proxy :: Proxy "requestStatus") .~ InProgress { cancel: cancelSpinner *> cancelApi })
+  step (field @"requestStatus" .~ InProgress { cancel: cancelSpinner *> cancelApi })
 
 
 -- Imagine that this is some genuine asynchronous API

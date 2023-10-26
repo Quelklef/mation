@@ -5,6 +5,7 @@ module Mation.Core.Html where
   
 import Mation.Core.Prelude
 
+import Mation.Lenses (field)
 import Mation.Core.MationT (MationT)
 import Mation.Core.MationT as MationT
 import Mation.Core.Util.Assoc (Assoc)
@@ -126,7 +127,7 @@ hoist1 f = case _ of
   VPrune e -> VPrune $ e # mapExists \(PruneE { keyPath, params, unsureEq, render }) ->
     PruneE { keyPath, params, unsureEq, render: render >>> hoist1 f }
 
-  where _restore = prop (Proxy :: Proxy "restore")
+  where _restore = field @"restore"
 
 
 -- | Prepend a key to pruning paths of all pruned descendants (including self)

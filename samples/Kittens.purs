@@ -8,7 +8,6 @@ import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
 import Control.Promise (Promise, toAffE)
-import Type.Proxy (Proxy (..))
 import Data.Int as Int
 import Data.Maybe (Maybe (..))
 import Data.Lens (Lens')
@@ -131,13 +130,13 @@ know what a lens is, think of it like a first-class record field.
 We'll use these to tell Mation where to embed the child components. -}
 
 _catWidth :: Lens' CatGeneratorModel Int
-_catWidth = field (Proxy :: Proxy "catWidth")
+_catWidth = field @"catWidth"
 
 _catHeight :: Lens' CatGeneratorModel Int
-_catHeight = field (Proxy :: Proxy "catHeight")
+_catHeight = field @"catHeight"
 
 _catImage :: Lens' CatGeneratorModel CatImage
-_catImage = field (Proxy :: Proxy "catImage")
+_catImage = field @"catImage"
 
 {- Here we define our render function for our main component. This has
 the same form as before: `SomeModel -> Html' SomeModel` -}

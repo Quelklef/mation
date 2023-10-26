@@ -6,7 +6,6 @@ import Data.Function as Fun
 import Data.Map as Map
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Array as Array
-import Data.Semigroup.Foldable (foldl1)
 import Data.Array.NonEmpty as NE
 import Data.Array.NonEmpty (NonEmptyArray)
 

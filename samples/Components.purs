@@ -4,17 +4,16 @@ import Prelude
 import Effect (Effect)
 import Data.Foldable (fold)
 import Data.Monoid (power)
-import Type.Proxy (Proxy (..))
 import Data.Tuple.Nested (type (/\), (/\))
 import Data.Lens (Lens', (^.))
 import Data.Lens.Lens (lens)
 import Data.Lens.Setter ((.~))
 import Data.Lens.Lens.Tuple (_1, _2)
-import Data.Lens.Record (prop)
 
 import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
+import Mation.Lenses (field)
 
 
 -- Each component is written the same as a miniature application,
@@ -104,8 +103,8 @@ renderBoth { concat, repeat } =
   -- being a part of the application model.
   -- These lenses are what allow component composition!
 
-  _concat = prop (Proxy :: Proxy "concat")
-  _repeat = prop (Proxy :: Proxy "repeat")
+  _concat = field @"concat"
+  _repeat = field @"repeat"
 
 
 

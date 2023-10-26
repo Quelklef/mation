@@ -9,6 +9,7 @@ import Mation.Props as P
 import Mation.Core.Daemon as D
 import Mation.Core.Util.UnsureEq (class UnsureEq, viaEq)
 import Mation.Additional.Router as R
+import Mation.Lenses (field)
 
 import Data.Map as Map
 
@@ -162,37 +163,37 @@ render model =
         ]
         [ case model.page of
             Welcome      ->
-              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "welcome")) $
+              E.enroot (field @"submodels" <<< field @"welcome") $
                 E.prune "page-welcome" model.submodels.welcome Samples.Welcome.render
             Counter      ->
-              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "counter")) $
+              E.enroot (field @"submodels" <<< field @"counter") $
                 E.prune "page-counter" model.submodels.counter Samples.Counter.render
             Components   ->
-              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "components")) $
+              E.enroot (field @"submodels" <<< field @"components") $
                 E.prune "page-components" model.submodels.components Samples.Components.render
             AsyncApiCall ->
-              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "asyncApiCall")) $
+              E.enroot (field @"submodels" <<< field @"asyncApiCall") $
                 E.prune "page-asyncApiCall" model.submodels.asyncApiCall Samples.AsyncApiCall.render
             Styling      ->
-              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "styling")) $
+              E.enroot (field @"submodels" <<< field @"styling") $
                 E.prune "page-styling" model.submodels.styling Samples.Styling.render
             Clock        ->
-              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "clock")) $
+              E.enroot (field @"submodels" <<< field @"clock") $
                 E.prune "page-clock" model.submodels.clock Samples.Clock.render
             Inputs       ->
-              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "inputs")) $
+              E.enroot (field @"submodels" <<< field @"inputs") $
                 E.prune "page-inputs" model.submodels.inputs Samples.Inputs.render
             TestingZone  ->
-              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "testing")) $
+              E.enroot (field @"submodels" <<< field @"testing") $
                 E.prune "page-testing" model.submodels.testing Samples.TestingZone.render
             PerfTest     ->
-              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "perfTest")) $
+              E.enroot (field @"submodels" <<< field @"perfTest") $
                 E.prune "page-perfTest" model.submodels.perfTest Samples.PerfTest.render
             Pruning      ->
-              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "pruning")) $
+              E.enroot (field @"submodels" <<< field @"pruning") $
                 E.prune "page-pruning" model.submodels.pruning Samples.Pruning.render
             Kittens ->
-              E.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "kittens")) $
+              E.enroot (field @"submodels" <<< field @"kittens") $
                 E.prune "page-readme-sample" model.submodels.kittens Samples.Kittens.render
         ]
       ]
@@ -228,7 +229,7 @@ render model =
         [ P.onInputValue \val step ->
             case unpretty val of
               Nothing -> pure unit
-              Just page -> step (prop (Proxy :: Proxy "page") .~ page)
+              Just page -> step (field @"page" .~ page)
         , P.addStyles
           [ S.fontSize "inherit"
           , S.color "inherit"
@@ -303,9 +304,9 @@ main = do
     , render
     , root: M.onHtml
     , daemon: fold
-        [ D.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "clock")) Samples.Clock.daemon
-        , D.enroot (prop (Proxy :: Proxy "submodels") <<< prop (Proxy :: Proxy "testing")) Samples.TestingZone.daemon
-        , D.enroot (prop (Proxy :: Proxy "page")) $ R.sync router
+        [ D.enroot (field @"submodels" <<< field @"clock") Samples.Clock.daemon
+        , D.enroot (field @"submodels" <<< field @"testing") Samples.TestingZone.daemon
+        , D.enroot (field @"page") $ R.sync router
         ]
     }
 

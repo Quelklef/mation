@@ -14,6 +14,7 @@ import Mation (Html, Prop)
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
+import Mation.Lenses (field)
 import Mation.Core.Util.UnsureEq (class UnsureEq)
 import Mation.Experimental.Input.Reading (Reading)
 import Mation.Experimental.Input.Reading as R
@@ -127,9 +128,9 @@ readAt :: forall supermodel model err t.
   -> supermodel
   -> Reading supermodel err t
 readAt lens (InputSpec spec) =
-  (_ ^. lens <<< _Newtype <<< prop (Proxy :: Proxy "model"))
+  (_ ^. lens <<< _Newtype <<< field @"model")
   >>> spec.read
-  >>> R.fromEither (lens <<< _Newtype <<< prop (Proxy :: Proxy "perturbed"))
+  >>> R.fromEither (lens <<< _Newtype <<< field @"perturbed")
 
 
 -- | Render an input
@@ -137,14 +138,14 @@ render :: forall m model err t. MonadEffect m => InputSpec model err t -> InputS
 render (InputSpec spec) (InputState { model, perturbed }) =
 
   E.span
-  [ P.onFocusout \_ step -> step (_Newtype <<< prop (Proxy :: Proxy "perturbed") .~ true)
-  , P.onInput \_ step -> step (_Newtype <<< prop (Proxy :: Proxy "perturbed") .~ true)
+  [ P.onFocusout \_ step -> step (_Newtype <<< field @"perturbed" .~ true)
+  , P.onInput \_ step -> step (_Newtype <<< field @"perturbed" .~ true)
   , P.addStyles
     [ S.display "contents"
     ]
   ]
   [ spec.render mErr model
-      # E.enroot (_Newtype <<< prop (Proxy :: Proxy "model"))
+      # E.enroot (_Newtype <<< field @"model")
   ]
 
   # E.hoist liftEffect

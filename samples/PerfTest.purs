@@ -25,6 +25,7 @@ import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
 import Mation.Selectors as Sel
+import Mation.Lenses (field)
 
 
 foreign import toFixed :: Int -> Number -> String
@@ -47,16 +48,16 @@ type Model =
 
 
 _items :: Lens' Model (Array String)
-_items = prop (Proxy :: Proxy "items")
+_items = field @"items"
 
 _exp :: Lens' Model Int
-_exp = prop (Proxy :: Proxy "exp")
+_exp = field @"exp"
 
 _benchmarks :: Lens' Model (Array Number)
-_benchmarks = prop (Proxy :: Proxy "benchmarks")
+_benchmarks = field @"benchmarks"
 
 _fast :: Lens' Model Boolean
-_fast = prop (Proxy :: Proxy "fast")
+_fast = field @"fast"
 
 
 

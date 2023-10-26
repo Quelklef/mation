@@ -73,7 +73,7 @@ product' ::
   Lens' s (Record a) -> Lens' s (Record b) -> Lens' s (Record ab)
 product' la lb = lens
   (\s -> view la s `Rec.merge` view lb s)
-  (\s rec -> let a /\ b = split (Proxy :: Proxy a) (Proxy :: Proxy b) rec
+  (\s rec -> let a /\ b = split @a @b rec
              in s # set la a # set lb b)
 
 infixr 4 product' as @@
@@ -89,13 +89,13 @@ infixr 4 product' as ⊗
 -- | type Cat = { name :: String, ageYears :: Number }
 -- |
 -- | nameLens :: Lens' Cat String
--- | nameLens = field (Proxy :: Proxy "name")
+-- | nameLens = field @"name"
 -- | ```
 field ::
-  forall label r a b ra rb.
+  forall @label r a b ra rb.
   IsSymbol label => Cons label a r ra => Cons label b r rb =>
-  Proxy label -> Lens (Record ra) (Record rb) a b
-field = prop
+  Lens (Record ra) (Record rb) a b
+field = prop (Proxy :: Proxy label)
 
 
 -- | Wraps a type up in a single-field record
@@ -103,12 +103,13 @@ field = prop
 -- | Example:
 -- | ```
 -- | len :: Iso' Int { n :: Int }
--- | len = labelled (Proxy :: Proxy "n")
+-- | len = labelled @"n"
 -- | ```
-labelled :: forall label a b justA justB.
+labelled :: forall @label a b justA justB.
   IsSymbol label => Cons label a () justA => Cons label b () justB =>
-  Proxy label -> Iso a b (Record justA) (Record justB)
-labelled l = iso (\a -> Rec.insert l a {}) (\rec -> Rec.get l rec)
+  Iso a b (Record justA) (Record justB)
+labelled = iso (\a -> Rec.insert l a {}) (\rec -> Rec.get l rec)
+  where l = (Proxy :: Proxy label)
 
 
 -- | Changes the label name of a single-field record
@@ -116,7 +117,7 @@ labelled l = iso (\a -> Rec.insert l a {}) (\rec -> Rec.get l rec)
 -- | Example:
 -- | ```
 -- | len :: Iso' { n :: Int } { k :: Int }
--- | len = relabelled (Proxy :: Proxy "k")
+-- | len = relabelled @"k"
 -- | ```
 -- |
 -- | This function takes the target label as a `Proxy` argument but
@@ -124,13 +125,15 @@ labelled l = iso (\a -> Rec.insert l a {}) (\rec -> Rec.get l rec)
 -- | the existing label is determined but the target label is not.
 -- | If that is not the case, type annotations can be used to
 -- | disambiguate.
-relabelled :: forall label label' a b justA justB justA' justB'.
+relabelled :: forall label @label' a b justA justB justA' justB'.
   IsSymbol label => IsSymbol label' =>
   Cons label a () justA => Cons label b () justB =>
   Cons label' a () justA' => Cons label' b () justB' =>
-  Proxy label' -> Iso (Record justA) (Record justB) (Record justA') (Record justB')
-relabelled l' = iso (\a -> Rec.insert l' (Rec.get l a) {}) (\b -> Rec.insert l (Rec.get l' b) {})
-  where l = Proxy :: Proxy label
+  Iso (Record justA) (Record justB) (Record justA') (Record justB')
+relabelled = iso (\a -> Rec.insert l' (Rec.get l a) {}) (\b -> Rec.insert l (Rec.get l' b) {})
+  where
+  l = Proxy :: Proxy label
+  l' = Proxy :: Proxy label'
 
 
 -- | Construct a lens targeting a field of a record.
@@ -141,15 +144,15 @@ relabelled l' = iso (\a -> Rec.insert l' (Rec.get l a) {}) (\b -> Rec.insert l (
 -- | type Cat = { name :: String, ageYears :: Number }
 -- |
 -- | nameLens :: Lens' Cat { name :: String }
--- | nameLens = field' (Proxy :: Proxy "name")
+-- | nameLens = field' @"name"
 -- | ```
 field' ::
-  forall label r a b ra rb justA justB.
+  forall @label r a b ra rb justA justB.
   IsSymbol label =>
   Cons label a r ra => Cons label b r rb =>
   Cons label a () justA => Cons label b () justB =>
-  Proxy label -> Lens (Record ra) (Record rb) (Record justA) (Record justB)
-field' l = field l <<< labelled l
+  Lens (Record ra) (Record rb) (Record justA) (Record justB)
+field' = field @label <<< labelled @label
 
 
 -- | Construct a lens targeting a subrecord.
@@ -168,8 +171,8 @@ subrecord :: forall a b ab.
   Union a b ab => Nub ab ab => Keys a => Keys b =>
   Lens' (Record ab) (Record a)
 subrecord = lens
-  (split (Proxy :: Proxy a) (Proxy :: Proxy b) >>> fst)
-  (\ab a -> let _ /\ b = split (Proxy :: Proxy a) (Proxy :: Proxy b) ab
+  (split @a @b >>> fst)
+  (\ab a -> let _ /\ b = split @a @b ab
             in a `Rec.merge` b)
 
   where
@@ -194,10 +197,10 @@ subrecord' Proxy = subrecord
 --
 -- Implementation derived from [1]
 -- [1]: <https://github.com/rowtype-yoga/purescript-record-studio/blob/6269003c6bc4b241ffde6144958cbc1fa960851a/src/Record/Studio/Shrink.purs>
-split :: forall a b ab.
+split :: forall @a @b ab.
   Union a b ab => Nub ab ab => Keys a => Keys b =>
-  Proxy a -> Proxy b -> Record ab -> Record a /\ Record b
-split Proxy Proxy record =
+  Record ab -> Record a /\ Record b
+split record =
   (/\)
     (unsafeTake (keys (Proxy :: Proxy a)) record)
     (unsafeTake (keys (Proxy :: Proxy b)) record)
@@ -230,24 +233,23 @@ data C = C
 type ABC = { a :: A, b :: B, c :: C }
 
 t1 :: Lens' ABC (A /\ B)
-t1 = field (Proxy :: Proxy "a") %% field (Proxy :: Proxy "b")
+t1 = field @"a" %% field @"b"
 
 t2 :: Lens' ABC (A /\ B /\ C)
-t2 = field (Proxy :: Proxy "a") %% field (Proxy :: Proxy "b") %% field (Proxy :: Proxy "c")
+t2 = field @"a" %% field @"b" %% field @"c"
 
 t3 :: Lens' ABC { a :: A, c :: C }
-t3 = field' (Proxy :: Proxy "a") @@ field' (Proxy :: Proxy "c")
+t3 = field' @"a" @@ field' @"c"
 
 t4 :: Lens' ABC ABC
-t4 = field' (Proxy :: Proxy "c") @@ field' (Proxy :: Proxy "b") @@ field' (Proxy :: Proxy "a")
+t4 = field' @"c" @@ field' @"b" @@ field' @"a"
 
 t5 :: Lens' ABC { a :: A, c :: C }
 t5 = subrecord
 
 t6 :: Lens' ABC { x :: A }
-t6 = field (Proxy :: Proxy "a") <<< labelled (Proxy :: Proxy "x")
+t6 = field @"a" <<< labelled @"x"
 
 t7 :: Lens' ABC { x :: A, y :: B }
-t7 = (field (Proxy :: Proxy "a") <<< labelled (Proxy :: Proxy "x"))
-        @@ (field (Proxy :: Proxy "b") <<< labelled (Proxy :: Proxy "y"))
+t7 = (field @"a" <<< labelled @"x") @@ (field @"b" <<< labelled @"y")
 

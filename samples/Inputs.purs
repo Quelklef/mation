@@ -6,6 +6,7 @@ import Mation (Html)
 import Mation.Elems as E
 import Mation.Experimental.Input as In
 import Mation.Experimental.Opts (def)
+import Mation.Lenses (field)
 
 
 inputs :: _
@@ -39,11 +40,11 @@ render model =
 
   [ In.render inputs.username model.username
     # withLabel "Username"
-    # E.enroot (prop (Proxy :: Proxy "username"))
+    # E.enroot (field @"username")
 
   , In.render inputs.email model.email
     # withLabel "Email"
-    # E.enroot (prop (Proxy :: Proxy "email"))
+    # E.enroot (field @"email")
   ]
 
   where

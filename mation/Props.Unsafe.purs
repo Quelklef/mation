@@ -7,6 +7,7 @@ import Mation.Core.Prop (Prop)
 import Mation.Core.Prop as Prop
 import Mation.Core.Dom (DomNode)
 import Mation.Core.Util.Revertible as Rev
+import Mation.Lenses (field)
 
 
 -- | Create a `Prop` which executes some arbitrary action (such as adding
@@ -39,7 +40,7 @@ fixupM f =
 -- | Apologies for the `MonadEffect` constraint (programming is hard)
 fixup' :: forall m s. MonadEffect m => (DomNode -> Step s -> Effect { restore :: Effect Unit }) -> Prop m s
 fixup' f = fixupM' (\node step -> f node step # liftEffect # map (_restore %~ liftEffect))
-  where _restore = prop (Proxy :: Proxy "restore")
+  where _restore = field @"restore"
 
 -- | Like `fixup` lives in `m` and the application `Step s`
 fixupM' :: forall m s. Functor m => (DomNode -> Step s -> m { restore :: m Unit }) -> Prop m s

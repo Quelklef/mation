@@ -19,7 +19,7 @@ import Mation.Core.Daemon as D
 import Mation.Core.Dom (DomNode)
 import Mation.Core.Util.UnsureEq (class UnsureEq, Unsure (..), viaPrim)
 import Mation.Experimental.Component as Com
-import Mation.Lenses ((×))
+import Mation.Lenses (field, (×))
 
 
 --------------------------------------------------------------------------------
@@ -106,8 +106,8 @@ renderCounter model =
 
   where
 
-  _count = prop (Proxy :: Proxy "count")
-  _streamState = prop (Proxy :: Proxy "streamState")
+  _count = field @"count"
+  _streamState = field @"streamState"
 
   buttonStyle :: forall m s. P.Prop m s
   buttonStyle = P.addStyles
@@ -200,8 +200,8 @@ type OnClickElsewhere =
 viewOnClickElsewhere :: OnClickElsewhere -> E.Html' OnClickElsewhere
 viewOnClickElsewhere { here, notHere } =
   E.div
-  [ P.onClick \_ step -> step (prop (Proxy :: Proxy "here") %~ (_ + 1))
-  , P.onClickElsewhere \_ step -> step (prop (Proxy :: Proxy "notHere") %~ (_ + 1))
+  [ P.onClick \_ step -> step (field @"here" %~ (_ + 1))
+  , P.onClickElsewhere \_ step -> step (field @"notHere" %~ (_ + 1))
   , P.addStyles
     [ S.fontFamily "sans-serif"
     , S.padding "1em"
@@ -250,7 +250,7 @@ initialSelectFlicker =
 daemonSelectFlicker :: M.Daemon' SelectFlicker
 daemonSelectFlicker wref = do
   _ <- everyNSeconds 0.75 do
-    wref # WRef.modify (prop (Proxy :: Proxy "time") %~ (_ + 1))
+    wref # WRef.modify (field @"time" %~ (_ + 1))
   pure unit
 
 viewSelectFlicker :: SelectFlicker -> E.Html' SelectFlicker
@@ -273,7 +273,7 @@ viewSelectFlicker model =
       [ P.fixup \node -> do
           node # addClass "princess"
           pure { restore: pure unit }
-      , P.onInputValue \val step -> step (prop (Proxy :: Proxy "selected") .~ val)
+      , P.onInputValue \val step -> step (field @"selected" .~ val)
       ]
       [ ["A", "B", "C"] # foldMap \opt ->
         E.option
@@ -329,14 +329,14 @@ comComponent =
           [ P.type_ "checkbox"
           , P.id "caps"
           , P.checked caps
-          , P.onInputValue \_ step -> step (_2 <<< prop (Proxy :: Proxy "caps") %~ not)
+          , P.onInputValue \_ step -> step (_2 <<< field @"caps" %~ not)
           ]
         , E.text " → "
         , E.text (if caps then toUpperCase string else string)
         ]
     , child1:
       { component: stringComponent
-      , at: Com.BoxLens (_1 × _2 <<< prop (Proxy :: Proxy "string"))
+      , at: Com.BoxLens (_1 × _2 <<< field @"string")
       }
     }
 
@@ -397,9 +397,9 @@ initialize = do
 
 daemon :: Daemon Effect Model
 daemon = fold
-  [ D.enroot (prop (Proxy :: Proxy "rawNodes")) daemonRawNodes
-  , D.enroot (prop (Proxy :: Proxy "selectFlicker")) daemonSelectFlicker
-  , D.enroot (_unit × prop (Proxy :: Proxy "comStuff")) (Com.daemonC comComponent)
+  [ D.enroot (field @"rawNodes") daemonRawNodes
+  , D.enroot (field @"selectFlicker") daemonSelectFlicker
+  , D.enroot (_unit × field @"comStuff") (Com.daemonC comComponent)
   ]
 
 render :: Model -> E.Html' Model
@@ -457,14 +457,14 @@ render model =
 
   where
 
-  _counter1 = prop (Proxy :: Proxy "counter1")
-  _counter2 = prop (Proxy :: Proxy "counter2")
-  _textbox = prop (Proxy :: Proxy "textbox")
-  _checkbox = prop (Proxy :: Proxy "checkbox")
-  _phoneNumber = prop (Proxy :: Proxy "phoneNumber")
-  _onClickElsewhere = prop (Proxy :: Proxy "onClickElsewhere")
-  _selectFlicker = prop (Proxy :: Proxy "selectFlicker")
-  _comStuff = prop (Proxy :: Proxy "comStuff")
+  _counter1 = field @"counter1"
+  _counter2 = field @"counter2"
+  _textbox = field @"textbox"
+  _checkbox = field @"checkbox"
+  _phoneNumber = field @"phoneNumber"
+  _onClickElsewhere = field @"onClickElsewhere"
+  _selectFlicker = field @"selectFlicker"
+  _comStuff = field @"comStuff"
 
 _unit :: forall x. Lens' x Unit
 _unit = lens (const unit) (\v _ -> v)
