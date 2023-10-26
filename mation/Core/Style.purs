@@ -4,6 +4,11 @@ import Mation.Core.Prelude
 
 import Data.Function as Fun
 import Data.Map as Map
+import Data.FunctorWithIndex (mapWithIndex)
+import Data.Array as Array
+import Data.Semigroup.Foldable (foldl1)
+import Data.Array.NonEmpty as NE
+import Data.Array.NonEmpty (NonEmptyArray)
 
 import Mation.Core.Prop (Prop, mkFixup)
 import Mation.Core.Dom (DomNode)
@@ -122,15 +127,35 @@ collate = collateBy
 
   where
 
+  -- Merges same-keyed elements
+  -- Preserves element order within key-groups
+  -- Orders key-groups by minimum element index
   collateBy :: forall k a. Ord k =>
     { key :: a -> k
     , merge :: a -> a -> a
     } -> Array a -> Array a
   collateBy { key, merge } =
-    map (\a -> key a /\ a)
-    >>> Map.fromFoldableWith merge
-    >>> Map.toUnfoldableUnordered
-    >>> map (\(_ /\ v) -> v)
+    mapWithIndex (\i a -> key a /\ NE.singleton (i /\ a))
+    -- v Form key-groups
+    >>> Map.fromFoldableWith (<>) >>> getValues
+    -- v Sort key-groups
+    >>> Array.sortBy (compare `Fun.on` (map fst >>> minimum1))
+    -- v Sort each key-group internally
+    >>> map (NE.sortBy (compare `Fun.on` fst))
+    -- v Collapse each key-group
+    >>> map (map snd >>> NE.foldl1 merge)
+
+  fst :: forall a b. a /\ b -> a
+  fst (a /\ _) = a
+
+  snd :: forall a b. a /\ b -> b
+  snd (_ /\ b) = b
+
+  minimum1 :: forall a. Ord a => NonEmptyArray a -> a
+  minimum1 = NE.foldl1 (\a b -> if a < b then a else b)
+
+  getValues :: forall k v. Map k v -> Array v
+  getValues = Map.toUnfoldableUnordered >>> map (\(_ /\ v) -> v)
 
 
 -- | Represents some CSS styles

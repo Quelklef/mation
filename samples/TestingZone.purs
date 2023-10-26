@@ -417,6 +417,24 @@ render model =
         E.p [] [ E.text $ show n <> ": monidal `Html` is great!" ]
     ]
   , E.hr []
+  , E.div
+    [ P.addStyles
+      -- v Test: that later styles get precedence
+      [ S.display "block"
+      , S.display "none"
+      ]
+    ]
+    [ E.div
+      [ P.addStyles
+        [ S.backgroundColor "red"
+        , S.color "white"
+        , S.fontSize "4em"
+        ]
+      ]
+      [ E.text "uh oh something worng"
+      ]
+    , E.hr []
+    ]
   , E.enroot _checkbox $ model.checkbox # \checked ->
       E.div
       [] $ (_ `power` 15)
