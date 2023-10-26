@@ -16,7 +16,7 @@ outputs = { self, ... }@inputs: let
       owner = "justinwoo";
       repo = "easy-purescript-nix";
       rev = "d5fe5f4b210a0e4bac42ae0c159596a49c5eb016";
-      sha256 = "";
+      sha256 = "sha256-a9Hhqf/Fi0FkjRTcQr3pYDhrO9A9tdOkaeVgD23Cdrk=";
     }) { inherit pkgs; };
 
   my-purs-nix = purs-nix.purs (import ./package.nix purs-nix);
