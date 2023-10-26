@@ -15,8 +15,8 @@ outputs = { self, ... }@inputs: let
     (pkgs.fetchFromGitHub {
       owner = "justinwoo";
       repo = "easy-purescript-nix";
-      rev = "0c10ff170461aed0c336f5c21ed0f430c2c3574b";
-      sha256 = "sha256-LLqaLPJNiap2U8I77K5XVPGJA/Be30Z8lyGOyYXmBlc=";
+      rev = "d5fe5f4b210a0e4bac42ae0c159596a49c5eb016";
+      sha256 = "";
     }) { inherit pkgs; };
 
   my-purs-nix = purs-nix.purs (import ./package.nix purs-nix);
@@ -187,20 +187,6 @@ in {
 
   # -- development shell -- #
   devShells.${system}.default = devt-shell;
-
-  # -- generated documentation -- #
-  packages.${system}.generated-docs =
-    docs-deriv;
-
-  apps.${system} = {
-    # -- generated documentation -- #
-    generated-docs.type = "app";
-    generated-docs.program = builtins.toString (
-      pkgs.writeScript "mation-serve-docs" ''
-        ${pkgs.python3}/bin/python3 -m http.server --directory ${docs-deriv}
-      ''
-    );
-  };
 
 };
 
