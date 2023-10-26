@@ -1,0 +1,34 @@
+docs_dir: "src"
+site_name: "Mation Documentation"
+
+theme:
+  name: readthedocs
+  highlightjs: true
+  hljs_languages:
+    - purescript
+    - haskell
+
+nav:
+  - "Mation":
+      - "At a glance": overview.md
+      - "Installation": installation.md
+  - "Beginner's Guide":
+      - "Preface": guide/preface.md
+      - "Architecture": guide/architecture.md
+      - "Components": guide/components.md
+      - "Styling & Monoidal HTML": guide/styling.md
+      - "Concluding": guide/conclusion.md
+  - "Topics":
+      - "Improving performance": none.md
+      - "Sending messages between components": none.md
+      - "Animations": none.md
+      - "SPA routing": none.md
+      - "Embedding Javascript-controlled components": none.md
+      - "Suppressing patching": none.md
+      - "Using a custom monad": none.md
+      - "Daemon cancellation & doing async right": none.md
+  - "Ramblings":
+      - "On Monoidal HTML": none.md
+      - "On Lens-based composition": none.md
+      - "On loose coupling": none.md
+      - "On virtual components": none.md
