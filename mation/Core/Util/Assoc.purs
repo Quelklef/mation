@@ -4,6 +4,7 @@ module Mation.Core.Util.Assoc
   , usePair
   , Assoc
   , toArray
+  , fromArray
   , fromFoldable
   , lookup
   ) where
@@ -45,6 +46,9 @@ instance Monoid (Assoc k v) where
 
 toArray :: forall k v. Assoc k v -> Array (k /\ v)
 toArray (Assoc arr) = arr # map (usePair (\k v -> k /\ v))
+
+fromArray :: forall k v. Array (k /\ v) -> Assoc k v
+fromArray = Assoc <<< map (\(k /\ v) -> mkPair k v)
 
 fromFoldable :: forall f k v. Foldable f => f (k /\ v) -> Assoc k v
 fromFoldable = Assoc <<< foldMap (\(k /\ v) -> [mkPair k v])

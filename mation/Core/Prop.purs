@@ -94,12 +94,12 @@ mkTagFromProps tag props children =
   flat :: Array (Prop1 (MationT m s))
   flat = FM.float props
 
-  attrs = Assoc.fromFoldable $
+  attrs = Assoc.fromArray $
     flat # foldMap case _ of
       PPair k v -> [ k /\ v ]
       _ -> []
 
-  listeners = Assoc.fromFoldable $
+  listeners = Assoc.fromArray $
     flat # foldMap case _ of
       PListener k v -> [ k /\ v ]
       _ -> []
