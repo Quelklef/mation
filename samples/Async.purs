@@ -48,7 +48,7 @@ initial =
   , spinnerTick: 0
   }
 
-render :: Model -> E.Html Effect Model
+render :: Model -> E.Html' (M.Modify' Model)
 render model =
   E.div
   [ P.addStyles
@@ -60,7 +60,7 @@ render model =
   [ renderStringReverse model
   ]
 
-renderStringReverse :: Model -> E.Html Effect Model
+renderStringReverse :: Model -> E.Html' (M.Modify' Model)
 renderStringReverse model =
   E.div
   [ P.addCss "flex: 1"
@@ -71,7 +71,7 @@ renderStringReverse model =
     [ E.text "Some input string: "
     , E.input
       [ P.value model.input
-      , P.onInputValue \v step -> step (field @"input" .~ v)
+      , P.onInputValue \v -> M.modify (field @"input" .~ v)
       , P.disabled $ isInProgress model.requestStatus
       ]
     ]
@@ -89,9 +89,9 @@ renderStringReverse model =
           , renderSpinner model.spinnerTick
           , E.text " "
           , E.button
-            [ P.onClick \_ step -> do
+            [ P.onClick \_ ref -> do
                   cancel
-                  step (field @"requestStatus" .~ NotStarted)
+                  ref # M.modify (field @"requestStatus" .~ NotStarted)
             ]
             [ E.text "Cancel"
             ]
@@ -151,26 +151,26 @@ renderSpinner tick =
   ]
 
 
-doReverse :: String -> M.Mation Effect Model
-doReverse string step = do
+doReverse :: String -> M.Modify' Model -> Effect Unit
+doReverse string ref = do
 
   let fps = 60.0
   { cancel: cancelSpinner } <-
     everyNSeconds (1.0 / fps) do
-      step (field @"spinnerTick" %~ (_ + 6))
+      ref # M.modify (field @"spinnerTick" %~ (_ + 6))
 
   { cancel: cancelApi } <-
     launchApiCall
       { onSuccess: \result -> do
           cancelSpinner
-          step (field @"requestStatus" .~ Success { result })
+          ref # M.modify (field @"requestStatus" .~ Success { result })
       , onFailure: \reason -> do
           cancelSpinner
-          step (field @"requestStatus" .~ Failure { reason })
+          ref # M.modify (field @"requestStatus" .~ Failure { reason })
       , input: string
       }
 
-  step (field @"requestStatus" .~ InProgress { cancel: cancelSpinner *> cancelApi })
+  ref # M.modify (field @"requestStatus" .~ InProgress { cancel: cancelSpinner *> cancelApi })
 
 
 -- Imagine that this is some genuine asynchronous API

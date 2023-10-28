@@ -99,7 +99,8 @@ function * events() {
   yield '';
   yield 'module Mation.Gen.Events where';
   yield '';
-  yield 'import Mation.Core.Mation (Mation)';
+  yield 'import Data.Unit (Unit)';
+  yield '';
   yield 'import Mation.Core.Dom (DomEvent)';
   yield 'import Mation.Core.Prop (Prop, mkListener)';
   yield '';
@@ -110,7 +111,7 @@ function * events() {
     const onName = 'on' + capitalize(toIdent(event.name));
 
     yield `-- | [HTML ${event.name} event](https://developer.mozilla.org/en-US/docs/Web/API/Element/${encodeURIComponent(event.name)}_event). This is generated code.`;
-    yield `${onName} :: forall m s. (DomEvent -> Mation m s) -> Prop m s`;
+    yield `${onName} :: forall m k. (DomEvent -> k -> m Unit) -> Prop m k`;
     yield `${onName} = mkListener "${event.name}"`;
     yield '';
   }

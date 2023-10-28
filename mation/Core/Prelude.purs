@@ -15,6 +15,7 @@ import Foreign (Foreign) as X
 import Type.Proxy (Proxy (..)) as X
 import Prim.Coerce (class Coercible) as X
 import Safe.Coerce (coerce) as X
+import Data.Functor.Contravariant (class Contravariant, cmap, (>$<)) as X
 import Data.Generic.Rep (class Generic) as X
 import Data.Show.Generic (genericShow) as X
 import Data.Ord.Generic (genericCompare) as X
@@ -28,7 +29,7 @@ import Data.Map (Map) as X
 import Data.Monoid (guard, power) as X
 import Data.Monoid.Endo (Endo (..)) as X
 import Data.Lens.Types (Getter') as X
-import Data.Lens.Lens (Lens') as X
+import Data.Lens.Lens (Lens', ALens', cloneLens) as X
 import Data.Lens.Setter (Setter', (.~), (%~)) as X
 import Data.Lens.Getter ((^.)) as X
 import Data.Lens.Record (prop) as X

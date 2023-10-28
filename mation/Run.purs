@@ -1,11 +1,19 @@
-module Mation.Run where
+module Mation.Run
+  ( runApp
+  , onBody
+  , underBody
+  , onHtml
+  , module X
+  ) where
 
 import Mation.Core.Prelude
 
-import Mation.Core.Daemon (Daemon)
+import Mation.Core.Run (Daemon, Daemon') as X
+
 import Mation.Core.Html (Html)
 import Mation.Core.Dom (DomNode)
-import Mation.Core.Run (runAppM)
+import Mation.Core.Run (runAppM, Daemon)
+import Mation.Core.Refs (ReadWrite)
 
 
 -- | Run an mation application
@@ -61,7 +69,7 @@ import Mation.Core.Run (runAppM)
 -- | for reasons discussed in its documentation
 runApp :: forall s.
   { initial :: s
-  , render :: s -> Html Effect s
+  , render :: s -> Html Effect (ReadWrite Effect s)
   , root :: Effect DomNode
   , daemon :: Daemon Effect s
   } -> Effect Unit

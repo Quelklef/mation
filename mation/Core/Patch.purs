@@ -34,14 +34,15 @@ foreign import data PruneMapRef :: Type
 -- | if some DOM node attribute is accidentally deleted by external javascript,
 -- | for instance, re-rendering the model will not replace it.
 patchOnto ::
-  { mOldVNode :: Maybe (VNode Effect)
-  , newVNode :: VNode Effect
+  { mOldVNode :: Maybe (VNode Effect Unit)
+  , newVNode :: VNode Effect Unit
   , mPruneMap :: Maybe PruneMapRef
   }
   -> DomNode -> Effect PruneMapRef
 patchOnto { mOldVNode, newVNode, mPruneMap } =
   patch_f
-    { caseMaybe
+    { unit
+    , caseMaybe
     , caseUnsure
     , caseVNode
     , collapseRevertible: Rev.collapse
@@ -54,15 +55,16 @@ patchOnto { mOldVNode, newVNode, mPruneMap } =
 
 
 foreign import patch_f ::
-   { caseMaybe :: CaseMaybe
+   { unit :: Unit
+   , caseMaybe :: CaseMaybe
    , caseUnsure :: CaseUnsure
    , caseVNode :: CaseVNode
    , collapseRevertible :: Revertible Effect -> Effect (Effect Unit)
    , emptyRevertible :: Revertible Effect
    , mPruneMap :: Maybe PruneMapRef
    } ->
-   { mOldVNode :: Maybe (VNode Effect)
-   , newVNode :: VNode Effect
+   { mOldVNode :: Maybe (VNode Effect Unit)
+   , newVNode :: VNode Effect Unit
    }
   -> (DomNode -> Effect PruneMapRef)
 

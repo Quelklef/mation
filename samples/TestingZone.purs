@@ -7,15 +7,14 @@ import Data.Map as Map
 import Data.Lens (lens)
 
 import Mation as M
+import Mation (Daemon, Daemon')
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Props.Unsafe as P
 import Mation.Styles as S
 import Mation.Selectors as Sel
 import Mation.Selectors ((#<>))
-import Mation.Core.Util.WRef as WRef
-import Mation.Core.Daemon (Daemon)
-import Mation.Core.Daemon as D
+import Mation.Core.Refs as Refs
 import Mation.Core.Dom (DomNode)
 import Mation.Core.Util.UnsureEq (class UnsureEq, Unsure (..), viaPrim)
 import Mation.Experimental.Component as Com
@@ -34,7 +33,7 @@ instance UnsureEq StreamState where
   unsureEq (Streaming c) (Streaming c') = viaPrim c c'
   unsureEq _ _ = Surely false
 
-renderCounter :: Counter -> E.Html' Counter
+renderCounter :: Counter -> E.Html' (M.Modify' Counter)
 renderCounter model =
   E.div
   [ P.addStyles
@@ -62,14 +61,14 @@ renderCounter model =
     ]
   , E.text " | "
   , E.button
-    [ P.onClick \_ step -> step (_count %~ (_ + 1))
+    [ P.onClick \_ -> M.modify (_count %~ (_ + 1))
     , buttonStyle
     ]
     [ E.text "+"
     ]
   , E.text " "
   , E.button
-    [ P.onClick \_ step -> step (_count %~ (_ - 1))
+    [ P.onClick \_ -> M.modify (_count %~ (_ - 1))
     , buttonStyle
     ]
     [ E.text "-"
@@ -78,18 +77,18 @@ renderCounter model =
   , case model.streamState of
       NotStreaming -> fold
         [ E.button
-          [ P.onClick \_ step -> do
-              { cancel } <- everyNSeconds 0.05 (step $ _count %~ (_ + 1))
-              step (_streamState .~ Streaming { cancel })
+          [ P.onClick \_ ref -> do
+              { cancel } <- everyNSeconds 0.05 (ref # M.modify (_count %~ (_ + 1)))
+              ref # M.modify (_streamState .~ Streaming { cancel })
           , buttonStyle
           ]
           [ E.text "++"
           ]
         , E.text " "
         , E.button
-          [ P.onClick \_ step -> do
-              { cancel } <- everyNSeconds 0.05 (step $ _count %~ ((_ - 1) >>> max 0))
-              step (_streamState .~ Streaming { cancel })
+          [ P.onClick \_ ref -> do
+              { cancel } <- everyNSeconds 0.05 (ref # M.modify (_count %~ ((_ - 1) >>> max 0)))
+              ref # M.modify (_streamState .~ Streaming { cancel })
           , buttonStyle
           ]
           [ E.text "--"
@@ -97,7 +96,7 @@ renderCounter model =
         ]
       Streaming { cancel } ->
         E.button
-        [ P.onClick \_ step -> do cancel *> step (_streamState .~ NotStreaming)
+        [ P.onClick \_ ref -> do cancel *> (ref # M.modify (_streamState .~ NotStreaming))
         , buttonStyle
         ]
         [ E.text "🛑"
@@ -122,17 +121,17 @@ foreign import everyNSeconds :: Number -> Effect Unit -> Effect { cancel :: Effe
 
 type Textbox = String
 
-renderTextbox :: Textbox -> E.Html' Textbox
+renderTextbox :: Textbox -> E.Html' (M.Write' Textbox)
 renderTextbox str =
   E.div
   []
   [ E.p
     []
-    [ E.input [ P.type_ "text", P.value str, P.onInputValue \val step -> step (const val) ]
+    [ E.input [ P.type_ "text", P.value str, P.onInputValue M.write ]
     , E.text " "
-    , E.input [ P.type_ "text", P.value str, P.onInputValue \val step -> step (const val) ]
+    , E.input [ P.type_ "text", P.value str, P.onInputValue M.write ]
     , E.text " "
-    , E.input [ P.type_ "text", P.value str, P.onInputValue \val step -> step (const val) ]
+    , E.input [ P.type_ "text", P.value str, P.onInputValue M.write ]
     ]
   , E.p [] [ E.text "As text: ", E.text str ]
   , E.p [] [ E.text "As html: ", E.rawHtml str ]
@@ -144,7 +143,7 @@ renderTextbox str =
 
 type PhoneNumber = Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int
 
-renderPhoneNumber :: PhoneNumber -> E.Html' PhoneNumber
+renderPhoneNumber :: PhoneNumber -> E.Html' (M.Modify' PhoneNumber)
 renderPhoneNumber = \pn ->
   E.div
   [ P.addStyles
@@ -173,10 +172,10 @@ renderPhoneNumber = \pn ->
 
   dot = E.span [ ] [ E.rawHtml "&bull;" ]
 
-  digit :: Lens' PhoneNumber Int -> PhoneNumber -> E.Html' PhoneNumber
+  digit :: Lens' PhoneNumber Int -> PhoneNumber -> E.Html' (M.Modify' PhoneNumber)
   digit len pn =
     E.select
-    [ P.onInputValue \v step -> step (len .~ (parseInt v))
+    [ P.onInputValue \v -> M.modify (len .~ (parseInt v))
     , P.remark "phone number digit"
     ]
     [ flip foldMap (range 1 9) \n ->
@@ -197,11 +196,11 @@ type OnClickElsewhere =
   , notHere :: Int
   }
 
-viewOnClickElsewhere :: OnClickElsewhere -> E.Html' OnClickElsewhere
+viewOnClickElsewhere :: OnClickElsewhere -> E.Html' (M.Modify' OnClickElsewhere)
 viewOnClickElsewhere { here, notHere } =
   E.div
-  [ P.onClick \_ step -> step (field @"here" %~ (_ + 1))
-  , P.onClickElsewhere \_ step -> step (field @"notHere" %~ (_ + 1))
+  [ P.onClick \_ -> M.modify (field @"here" %~ (_ + 1))
+  , P.onClickElsewhere \_ -> M.modify (field @"notHere" %~ (_ + 1))
   , P.addStyles
     [ S.fontFamily "sans-serif"
     , S.padding "1em"
@@ -248,12 +247,12 @@ initialSelectFlicker =
   }
 
 daemonSelectFlicker :: M.Daemon' SelectFlicker
-daemonSelectFlicker wref = do
+daemonSelectFlicker ref = do
   _ <- everyNSeconds 0.75 do
-    wref # WRef.modify (field @"time" %~ (_ + 1))
+    ref # Refs.modify (field @"time" %~ (_ + 1))
   pure unit
 
-viewSelectFlicker :: SelectFlicker -> E.Html' SelectFlicker
+viewSelectFlicker :: SelectFlicker -> E.Html' (M.Modify' SelectFlicker)
 viewSelectFlicker model =
   E.div
   [ P.addStyles
@@ -273,7 +272,7 @@ viewSelectFlicker model =
       [ P.fixup \node -> do
           node # addClass "princess"
           pure { restore: pure unit }
-      , P.onInputValue \val step -> step (field @"selected" .~ val)
+      , P.onInputValue \val -> M.modify (field @"selected" .~ val)
       ]
       [ ["A", "B", "C"] # foldMap \opt ->
         E.option
@@ -308,7 +307,7 @@ stringComponent =
     , daemon: \_ -> pure unit
     , view: \(_ /\ s) ->
         E.input
-        [ P.onInputValue \v step -> step (_2 .~ v)
+        [ P.onInputValue \v -> M.modify (_2 .~ v)
         , P.value s
         ]
     }
@@ -329,7 +328,7 @@ comComponent =
           [ P.type_ "checkbox"
           , P.id "caps"
           , P.checked caps
-          , P.onInputValue \_ step -> step (_2 <<< field @"caps" %~ not)
+          , P.onInputValue \_ -> M.modify (_2 <<< field @"caps" %~ not)
           ]
         , E.text " → "
         , E.text (if caps then toUpperCase string else string)
@@ -347,11 +346,11 @@ foreign import toUpperCase :: String -> String
 
 type RawNodes = Maybe (DomNode /\ DomNode)
 
-daemonRawNodes :: Daemon Effect RawNodes
-daemonRawNodes wref = do
+daemonRawNodes :: Daemon' RawNodes
+daemonRawNodes ref = do
   rn1 <- mkTextRawNode
   rn2 <- mkIframeRawNode
-  WRef.write (Just $ rn1 /\ rn2) wref
+  Refs.write (Just $ rn1 /\ rn2) ref
 
 foreign import mkTextRawNode :: Effect DomNode
 foreign import mkIframeRawNode :: Effect DomNode
@@ -396,20 +395,19 @@ initialize = do
     }
 
 daemon :: Daemon Effect Model
-daemon = fold
-  [ D.enroot (field @"rawNodes") daemonRawNodes
-  , D.enroot (field @"selectFlicker") daemonSelectFlicker
-  , D.enroot (_unit × field @"comStuff") (Com.daemonC comComponent)
-  ]
+daemon ref = do
+  daemonRawNodes (ref # Refs.focusWithLens (field @"rawNodes"))
+  daemonSelectFlicker (ref # Refs.focusWithLens (field @"selectFlicker"))
+  (Com.daemonC comComponent) (ref # Refs.focusWithLens (_unit × field @"comStuff"))
 
-render :: Model -> E.Html' Model
+render :: Model -> E.Html' (M.Modify' Model)
 render model =
   E.div
   []
-  [ E.p [] [ E.enroot _counter1 (renderCounter model.counter1) ]
-  , E.p [] [ E.enroot _counter2 (renderCounter model.counter2) ]
+  [ E.p [] [ cmap (M.focusWithLens _counter1) (renderCounter model.counter1) ]
+  , E.p [] [ cmap (M.focusWithLens _counter2) (renderCounter model.counter2) ]
   , E.hr []
-  , E.enroot _textbox (renderTextbox model.textbox)
+  , cmap (M.focusWithLens _textbox >>> Refs.downcast) (renderTextbox model.textbox)
   , E.hr []
   , E.div
     [ P.addStyles [ S.fontSize ".8em" ] ]
@@ -435,21 +433,21 @@ render model =
       ]
     , E.hr []
     ]
-  , E.enroot _checkbox $ model.checkbox # \checked ->
+  , cmap (M.focusWithLens _checkbox) $ model.checkbox # \checked ->
       E.div
       [] $ (_ `power` 15)
-        [ E.input [ P.type_ "checkbox", P.checked      checked , P.onInput \_ step -> step not ]
-        , E.input [ P.type_ "checkbox", P.checked (not checked), P.onInput \_ step -> step not ]
+        [ E.input [ P.type_ "checkbox", P.checked      checked , P.onInput \_ -> M.modify not ]
+        , E.input [ P.type_ "checkbox", P.checked (not checked), P.onInput \_ -> M.modify not ]
         ]
   , E.hr []
-  , E.enroot _phoneNumber $ renderPhoneNumber model.phoneNumber
-  , E.enroot _phoneNumber $ renderPhoneNumber model.phoneNumber
+  , cmap (M.focusWithLens _phoneNumber) $ renderPhoneNumber model.phoneNumber
+  , cmap (M.focusWithLens _phoneNumber) $ renderPhoneNumber model.phoneNumber
   , E.hr []
-  , E.enroot _onClickElsewhere $ viewOnClickElsewhere model.onClickElsewhere
+  , cmap (M.focusWithLens _onClickElsewhere) $ viewOnClickElsewhere model.onClickElsewhere
   , E.hr []
-  , E.enroot _selectFlicker $ viewSelectFlicker model.selectFlicker
+  , cmap (M.focusWithLens _selectFlicker) $ viewSelectFlicker model.selectFlicker
   , E.hr []
-  , E.enroot (_unit × _comStuff) $ Com.viewC comComponent (unit /\ model.comStuff)
+  , cmap (M.focusWithLens (_unit × _comStuff)) $ Com.viewC comComponent (unit /\ model.comStuff)
   , E.hr []
   , renderRawNodes model.rawNodes
   , E.br [] `power` 25

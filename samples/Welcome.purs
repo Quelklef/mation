@@ -2,6 +2,7 @@ module Mation.Samples.Welcome where
 
 import Mation.Core.Prelude
 
+import Mation as M
 import Mation (Prop, Html)
 import Mation.Elems as E
 import Mation.Props as P
@@ -13,7 +14,7 @@ type Model = Unit
 initialize :: Effect Model
 initialize = pure unit
 
-render :: Model -> Html Effect Model
+render :: Model -> Html Effect (M.Modify' Model)
 render _model =
   E.div
   [ P.addStyles

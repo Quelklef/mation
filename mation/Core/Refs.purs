@@ -83,28 +83,53 @@ module Mation.Core.Refs
   , class CanMake
   , makeWithSelf
   , make
+  , class CanFocusWithLens
+  , focusWithLens
+  , class CanFocusWithSetter
+  , focusWithSetter
+  , class CanFocusWithGetter
+  , focusWithGetter
   , class Downcast
   , downcast
   , downcastTo
   , ReadWriteL
+  , ReadWriteL'
   , focusReadWriteL
+  , hoistReadWriteL
   , ReadWrite
+  , ReadWrite'
   , focusReadWrite
+  , hoistReadWrite
+  , Modify
+  , Modify'
+  , focusModify
+  , hoistModify
   , Write
+  , Write'
   , focusWrite
+  , hoistWrite
   , ReadL
+  , ReadL'
   , focusReadL
+  , hoistReadL
   , Read
+  , Read'
   , focusRead
+  , hoistRead
   , Nil
+  , Nil'
   , mkNil
   , focusNil
+  , hoistNil
+
+  , sync
   ) where
 
 import Mation.Core.Prelude
 
 import Effect.Ref as ERef
 import Data.Lens as Lens
+import Data.Lens (ALens')
 import Data.Array as Array
 import Data.Traversable (sequence_)
 
@@ -155,6 +180,40 @@ class CanMake m ref where
 make :: forall m ref a. CanMake m ref => a -> m (ref a)
 make a = makeWithSelf (\_self -> a)
 
+-- | Reference types who can `focus` with a `Lens'`
+-- |
+-- | Ideally there would just be a `CanFocus` class, so one
+-- | can write `CanFocus Lens' ref`. But because of the way `Lens'`
+-- | is defined, there's no good way (that I know of) to do this.
+-- |
+-- | Instead we have a `CanFocusWithX` class for each optic
+-- | type `X` which can be used to focus >1 ref types.
+class CanFocusWithLens ref where
+  focusWithLens :: forall s a. Lens' s a -> ref s -> ref a
+
+-- | Reference types who can `focus` with a `Setter'`
+class CanFocusWithSetter ref where
+  focusWithSetter :: forall s a. Setter' s a -> ref s -> ref a
+
+-- | Reference types who can `focus` with a `Getter'`
+class CanFocusWithGetter ref where
+  focusWithGetter :: forall s a. Getter' s a -> ref s -> ref a
+
+class CanFocus lenSA ref s a | ref -> lenSA where
+  focus :: lenSA -> ref s -> ref a
+
+focusReadWriteL' :: forall m s a. Bind m =>
+  ALens' s a -> ReadWriteL m s -> ReadWriteL m a
+focusReadWriteL' alen rwl =
+  let len = cloneLens alen in
+  ReadWriteL
+    (Lens.view len <$> read rwl)
+    (\a -> rwl # modify (len .~ a))
+    (\f -> rwl # onNextChange f)
+
+instance Bind m => CanFocus (ALens' s a) (ReadWriteL m) s a where
+  focus len = focusReadWriteL' len
+
 -- | An instance of `Downcast r1 r2` gives a way to transform a reference
 -- | of type `r1` into a reference of type `r2`.
 -- |
@@ -188,6 +247,8 @@ downcastTo = downcast
 -- | Reference type with read/write/modify/listen capabilities
 data ReadWriteL m a = ReadWriteL (m a) (a -> m Unit) (m Unit -> m Unit)
 
+type ReadWriteL' = ReadWriteL Effect
+
 instance CanRead m (ReadWriteL m) where
   read (ReadWriteL readIt _ _) = readIt
 
@@ -220,8 +281,9 @@ instance CanMake Effect (ReadWriteL Effect) where
           -- Write value
           valRef # ERef.write a
           -- Notify & detach listeners
-          ERef.read listenersRef >>= sequence_
+          listeners <- ERef.read listenersRef
           listenersRef # ERef.write []
+          sequence_ listeners
         onNextChangeIt listener =
           listenersRef # ERef.modify_ (flip Array.snoc listener)
         in (ReadWriteL readIt writeIt onNextChangeIt)
@@ -242,6 +304,16 @@ focusReadWriteL len rwl =
     (\a -> rwl # modify (len .~ a))
     (\f -> rwl # onNextChange f)
 
+instance Bind m => CanFocusWithLens (ReadWriteL m) where
+  focusWithLens = focusReadWriteL
+
+-- | Lift a monad isomorphism to a mapping of `ReadWriteL`
+-- |
+-- | An entire isomorphism is required to hoist the ref listeners
+hoistReadWriteL :: forall m n. (m ~> n) -> (n ~> m) -> (ReadWriteL m ~> ReadWriteL n)
+hoistReadWriteL toN fromN (ReadWriteL readIt writeIt onNextChangeIt) =
+    ReadWriteL (toN readIt) (toN <$> writeIt) (fromN >>> onNextChangeIt >>> toN)
+
 instance Downcast (ReadWriteL m) (ReadWriteL m) where
   downcast = identity
 
@@ -249,6 +321,8 @@ instance Downcast (ReadWriteL m) (ReadWriteL m) where
 
 -- | Reference type with read/write/modify capabilities
 data ReadWrite m a = ReadWrite (m a) (a -> m Unit)
+
+type ReadWrite' = ReadWrite Effect
 
 instance CanRead m (ReadWrite m) where
   read (ReadWrite readIt _) = readIt
@@ -272,6 +346,14 @@ focusReadWrite len rw =
     ((_ ^. len) <$> read rw)
     (\a -> rw # modify (len .~ a))
 
+instance Bind m => CanFocusWithLens (ReadWrite m) where
+  focusWithLens = focusReadWrite
+
+-- | Lift a monad morphism to a mapping of `ReadWrite`
+hoistReadWrite :: forall m n. (m ~> n) -> (ReadWrite m ~> ReadWrite n)
+hoistReadWrite toN (ReadWrite readIt writeIt) =
+    ReadWrite (toN readIt) (toN <$> writeIt)
+
 instance Downcast (ReadWrite m) (ReadWrite m) where
   downcast = identity
 
@@ -282,6 +364,8 @@ instance Downcast (ReadWriteL m) (ReadWrite m) where
 
 -- | Reference type with modify capabilities
 newtype Modify m a = Modify ((a -> a) -> m Unit)
+
+type Modify' = Modify Effect
 
 instance CanWrite m (Modify m) where
   write a (Modify modify) = modify (const a)
@@ -299,6 +383,17 @@ focusModify :: forall m s a.
 focusModify len (Modify modifyIt) =
   Modify (\f -> modifyIt (len %~ f))
 
+instance CanFocusWithLens (Modify m) where
+  focusWithLens len = focusModify len
+
+instance CanFocusWithSetter (Modify m) where
+  focusWithSetter = focusModify
+
+-- | Lift a monad morphism to a mapping of `Modify`
+hoistModify :: forall m n. (m ~> n) -> (Modify m ~> Modify n)
+hoistModify toN (Modify modifyIt) =
+    Modify (modifyIt >>> toN)
+
 instance Downcast (Modify m) (Modify m) where
   downcast = identity
 
@@ -313,6 +408,8 @@ instance Bind m => Downcast (ReadWrite m) (Modify m) where
 -- | Reference type with write capabilities
 newtype Write m a = Write (a -> m Unit)
 
+type Write' = Write Effect
+
 instance CanWrite m (Write m) where
   write a (Write write) = write a
 
@@ -325,6 +422,11 @@ focusWrite :: forall m s a.
   (a -> s) -> Write m s -> Write m a
 focusWrite up (Write writeIt) =
   Write (\a -> writeIt (up a))
+
+-- | Lift a monad morphism to a mapping of `Write`
+hoistWrite :: forall m n. (m ~> n) -> (Write m ~> Write n)
+hoistWrite toN (Write writeIt) =
+    Write (writeIt >>> toN)
 
 instance Downcast (Write m) (Write m) where
   downcast = identity
@@ -342,6 +444,8 @@ instance Downcast (Modify m) (Write m) where
 
 -- | Reference type with read/listen capabilities
 data ReadL m a = ReadL (m a) (m Unit -> m Unit)
+
+type ReadL' = ReadL Effect
 
 instance CanRead m (ReadL m) where
   read (ReadL readIt _) = readIt
@@ -361,6 +465,19 @@ focusReadL len rl =
     (Lens.view len <$> read rl)
     (\f -> rl # onNextChange f)
 
+instance Functor m => CanFocusWithLens (ReadL m) where
+  focusWithLens len = focusReadL len
+
+instance Functor m => CanFocusWithGetter (ReadL m) where
+  focusWithGetter len = focusReadL len
+
+-- | Lift a monad isomorphism to a mapping of `ReadL`
+-- |
+-- | An entire isomorphism is required to hoist the ref listeners
+hoistReadL :: forall m n. (m ~> n) -> (n ~> m) -> (ReadL m ~> ReadL n)
+hoistReadL toN fromN (ReadL readIt onNextChangeIt) =
+    ReadL (toN readIt) (fromN >>> onNextChangeIt >>> toN)
+
 instance Downcast (ReadL m) (ReadL m) where
   downcast = identity
 
@@ -372,6 +489,8 @@ instance Downcast (ReadWriteL m) (ReadL m) where
 -- | Reference type with read capabilities
 newtype Read :: forall k. (k -> Type) -> k -> Type
 newtype Read m a = Read (m a)
+
+type Read' = Read Effect
 
 instance CanRead m (Read m) where
   read (Read readIt) = readIt
@@ -385,6 +504,17 @@ focusRead :: forall m s a. Functor m =>
   Getter' s a -> Read m s -> Read m a
 focusRead len (Read readIt) =
   Read (Lens.view len <$> readIt)
+
+instance Functor m => CanFocusWithLens (Read m) where
+  focusWithLens len = focusRead len
+
+instance Functor m => CanFocusWithGetter (Read m) where
+  focusWithGetter len = focusRead len
+
+-- | Lift a monad morphism to a mapping of `Read`
+hoistRead :: forall m n. (m ~> n) -> (Read m ~> Read n)
+hoistRead toN (Read readIt) =
+    Read (toN readIt)
 
 instance Downcast (Read m) (Read m) where
   downcast = identity
@@ -404,6 +534,9 @@ instance Downcast (ReadL m) (Read m) where
 data Nil :: forall k1 k2. k1 -> k2 -> Type
 data Nil m a = Nil
 
+type Nil' :: forall k. k -> Type
+type Nil' = Nil Effect
+
 mkNil :: forall m a. Nil m a
 mkNil = Nil
 
@@ -413,6 +546,15 @@ instance Applicative m => CanMake m (Nil m) where
 -- | Construct a subreference
 focusNil :: forall m s a. Nil m s -> Nil m a
 focusNil Nil = Nil
+
+instance CanFocusWithLens (Nil m) where
+  focusWithLens _ _ = Nil
+
+instance CanFocusWithSetter (Nil m) where
+  focusWithSetter _ _ = Nil
+
+hoistNil :: forall m n. Nil m ~> Nil n
+hoistNil Nil = Nil
 
 instance Downcast (Nil m) (Nil m) where
   downcast _ = Nil
@@ -471,3 +613,89 @@ onChange' f ref = do
     oldValRef # write newVal
     f { old: oldVal, new: newVal }
 
+
+-- | Create a two-way binding with a read/write ref
+-- |
+-- | Differs from creating a two-way binding with `onChange` and `push` in
+-- | that bindings created with `sync` will not self-invoke.
+-- |
+-- | ***
+-- |
+-- | A first attempt at creating a two-way sync is to use `onChange` for
+-- | one direction of the sync (or `onChange'`) and `write` for the other
+-- | direction of the sync.
+-- |
+-- | The trouble with this is that it causes unnecessary round-tripping.
+-- | When the non-`ref` state changes, it will invoke `write`, which
+-- | will invoke the `onChange` listener, which is redundant. Likewise,
+-- | when the `ref` state changes, it will invoke the `onChange` listener,
+-- | which will update the non-`ref` state, which will invoke `write`,
+-- | which is redundant.
+-- |
+-- | In fact, if one uses `onChange` this should cause an infinite loop.
+-- | (The other option is to use `onChange'` and using `==` to test in
+-- | the listener for if the state has actually changed)
+-- |
+-- | The value add of `sync` is that it avoids this round-tripping. You
+-- | pass in a `listen :: a -> Effect Unit` (as you would to `onChange`)
+-- | and recieve a `tell :: a -> Effect Unit` (akin to `write`) and
+-- | when they are invoked they will avoid invoking the other.
+sync :: forall ref a. CanRead Effect ref => CanWrite Effect ref => CanListen Effect ref =>
+  (a -> Effect Unit) -> ref a -> Effect (a -> Effect Unit)
+sync onPush ref = do
+  (rDont :: ReadWrite Effect _) <- make false
+  ref # onChange \newVal -> sync'd rDont (onPush newVal)
+  pure \val -> sync'd rDont (ref # write val)
+
+  where
+
+  sync'd rDont action = do
+    read rDont >>= case _ of
+      true -> pure unit
+      false -> do
+        rDont # write true
+        action
+        rDont # write false
+
+{- TODO
+
+-- | Transforms a `Step s` stepper into a "buffered stepper" which
+-- | stages state updates `s -> s` before applying them all at once.
+-- |
+-- | Intended to be used with event handlers like
+-- |
+-- | ```purs
+-- | onClick \step -> do
+-- |   { stage, apply } <- M.toBuffered step
+-- |   ...
+-- | ```
+-- |
+-- | It's tempting to instead write
+-- |
+-- | ```purs
+-- | onClick $ M.toBuffered >=> \{ stage, apply } -> ...`
+-- | ```
+-- |
+-- | but this makes the typesystem choke up due to `Step`
+-- | containing a `forall`
+toBuffered :: forall m s.
+  MonadEffect m => Step s -> m (BufferedStep m s)
+toBuffered step = liftEffect do
+  buf <- liftEffect $ Ref.new identity
+  pure
+    { stage: \g -> liftEffect do
+        Ref.modify_ (_ >>> g) buf
+    , apply: do
+        liftEffect (Ref.read buf) >>= step
+        liftEffect $ Ref.write identity buf
+    }
+
+type BufferedStep m s =
+    -- | Add a state update to the buffer
+  { stage :: (s -> s) -> m Unit
+    -- | Apply all staged updates to the state
+  , apply :: m Unit
+  }
+
+
+-}

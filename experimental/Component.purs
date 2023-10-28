@@ -17,12 +17,13 @@ import Mation.Core.Prelude
 import Data.Lens (Lens)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 
-import Mation.Core.Daemon (Daemon)
+import Mation (Daemon, Daemon')
+import Mation as M
 import Mation.Elems (Html)
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
-import Mation.Core.Util.WRef as WRef
+import Mation.Core.Refs as Refs
 
 
 -- | A mation component
@@ -39,7 +40,7 @@ import Mation.Core.Util.WRef as WRef
 newtype Component m sup model = Com
   { init :: Effect model
   , daemon :: Daemon Effect (sup /\ model)
-  , view :: sup /\ model -> Html m (sup /\ model)
+  , view :: sup /\ model -> Html m (M.Modify m (sup /\ model))
   }
 
 
@@ -51,7 +52,7 @@ mkComponent :: forall name m sup model. IsSymbol name =>
   { name :: Proxy name
   , init :: Effect model
   , daemon :: Daemon Effect (sup /\ model)
-  , view :: sup /\ model -> Html m (sup /\ model)
+  , view :: sup /\ model -> Html m (M.Modify m (sup /\ model))
   } -> Component m sup model
 
 mkComponent { name, init, daemon, view } = Com
@@ -70,10 +71,10 @@ mkComponent { name, init, daemon, view } = Com
 initializeC :: forall m sup model. Component m sup model -> Effect model
 initializeC (Com { init }) = init
 
-daemonC :: forall m sup model. Component m sup model -> Daemon Effect (sup /\ model)
+daemonC :: forall m sup model. Component m sup model -> Daemon' (sup /\ model)
 daemonC (Com { daemon }) = daemon
 
-viewC :: forall m sup model. Component m sup model -> (sup /\ model -> Html m (sup /\ model))
+viewC :: forall m sup model. Component m sup model -> (sup /\ model -> Html m (M.Modify m (sup /\ model)))
 viewC (Com { view }) = view
 
 
@@ -92,7 +93,7 @@ mkParent1 :: forall
       -- | Initialize the parent
   , daemon :: Daemon Effect (sup /\ model)
       -- | Accepts as input the result of the child's view function
-  , view :: Html m (sup /\ model) -> (sup /\ model -> Html m (sup /\ model))
+  , view :: Html m (M.Modify m (sup /\ model)) -> (sup /\ model -> Html m (M.Modify m (sup /\ model)))
       -- | Child specification
   , child1 :: { component :: Component m sup1 model1, at :: BoxLens' (sup /\ model) (sup1 /\ model1) }
   } -> Component m sup model
@@ -103,14 +104,14 @@ mkParent1 { name, init, daemon, view, child1 } =
     , init: do
         model1 <- initializeC child1.component
         init model1
-    , daemon: \wref -> do
-        daemonC child1.component (WRef.mkView child1At wref)
-        daemon wref
+    , daemon: \ref -> do
+        daemonC child1.component (ref # Refs.focusWithLens child1At)
+        daemon ref
     , view: \(sup /\ model) ->
         let
-          childViewed :: Html m (sup1 /\ model1)
+          childViewed :: Html m (M.Modify m (sup1 /\ model1))
           childViewed = viewC child1.component ((sup /\ model) ^. child1At)
-        in view (E.enroot child1At childViewed) (sup /\ model)
+        in view (cmap (M.focusWithLens child1At) childViewed) (sup /\ model)
     }
 
   where

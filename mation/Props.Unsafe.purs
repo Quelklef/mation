@@ -1,8 +1,6 @@
 module Mation.Props.Unsafe where
 
 import Mation.Core.Prelude
-import Mation.Core.MationT (Step, MationT (..))
-import Mation.Core.MationT as MationT
 import Mation.Core.Prop (Prop)
 import Mation.Core.Prop as Prop
 import Mation.Core.Dom (DomNode)
@@ -27,24 +25,22 @@ import Mation.Lenses (field)
 -- | Because `fixup` allows the user to perform effects at *render* time, it is
 -- | considered an unsafe operation.
 fixup :: forall m s. (DomNode -> Effect { restore :: Effect Unit }) -> Prop m s
-fixup f = Prop.mkFixup \node -> Rev.mkRevertibleE (_.restore <$> f node)
+fixup f = Prop.mkFixup \node _k -> Rev.mkRevertibleE (_.restore <$> f node)
 
 -- | Like `fixup` but lives in `m`
 fixupM :: forall m s. Functor m => (DomNode -> m { restore :: m Unit }) -> Prop m s
 fixupM f =
-  Prop.mkFixup \node -> Rev.mkRevertibleM $ MationT \_step ->
-    (MationT.lift <<< _.restore) <$> f node
+  Prop.mkFixup \node _k -> Rev.mkRevertibleM (_.restore <$> f node)
 
 -- | Like `fixup` but with access the application `Step s`
 -- |
 -- | Apologies for the `MonadEffect` constraint (programming is hard)
-fixup' :: forall m s. MonadEffect m => (DomNode -> Step s -> Effect { restore :: Effect Unit }) -> Prop m s
+fixup' :: forall m k. MonadEffect m => (DomNode -> k -> Effect { restore :: Effect Unit }) -> Prop m k
 fixup' f = fixupM' (\node step -> f node step # liftEffect # map (_restore %~ liftEffect))
   where _restore = field @"restore"
 
 -- | Like `fixup` lives in `m` and the application `Step s`
-fixupM' :: forall m s. Functor m => (DomNode -> Step s -> m { restore :: m Unit }) -> Prop m s
+fixupM' :: forall m k. Functor m => (DomNode -> k -> m { restore :: m Unit }) -> Prop m k
 fixupM' f =
-  Prop.mkFixup \node -> Rev.mkRevertibleM $ MationT \step ->
-    (MationT.lift <<< _.restore) <$> f node step
+  Prop.mkFixup \node k -> Rev.mkRevertibleM (_.restore <$> f node k)
 

@@ -20,7 +20,7 @@ import Data.Lens.Index (ix)
 import Data.Time.Duration (Milliseconds (..))
 
 import Mation as M
-import Mation (Html)
+import Mation (Html, Html')
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
@@ -70,7 +70,7 @@ initial =
   , fast: false
   }
 
-render :: Model -> E.Html' Model
+render :: Model -> E.Html' (M.Modify' Model)
 render model =
   E.div
   []
@@ -85,10 +85,10 @@ render model =
       [ E.text "Rendering to 2^"
       , E.input
         [ P.type_ "number"
-        , P.onInputValue \val step ->
+        , P.onInputValue \val ref ->
               case Int.fromString val of
                 Nothing -> pure unit
-                Just n -> step $ (_exp .~ n) >>> (_items %~ resizeArray' (Int.pow 2 n))
+                Just n -> ref # M.modify ((_exp .~ n) >>> (_items %~ resizeArray' (Int.pow 2 n)))
         , P.value (show model.exp)
         , P.addStyles [ S.width "6ch" ]
         ]
@@ -100,7 +100,7 @@ render model =
       [ E.input
         [ P.type_ "checkbox"
         , P.checked model.fast
-        , P.onInputValue \_ step -> step (_fast %~ not)
+        , P.onInputValue \_ -> M.modify (_fast %~ not)
         , P.id "use-fast"
         ]
       , E.text " "
@@ -168,13 +168,13 @@ render model =
     ]
   , E.br []
   , E.br []
-  , E.enroot _items $
+  , cmap (M.focusWithLens _items) $
       theList model.items
   ]
 
   where
 
-  theList :: Array String -> Html Effect (Array String)
+  theList :: Array String -> Html' (M.Modify' (Array String))
   theList items =
     E.div
     [ P.addStyles
@@ -185,10 +185,10 @@ render model =
     ]
     [ items
       # foldMapWithIndex \idx str ->
-          E.enroot (ix idx) (listItem idx str)
+          (cmap (M.focusWithSetter (ix idx))) (listItem idx str)
     ]
 
-  listItem :: Int -> String -> Html Effect String
+  listItem :: Int -> String -> Html' (M.Modify' String)
   listItem = \idx str ->
     case model.fast of
       false -> impl idx str
@@ -229,7 +229,7 @@ render model =
         , E.text " ~ "
         , E.input
           [ P.value str
-          , P.onInputValue \v step -> step (const v)
+          , P.onInputValue \v -> M.write v
           ]
         , E.text " → "
         ]
@@ -260,16 +260,16 @@ resizeArray mkItem size arr =
     else Array.range lo (hi - 1)
 
 
-doBench :: Int -> M.Mation Effect Model
-doBench count step = Aff.launchAff_ do
-  step (_benchmarks .~ [])
+doBench :: Int -> M.Modify' Model -> Effect Unit
+doBench count ref = Aff.launchAff_ do
+  liftEffect do ref # M.modify (_benchmarks .~ [])
   for_ (Array.range 1 count) \idx -> do
     t0 <- liftEffect getNow
-    step (_items <<< ix 0 .~ ("frame #" <> show idx))
+    liftEffect do ref # M.modify (_items <<< ix 0 .~ ("frame #" <> show idx))
       -- ^ Need to actually modify the DOM or we get wacky results
     tf <- liftEffect getNow
     waitTick
-    liftEffect $ step (_benchmarks %~ (_ <> [tf - t0]))
+    liftEffect do ref # M.modify (_benchmarks %~ (_ <> [tf - t0]))
 
   where
   waitTick = Aff.delay (Milliseconds 0.0)

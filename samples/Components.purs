@@ -11,6 +11,8 @@ import Data.Lens.Setter ((.~))
 import Data.Lens.Lens.Tuple (_1, _2)
 
 import Mation as M
+import Mation (cmap)
+import Mation.Core.Refs as Refs
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Lenses (field)
@@ -28,17 +30,17 @@ type ConcatModel = String /\ String
 initialConcat :: ConcatModel
 initialConcat = "unde" /\ "niably"
 
-renderConcat :: ConcatModel -> E.Html' ConcatModel
+renderConcat :: ConcatModel -> E.Html' (M.Modify' ConcatModel)
 renderConcat (prefix /\ suffix) =
   fold
   [ E.input
-    [ P.onInputValue \newPrefix step -> step (\(_oldPrefix /\ curSuffix) -> newPrefix /\ curSuffix)
+    [ P.onInputValue \newPrefix -> M.modify (\(_oldPrefix /\ curSuffix) -> newPrefix /\ curSuffix)
     , P.value prefix
     , P.addCss "width: 10ch"
     ]
   , E.text " + "
   , E.input
-    [ P.onInputValue \newSuffix step -> step (\(curPrefix /\ _oldSuffix) -> curPrefix /\ newSuffix)
+    [ P.onInputValue \newSuffix -> M.modify (\(curPrefix /\ _oldSuffix) -> curPrefix /\ newSuffix)
     , P.value suffix
     , P.addCss "width: 10ch"
     ]
@@ -57,18 +59,18 @@ type RepeatModel = String /\ Int
 initialRepeat :: RepeatModel
 initialRepeat = "<>"  /\ 4
 
-renderRepeat :: RepeatModel -> E.Html' RepeatModel
+renderRepeat :: RepeatModel -> E.Html' (M.Modify' RepeatModel)
 renderRepeat (string /\ count) =
   fold
   [ E.input
-    [ P.onInputValue \s step -> step (_1 .~ s)
+    [ P.onInputValue \s -> M.modify (_1 .~ s)
     , P.value string
     , P.addCss "width: 10ch"
     ]
   , E.text " × "
   , E.input
     [ P.type_ "number"
-    , P.onInputValue \s step -> step (_2 .~ parseNumber s)
+    , P.onInputValue \s -> M.modify (_2 .~ parseNumber s)
     , P.value (show count)
     , P.addCss "width: 5ch"
     ]
@@ -90,11 +92,11 @@ initialBoth =
   , repeat: initialRepeat
   }
 
-renderBoth :: BothModel -> E.Html' BothModel
+renderBoth :: BothModel -> E.Html' (M.Modify' BothModel)
 renderBoth { concat, repeat } =
   fold
-  [ E.p [] [ E.enroot _concat (renderConcat concat) ]
-  , E.p [] [ E.enroot _repeat (renderRepeat repeat) ]
+  [ E.p [] [ cmap (M.focusWithLens _concat) (renderConcat concat) ]
+  , E.p [] [ cmap (M.focusWithLens _repeat) (renderRepeat repeat) ]
   ]
 
   where
@@ -125,11 +127,11 @@ initialSharing =
   , count: 4
   }
 
-renderSharing :: SharingModel -> E.Html' SharingModel
+renderSharing :: SharingModel -> E.Html' (M.Modify' SharingModel)
 renderSharing model =
   fold
-  [ E.p [] [ E.enroot _concat (renderConcat $ model ^. _concat) ]
-  , E.p [] [ E.enroot _repeat (renderRepeat $ model ^. _repeat) ]
+  [ E.p [] [ (cmap (M.focusWithLens _concat)) (renderConcat $ model ^. _concat) ]
+  , E.p [] [ (cmap (M.focusWithLens _repeat)) (renderRepeat $ model ^. _repeat) ]
   ]
 
   where
@@ -153,18 +155,23 @@ type Model = BothModel /\ SharingModel
 initial :: Model
 initial = initialBoth /\ initialSharing
 
-render :: Model -> E.Html' Model
+render :: Model -> E.Html' (M.Modify' Model)
 render (both /\ sharing) =
   E.div
   [ P.addCss "font-family: sans-serif; line-height: 1.5em"
   ]
-  [ E.enroot _1 $ renderBoth both
+  [ cmap (M.focusWithLens _1) $ renderBoth both
   , E.hr []
-  , E.enroot _2 $ renderSharing sharing
+  , cmap (M.focusWithLens _2) $ renderSharing sharing
   ]
 
 
 main :: Effect Unit
-main = M.runApp { initial, render, root: M.underBody, daemon: mempty }
+main = M.runApp
+  { initial
+  , render: render >>> cmap Refs.downcast
+  , root: M.underBody
+  , daemon: mempty
+  }
 
 foreign import parseNumber :: String -> Int

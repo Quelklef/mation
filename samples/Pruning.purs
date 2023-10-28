@@ -4,6 +4,7 @@ import Mation.Core.Prelude
 
 import Data.Array (range)
 
+import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
@@ -34,12 +35,13 @@ initial =
   double x = x /\ x
 
 
-onDouble :: forall a. UnsureEq a => (a -> E.Html' a) -> (Double a -> E.Html' (Double a))
+onDouble :: forall ref a. M.CanFocusWithLens ref => UnsureEq a =>
+  (a -> E.Html' (ref a)) -> (Double a -> E.Html' (ref (Double a)))
 onDouble renderOne model =
   E.div
   []
-  [ E.prune "1" (model ^. _1) (\n -> box $ E.enroot _1 $ renderOne n)
-  , E.prune "2" (model ^. _2) (\n -> box $ E.enroot _2 $ renderOne n)
+  [ E.prune "1" (model ^. _1) (\n -> box $ cmap (M.focusWithLens _1) $ renderOne n)
+  , E.prune "2" (model ^. _2) (\n -> box $ cmap (M.focusWithLens _2) $ renderOne n)
   ]
 
   where
@@ -58,7 +60,7 @@ onDouble renderOne model =
     ]
 
 
-render :: Model -> E.Html' Model
+render :: Model -> E.Html' (M.Modify' Model)
 render model =
 
   E.div
@@ -68,23 +70,23 @@ render model =
   , E.div
     [ P.addCss "font-size: 0.75em"
     ]
-    [ E.prune "example-1" model.vals (\vals -> E.enroot (field @"vals") $ onDouble (onDouble (onDouble mkCounter)) vals)
+    [ E.prune "example-1" model.vals (\vals -> cmap (M.focusWithLens (field @"vals")) $ onDouble (onDouble (onDouble mkCounter)) vals)
     ]
   , E.br []
   , E.hr []
   , E.p [ pSty ] [ E.text "Pruning works even when the node moves around the application. Try modifying the number of wrapper <divs> below. Again, updates are shown in red." ]
-  , E.prune "example-2" model.example2 (\ex2 -> E.enroot (field @"example2") $ renderExample2 ex2)
+  , E.prune "example-2" model.example2 (\ex2 -> cmap (M.focusWithLens (field @"example2")) $ renderExample2 ex2)
   , E.br []
   , E.br []
   , E.hr []
-  , E.enroot (field @"sumTest") $ E.prune "sum-test" model.sumTest renderSumTest
+  , cmap (M.focusWithLens (field @"sumTest")) $ E.prune "sum-test" model.sumTest renderSumTest
   ]
 
   where
 
   pSty = P.addStyles [ S.maxWidth "600px" ]
 
-  mkCounter :: Int -> E.Html' Int
+  mkCounter :: Int -> E.Html' (M.Modify' Int)
   mkCounter = \val ->
     E.span
     [ P.addStyles
@@ -103,12 +105,12 @@ render model =
         ]
       ]
       [ E.button
-        [ P.onClick \_ step -> step (_ + 1)
+        [ P.onClick \_ -> M.modify (_ + 1)
         , P.addCss "font-size: 1em; padding: .1em .2em"
         ]
         [ E.text "↑" ]
       , E.button
-        [ P.onClick \_ step -> step (_ - 1)
+        [ P.onClick \_ -> M.modify (_ - 1)
         , P.addCss "font-size: 1em; padding: .1em .2em"
         ]
         [ E.text "↓" ]
@@ -116,7 +118,7 @@ render model =
     ]
 
 
-renderExample2 :: { depth :: Int, color :: String } -> E.Html' { depth :: Int, color :: String }
+renderExample2 :: { depth :: Int, color :: String } -> E.Html' (M.Modify' { depth :: Int, color :: String })
 renderExample2 = \{ depth, color } ->
 
   fold
@@ -126,11 +128,11 @@ renderExample2 = \{ depth, color } ->
     , E.input
       [ P.type_ "number"
       , P.value $ show depth
-      , P.onInputValue \v step -> step (field @"depth" .~ parseInt v)
+      , P.onInputValue \v -> M.modify (field @"depth" .~ parseInt v)
       ]
     , E.text " "
     , E.button
-      [ P.onClick \_ step -> step $ field @"color" %~ case _ of
+      [ P.onClick \_ -> M.modify $ field @"color" %~ case _ of
             "lightgreen" -> "teal"
             "teal" -> "lightgreen"
             _ -> "yellow"
@@ -187,7 +189,7 @@ foreign import parseInt :: String -> Int
 
 
 -- Tests cases where we cycle between different pruned VDOMs
-renderSumTest :: (Int /\ Int) -> E.Html' (Int /\ Int)
+renderSumTest :: (Int /\ Int) -> E.Html' (M.Modify' (Int /\ Int))
 renderSumTest (n /\ tab) =
   E.p
   []
@@ -200,7 +202,7 @@ renderSumTest (n /\ tab) =
     ]
     [ E.text "Number: "
     , E.button
-      [ P.onClick \_ step -> step (_1 %~ (_ + 1))
+      [ P.onClick \_ -> M.modify (_1 %~ (_ + 1))
       , P.addStyles
         [ S.padding "0 1.5em"
         , S.lineHeight "2em"
@@ -234,7 +236,7 @@ renderSumTest (n /\ tab) =
 
   mkTab idx label =
     E.span
-    [ P.onClick \_ step -> step (_2 .~ idx)
+    [ P.onClick \_ -> M.modify (_2 .~ idx)
     , P.addStyles
       [ S.cursor "pointer"
       , S.padding ".35em 1em"

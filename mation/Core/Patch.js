@@ -6,7 +6,8 @@
 //   implementation.
 
 export const patch_f =
-({ caseMaybe
+({ unit
+ , caseMaybe
  , caseUnsure
  , caseVNode
  , collapseRevertible
@@ -94,6 +95,7 @@ export const patch_f =
         (newVTag => {
           return tagCase(root, mOldVNode, newVTag)
         })
+        (vWithK => throwThis(Error('not yet implemented')))
         (vPrune => {
           return pruneCase(root, mOldVNode, vPrune)
         })
@@ -157,6 +159,7 @@ export const patch_f =
         (html => true)
         (text => true)
         (oldVTag => oldVTag.tag !== newVTag.tag)
+        (vWithK => throwThis(Error('not yet implemented')))
         (vPrune => newVTag.tag !== 'span')
     );
     if (shouldReplace) {
@@ -175,13 +178,14 @@ export const patch_f =
         (html => empty)
         (text => empty)
         (oldVTag => oldVTag)
+        (vWithK => throwThis(Error('not yet implemented')))
         (vPrune => {
           // Since the prune was rendered last frame, it must be in the prune map
           // Also, we need not check the prune params
           const info = lookupPruneUnsafe(oldPruneMap, vPrune);
           console.assert(!!info, `[mation] prune missing from map (looking for keypath '${vPrune.keyPath.map(k => '→ ' + k).join(' ')}')`);
           // You and I have magic knowledge that all VPrune nodes render to VTag nodes
-          const vTag = caseVNode(info.vNode)(_ => null)(_ => null)(_ => null)(x => x)(_ => null);
+          const vTag = caseVNode(info.vNode)(_ => null)(_ => null)(_ => null)(x => x)(_ => null)(_ => null);
           return vTag;
         })
     );
@@ -191,7 +195,7 @@ export const patch_f =
     patchChildren(root, oldVTag.children, newVTag.children);
 
     // Perform fixup & store restoration function
-    const restore = collapseRevertible(newVTag.fixup(root))();
+    const restore = collapseRevertible(newVTag.fixup(root)(unit))();
     fixupAttachRestore(root, restore);
 
     return root;
@@ -301,7 +305,7 @@ export const patch_f =
     // Add new listeners
     root._listeners = {};
     for (const [name, f] of newListeners) {
-      const domHandler = ev => f(ev)();
+      const domHandler = ev => f(ev)(unit)();
       root.addEventListener(name, domHandler);
       root._listeners[name] = domHandler;
     }
@@ -377,6 +381,11 @@ export const patch_f =
 
 };
 
+
+function throwThis(x) {
+  // The bundler didn't like `throw` in some contexts. ok...
+  throw x;
+}
 
 function iife(f) {
   return f();

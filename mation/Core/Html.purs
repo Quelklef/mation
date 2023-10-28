@@ -6,8 +6,6 @@ module Mation.Core.Html where
 import Mation.Core.Prelude
 
 import Mation.Lenses (field)
-import Mation.Core.MationT (MationT)
-import Mation.Core.MationT as MationT
 import Mation.Core.Util.Assoc (Assoc)
 import Mation.Core.Util.Assoc as Assoc
 import Mation.Core.Util.Revertible (Revertible)
@@ -21,12 +19,9 @@ import Mation.Core.Util.Exists (Exists, mkExists, mapExists, runExists)
 
 -- | A single Virtual Node
 -- |
--- | Parameterized by one type variable `m` which gives the monad
--- | in which event listeners and fixups live
--- |
 -- | `Html` will be the free monoid over `VNode`, so one might
 -- | also name this type `Html1`.
-data VNode m
+data VNode m k
 
     -- | Embed an existing DomNode directly into the virtual dom
   = VRawNode DomNode
@@ -47,7 +42,7 @@ data VNode m
       , attrs :: Assoc String String
 
       -- | Event listeners
-      , listeners :: Assoc String (DomEvent -> m Unit)
+      , listeners :: Assoc String (DomEvent -> k -> m Unit)
 
       -- | Arbitrary revertible change on the mounted `DomNode`,
       -- | such as adding a class. The change is applied on each
@@ -68,19 +63,19 @@ data VNode m
       -- | something like `Effect` instead?
       -- |
       -- | Well, in the end we'll be using the `VNode` type
-      -- | instantiated with `m ~ MationT s n` for some user-defined
-      -- | `n`. We expect `n` to instantiate `MonadEffect` since it
+      -- | instantiated with some user-defined `m`.
+      -- | We expect `m` to instantiate `MonadEffect` since it
       -- | has to be able to execute the Mation runtime (see the
       -- | comment on `Mation.Core.Mation (Mation)`), meaning
-      -- | that working in `n` does give us our desired access
-      -- | to `Effect`. Additionally, via `MationT s` it will
-      -- | give us access to the application `Step s`, which is useful
-      -- | for some `fixup`s.
-      , fixup :: DomNode -> Revertible m
+      -- | that working in `m` does give us our desired access
+      -- | to `Effect`.
+      , fixup :: DomNode -> k -> Revertible m
 
       -- | Children virtual nodes
-      , children :: Array (VNode m)
+      , children :: Array (VNode m k)
       }
+
+  | VWithK (k -> VNode m k)
 
     -- | A node can be "pruned" by supplying, instead of an actual virtual node,
     -- | a value `params :: p` (for some `p`) plus a function `render : p -> VNode m`.
@@ -99,39 +94,70 @@ data VNode m
     -- | frames, if a key path appears in both frames, then its parameter
     -- | type `p`, `UnsureEq p` instance, and render function `render` are equal
     -- | between the frames.
-  | VPrune (Exists (PruneE m))
+  | VPrune (Exists (PruneE m k))
 
 
-newtype PruneE m p = PruneE
+newtype PruneE m k p = PruneE
   { keyPath :: Array String
   , params :: p
   , unsureEq :: p -> p -> Unsure Boolean
       -- ^ Typeclass instance. Manually managed because Purescript doesn't have
       --   native support for existentials (not to mention constrained existentials)
-  , render :: p -> VNode m
+  , render :: p -> VNode m k
   }
 
 
+-- | Contravariantly map over a `VNode`
+instance Contravariant (VNode m) where
+  cmap f = case _ of
+    VRawNode x -> VRawNode x
+    VRawHtml x -> VRawHtml x
+    VText x -> VText x
+    VTag { tag, attrs, listeners, fixup, children } ->
+      VTag { tag, attrs
+           , listeners: listeners # (map <<< map) (f >>> _)
+           , fixup: fixup # map (f >>> _)
+           , children: children # map (cmap f)
+           }
+    VWithK withK -> VWithK (f >>> withK >>> cmap f)
+    VPrune e -> VPrune $ e # mapExists \(PruneE { keyPath, params, unsureEq, render }) ->
+      PruneE { keyPath, params, unsureEq, render: render >>> cmap f }
+
+
 -- | Change the underlying monad of a virtual node
-hoist1 :: forall m n. Functor n => (m ~> n) -> VNode m -> VNode n
+hoist1 :: forall m n k. Functor n => (m ~> n) -> VNode m k -> VNode n k
 hoist1 f = case _ of
   VRawNode x -> VRawNode x
   VRawHtml x -> VRawHtml x
   VText x -> VText x
   VTag { tag, attrs, listeners, fixup, children } ->
     VTag { tag, attrs
-         , listeners: listeners # map (map f)
-         , fixup: fixup # map (Rev.hoist f)
+         , listeners: listeners # (map <<< map <<< map) f
+         , fixup: fixup # (map <<< map) (Rev.hoist f)
          , children: children # map (hoist1 f)
          }
+  VWithK withK -> VWithK (hoist1 f <$> withK)
   VPrune e -> VPrune $ e # mapExists \(PruneE { keyPath, params, unsureEq, render }) ->
     PruneE { keyPath, params, unsureEq, render: render >>> hoist1 f }
 
   where _restore = field @"restore"
 
 
+
+-- | Fix the `k` value of a `VNode`
+-- |
+-- | Once this is performed, every `cmap` operation is trivial since it asks
+-- | for a function `a -> Unit`
+fixVNode :: forall m k. k -> VNode m k -> VNode m Unit
+fixVNode = cfix
+  where
+
+  cfix :: forall f a. Contravariant f => a -> f a -> f Unit
+  cfix a0 = cmap (const a0)
+
+
 -- | Prepend a key to pruning paths of all pruned descendants (including self)
-addPruneKey :: forall m. String -> VNode m -> VNode m
+addPruneKey :: forall m k. String -> VNode m k -> VNode m k
 addPruneKey key = case _ of
   VRawNode x -> VRawNode x
   VRawHtml x -> VRawHtml x
@@ -140,6 +166,7 @@ addPruneKey key = case _ of
     VTag { tag, attrs, fixup, listeners
          , children: children # map (addPruneKey key)
          }
+  VWithK withK -> VWithK (addPruneKey key <$> withK)
   VPrune e -> VPrune $ e # mapExists \(PruneE { keyPath, params, unsureEq, render }) ->
     PruneE { params, unsureEq
            , keyPath: [key] <> keyPath
@@ -149,9 +176,9 @@ addPruneKey key = case _ of
 -- | Remove all contained `VPrune` nodes, collapsing their deferred
 -- | computation.
 -- |
--- | Preserves the container <span style="display: contents"> in order to
+-- | Preserves the container `<span style="display: contents">` in order to
 -- | minimize difference between a VDom before and after being unpruned
-unPrune1 :: forall m. VNode m -> VNode m
+unPrune1 :: forall m k. VNode m k -> VNode m k
 unPrune1 = case _ of
   VRawNode x -> VRawNode x
   VRawHtml x -> VRawHtml x
@@ -160,6 +187,7 @@ unPrune1 = case _ of
     VTag { tag, attrs, listeners, fixup
          , children: children # map unPrune1
          }
+  VWithK withK -> VWithK (unPrune1 <$> withK)
   VPrune e ->
     e # runExists \(PruneE { params, render }) ->
           withPruneWrapper [render params]
@@ -168,7 +196,7 @@ unPrune1 = case _ of
 -- FIXME: We treat VPrune nodes as being a <span style="display: contents"> over
 --        their children. This makes diffing easier but is fundamentally a hack.
 --        Note that the diffing algorithm directly uses knowledge of this hack.
-withPruneWrapper :: forall m. Array (VNode m) -> VNode m
+withPruneWrapper :: forall m k. Array (VNode m k) -> VNode m k
 withPruneWrapper children = VTag
   { tag: "span"
   , attrs: Assoc.fromFoldable [ "style" /\ "display: contents" ]
@@ -178,27 +206,29 @@ withPruneWrapper children = VTag
   }
 
 
-type CaseVNode = forall m r.
-     VNode m
+type CaseVNode = forall m k r.
+     VNode m k
   -> (DomNode -> r)
   -> (String -> r)
   -> (String -> r)
   -> ({ tag :: String
       , attrs :: Assoc String String
-      , listeners :: Assoc String (DomEvent -> m Unit)
-      , fixup :: DomNode -> Revertible m
-      , children :: Array (VNode m)
+      , listeners :: Assoc String (DomEvent -> k -> m Unit)
+      , fixup :: DomNode -> k -> Revertible m
+      , children :: Array (VNode m k)
       } -> r)
-  -> (Exists (PruneE m) -> r)
+  -> ((k -> VNode m k) -> r)
+  -> (Exists (PruneE m k) -> r)
   -> r
 
 caseVNode :: CaseVNode
-caseVNode node vRawNode vRawHtml vText vTag vPrune =
+caseVNode node vRawNode vRawHtml vText vTag vWithK vPrune =
   case node of
     VRawNode x -> vRawNode x
     VRawHtml x -> vRawHtml x
     VText x -> vText x
     VTag x -> vTag x
+    VWithK x -> vWithK x
     VPrune x -> vPrune x
 
 
@@ -214,42 +244,45 @@ caseVNode node vRawNode vRawHtml vText vTag vPrune =
 -- |
 -- | - This type can be used with functions like `foldMap` and monoidal `when`,
 -- |   which can be extremely convenient when constructing `Html` values
-newtype Html m s = Html (Array (VNode (MationT m s)))
+newtype Html m k = Html (Array (VNode m k))
 
-instance FreeMonoid (Html m s) (VNode (MationT m s))
+instance FreeMonoid (Html m k) (VNode m k)
 
-derive instance Newtype (Html m s) _
-derive newtype instance Semigroup (Html m s)
-derive newtype instance Monoid (Html m s)
+derive instance Newtype (Html m k) _
+derive newtype instance Semigroup (Html m k)
+derive newtype instance Monoid (Html m k)
+
+instance Contravariant (Html m) where
+  cmap f (Html arr) = Html (cmap f <$> arr)
 
 
 -- | `Html` constructor
-mkRawNode :: forall m s. DomNode -> Html m s
+mkRawNode :: forall m k. DomNode -> Html m k
 mkRawNode node = FM.singleton $ VRawNode node
 
 -- | `Html` constructor
-mkRawHtml :: forall m s. String -> Html m s
+mkRawHtml :: forall m k. String -> Html m k
 mkRawHtml html = FM.singleton $ VRawHtml html
 
 -- | `Html` constructor
-mkText :: forall m s. String -> Html m s
+mkText :: forall m k. String -> Html m k
 mkText text = FM.singleton $ VText text
 
 -- | `Html` constructor
-mkTag :: forall m s.
+mkTag :: forall m k.
   { tag :: String
   , attrs :: Assoc String String
-  , listeners :: Assoc String (DomEvent -> MationT m s Unit)
-  , fixup :: DomNode -> Revertible (MationT m s)
-  , children :: Array (Html m s)
+  , listeners :: Assoc String (DomEvent -> k -> m Unit)
+  , fixup :: DomNode -> k -> Revertible m
+  , children :: Array (Html m k)
   }
-  -> Html m s
+  -> Html m k
 mkTag info = Html [ VTag info' ]
   where
   info' = info { children = FM.float info.children }
 
 -- | `Html` constructor
-mkPrune :: forall p s m. UnsureEq p => String -> (p -> Html m s) -> p -> Html m s
+mkPrune :: forall m k p. UnsureEq p => String -> (p -> Html m k) -> p -> Html m k
 mkPrune key render params =
   FM.singleton $
     addPruneKey key $  -- Append key to key path of this node and all descendants
@@ -261,16 +294,12 @@ mkPrune key render params =
         }
 
 -- | Remove pruning from all contained VNodes
-unPrune :: forall m s. Html m s -> Html m s
+unPrune :: forall m k. Html m k -> Html m k
 unPrune = FM.map unPrune1
-
--- | Embed one `Html` within another
-enroot :: forall m large small. Functor m => Setter' large small -> Html m small -> Html m large
-enroot len (Html arr) = Html $ arr # map (hoist1 (MationT.enroot len))
 
 -- | Transform the underlying monad of an `Html`
 -- |
 -- | The given `m ~> n` is expected to be a monad morphism
 hoist :: forall m n a. Functor n => (m ~> n) -> Html m a -> Html n a
-hoist f (Html arr) = Html $ arr # map (hoist1 (MationT.hoist f))
+hoist f (Html arr) = Html $ arr # map (hoist1 f)
 

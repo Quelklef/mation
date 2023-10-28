@@ -6,8 +6,8 @@ import Mation as M
 import Mation.Elems as E
 import Mation.Styles as S
 import Mation.Props as P
-import Mation.Core.Daemon as D
 import Mation.Core.Util.UnsureEq (class UnsureEq, viaEq)
+import Mation.Core.Refs as Refs
 import Mation.Additional.Router as R
 import Mation.Lenses (field)
 
@@ -23,7 +23,6 @@ import Mation.Samples.Inputs as Samples.Inputs
 import Mation.Samples.TestingZone as Samples.TestingZone
 import Mation.Samples.PerfTest as Samples.PerfTest
 import Mation.Samples.Pruning as Samples.Pruning
-import Mation.Samples.Kittens as Samples.Kittens
 
 
 data Page
@@ -33,7 +32,6 @@ data Page
   | Components
   | AsyncApiCall
   | Styling
-  | Kittens
   | Clock
   | Inputs
   | TestingZone
@@ -50,7 +48,6 @@ pages =
   , AsyncApiCall
   , Styling
   , Clock
-  , Kittens
   , Inputs
   , TestingZone
   , PerfTest
@@ -84,7 +81,6 @@ pretty = case _ of
   TestingZone -> "Testing-Zone"
   PerfTest -> "Perf-Test"
   Pruning -> "Pruning"
-  Kittens -> "Kittens"
 
 unpretty :: String -> Maybe Page
 unpretty = case _ of
@@ -98,7 +94,6 @@ unpretty = case _ of
   "Inputs" -> Just Inputs
   "Perf-Test" -> Just PerfTest
   "Pruning" -> Just Pruning
-  "Kittens" -> Just Kittens
 
   _ -> Nothing
 
@@ -131,12 +126,11 @@ type Model =
     , testing :: Samples.TestingZone.Model
     , perfTest :: Samples.PerfTest.Model
     , pruning :: Samples.Pruning.Model
-    , kittens :: Samples.Kittens.Model
     }
   }
 
 
-render :: Model -> E.Html' Model
+render :: Model -> E.Html' (M.Modify' Model)
 render model =
   E.html
   []
@@ -163,38 +157,35 @@ render model =
         ]
         [ case model.page of
             Welcome      ->
-              E.enroot (field @"submodels" <<< field @"welcome") $
+              cmap (M.focusModify $ field @"submodels" <<< field @"welcome") $
                 E.prune "page-welcome" model.submodels.welcome Samples.Welcome.render
             Counter      ->
-              E.enroot (field @"submodels" <<< field @"counter") $
+              cmap (M.focusModify $ field @"submodels" <<< field @"counter") $
                 E.prune "page-counter" model.submodels.counter Samples.Counter.render
             Components   ->
-              E.enroot (field @"submodels" <<< field @"components") $
+              cmap (M.focusModify $ field @"submodels" <<< field @"components") $
                 E.prune "page-components" model.submodels.components Samples.Components.render
             AsyncApiCall ->
-              E.enroot (field @"submodels" <<< field @"asyncApiCall") $
+              cmap (M.focusModify $ field @"submodels" <<< field @"asyncApiCall") $
                 E.prune "page-asyncApiCall" model.submodels.asyncApiCall Samples.AsyncApiCall.render
             Styling      ->
-              E.enroot (field @"submodels" <<< field @"styling") $
+              cmap (M.focusModify $ field @"submodels" <<< field @"styling") $
                 E.prune "page-styling" model.submodels.styling Samples.Styling.render
             Clock        ->
-              E.enroot (field @"submodels" <<< field @"clock") $
+              cmap (const unit) $
                 E.prune "page-clock" model.submodels.clock Samples.Clock.render
             Inputs       ->
-              E.enroot (field @"submodels" <<< field @"inputs") $
+              cmap (M.focusModify $ field @"submodels" <<< field @"inputs") $
                 E.prune "page-inputs" model.submodels.inputs Samples.Inputs.render
             TestingZone  ->
-              E.enroot (field @"submodels" <<< field @"testing") $
+              cmap (M.focusModify $ field @"submodels" <<< field @"testing") $
                 E.prune "page-testing" model.submodels.testing Samples.TestingZone.render
             PerfTest     ->
-              E.enroot (field @"submodels" <<< field @"perfTest") $
+              cmap (M.focusModify $ field @"submodels" <<< field @"perfTest") $
                 E.prune "page-perfTest" model.submodels.perfTest Samples.PerfTest.render
             Pruning      ->
-              E.enroot (field @"submodels" <<< field @"pruning") $
+              cmap (M.focusModify $ field @"submodels" <<< field @"pruning") $
                 E.prune "page-pruning" model.submodels.pruning Samples.Pruning.render
-            Kittens ->
-              E.enroot (field @"submodels" <<< field @"kittens") $
-                E.prune "page-readme-sample" model.submodels.kittens Samples.Kittens.render
         ]
       ]
     ]
@@ -226,10 +217,10 @@ render model =
       ]
       [ E.text "Page: "
       , E.select
-        [ P.onInputValue \val step ->
+        [ P.onInputValue \val ref ->
             case unpretty val of
               Nothing -> pure unit
-              Just page -> step (field @"page" .~ page)
+              Just page -> ref # M.modify (field @"page" .~ page)
         , P.addStyles
           [ S.fontSize "inherit"
           , S.color "inherit"
@@ -291,7 +282,6 @@ initialize = do
       , inputs: Samples.Inputs.initial
       , perfTest: Samples.PerfTest.initial
       , pruning: Samples.Pruning.initial
-      , kittens: Samples.Kittens.initial
       }
     }
 
@@ -301,13 +291,12 @@ main = do
   initial <- initialize
   M.runApp
     { initial
-    , render
+    , render: render >>> cmap Refs.downcast
     , root: M.onHtml
-    , daemon: fold
-        [ D.enroot (field @"submodels" <<< field @"clock") Samples.Clock.daemon
-        , D.enroot (field @"submodels" <<< field @"testing") Samples.TestingZone.daemon
-        , D.enroot (field @"page") $ R.sync router
-        ]
+    , daemon: \ref -> do
+        Samples.Clock.daemon (ref # Refs.focusReadWriteL (field @"submodels" <<< field @"clock"))
+        Samples.TestingZone.daemon (ref # Refs.focusReadWriteL (field @"submodels" <<< field @"testing"))
+        (R.sync router) (ref # Refs.focusReadWriteL (field @"page"))
     }
 
 

@@ -22,10 +22,6 @@ type Html' s = Html Effect s
 text :: forall m s. String -> Html m s
 text = Html.mkText
 
--- | Embed one `Html` within another
-enroot :: forall m large small. Functor m => Setter' large small -> Html m small -> Html m large
-enroot = Html.enroot
-
 -- | Embed a DOM node
 rawNode :: forall m s. DomNode -> Html m s
 rawNode = Html.mkRawNode

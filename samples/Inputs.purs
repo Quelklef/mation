@@ -2,7 +2,8 @@ module Mation.Samples.Inputs where
 
 import Mation.Core.Prelude
 
-import Mation (Html)
+import Mation (Html, Html')
+import Mation as M
 import Mation.Elems as E
 import Mation.Experimental.Input as In
 import Mation.Experimental.Opts (def)
@@ -33,18 +34,18 @@ initial =
   }
 
 
-render :: Model -> Html Effect Model
+render :: Model -> Html' (M.Modify' Model)
 render model =
   E.form
   []
 
   [ In.render inputs.username model.username
     # withLabel "Username"
-    # E.enroot (field @"username")
+    # cmap (M.focusWithLens (field @"username"))
 
   , In.render inputs.email model.email
     # withLabel "Email"
-    # E.enroot (field @"email")
+    # cmap (M.focusWithLens (field @"email"))
   ]
 
   where

@@ -4,16 +4,17 @@ import Mation.Core.Prelude
 
 import Effect.Exception (throw)
 
-import Mation.Core.MationT (MationT)
-import Mation.Core.MationT as MationT
-import Mation.Core.Daemon (Daemon)
-import Mation.Core.Daemon as Daemon
-import Mation.Core.Html (Html (..), VNode)
+import Mation.Core.Html (Html (..), VNode, fixVNode)
 import Mation.Core.Html as Html
 import Mation.Core.Dom (DomNode)
 import Mation.Core.Patch as Patch
-import Mation.Core.Util.WRef (WRef)
-import Mation.Core.Util.WRef as WRef
+import Mation.Core.Refs as Refs
+import Mation.Core.Refs (ReadWriteL, ReadWrite)
+
+
+type Daemon m s = ReadWriteL m s -> m Unit
+
+type Daemon' s = Daemon Effect s
 
 
 -- | Like `Mation.Run (runApp)` but with event handlers living in a user-specified monad `m`.
@@ -157,9 +158,11 @@ import Mation.Core.Util.WRef as WRef
 -- |
 -- | But for so much noise all we'd gain is being able to avoid
 -- | writing `launchAff_` at the beginning of our event handlers. Not worth it.
+--
+-- FIXME: add runAppML variant where 'render' is given a ReadWriteL
 runAppM :: forall m s. MonadUnliftEffect m =>
   { initial :: s
-  , render :: s -> Html m s
+  , render :: s -> Html m (ReadWrite m s)
   , root :: Effect DomNode
   , daemon :: Daemon m s
   } -> m Unit
@@ -167,70 +170,44 @@ runAppM :: forall m s. MonadUnliftEffect m =>
 runAppM args = withRunInEffect \(toEffect :: m ~> Effect) -> do
 
   let
-    -- Render to an VNode instead of an Html
+    -- Render to a single VNode (instead of an entire Html)
     -- This is unsafe, but during usual usage of the framework should never happen
-    renderTo1 :: s -> Effect (VNode (MationT m s))
+    renderTo1 :: s -> Effect (VNode m (ReadWrite m s))
     renderTo1 = args.render >>> case _ of
       Html [x] -> pure x
       _ -> throw "[mation] Error: Top-level Html value contains either zero nodes or more than one node. Did you produce `mempty`, perhaps, or some result of `<>` or `fold`? Please wrap your application in a container node."
 
-  -- This will eventually hold the real step function, but is
-  -- initialized with a dummy
-  --
-  -- This works because no Mation should ever be executed until
-  -- after the first render is complete (which is when this WRef
-  -- will be populated)
-  --
-  -- This is an ugly setup but is necessary to bootstrap the
-  -- application
-  stepRef :: WRef ((s -> s) -> Effect Unit)
-    <- WRef.make (\_ -> pure unit)
 
-  let
-    -- Turn a Mation into an Effect
-    execMation :: MationT m s ~> Effect
-    execMation mat = do
-      step <- WRef.read stepRef
-      toEffect $ MationT.runMationT mat (step >>> liftEffect)
+  -- Tracks user application state
+  (stateRef :: ReadWriteL Effect s) <- Refs.make args.initial
 
-  -- Render for the first time
-  model /\ vNode /\ pruneMap <- do
-    let model = args.initial
-    vNode <- renderTo1 model
+  -- Tracks Mation internal state
+  (vNodeRef :: ReadWrite Effect (Maybe (VNode Effect Unit))) <- Refs.make Nothing
+  (pruneMapRef :: ReadWrite Effect (Maybe _)) <- Refs.make Nothing
+
+  -- On change to state, re-render application
+  stateRef # Refs.onChange \newState -> do
+    mOldVNode <- vNodeRef # Refs.read
+    (newVNode :: VNode m (ReadWrite m s)) <- renderTo1 newState
+    let (newVNode' :: VNode Effect Unit) =
+            newVNode
+            # fixVNode (stateRef # Refs.downcast # Refs.hoistReadWrite liftEffect)
+            # Html.hoist1 toEffect
+    mOldPruneMap <- pruneMapRef # Refs.read
     let patch = Patch.patchOnto
-                  { mOldVNode: Nothing
-                  , newVNode: Html.hoist1 execMation vNode
-                  , mPruneMap: Nothing
-                  }
-    pruneMap <- args.root >>= patch
-    pure $ model /\ vNode /\ pruneMap
-
-  -- Holds current state
-  ref <- WRef.make (model /\ vNode /\ pruneMap)
-
-  let
-    -- This is the actual step function
-    step :: (s -> s) -> Effect Unit
-    step endo = do
-      oldModel /\ oldVNode /\ oldPruneMap <- WRef.read ref
-      let newModel = endo oldModel
-      newVNode <- renderTo1 newModel
-      let patch = Patch.patchOnto
-                    { mOldVNode: Just (Html.hoist1 execMation oldVNode)
-                    , newVNode: Html.hoist1 execMation newVNode
-                    , mPruneMap: Just oldPruneMap
+                    { mOldVNode
+                    , newVNode: newVNode'
+                    , mPruneMap: mOldPruneMap
                     }
-      newPruneMap <- args.root >>= patch
-      WRef.write (newModel /\ newVNode /\ newPruneMap) ref
+    newPruneMap <- args.root >>= patch
+    vNodeRef # Refs.write (Just newVNode')
+    pruneMapRef # Refs.write (Just newPruneMap)
+    pure unit
 
-  -- Populate the stepRef with the correct value
-  WRef.write step stepRef
+  -- Induce initial render
+  stateRef # Refs.modify identity
 
   -- Start the daemon
-  ref # WRef.onChange \_ -> step identity
-    -- FIXME: this^ is kind of a hack. The invarant between
-    --   the three states is broken temporarily until
-    --   we call 'step identity'
-  toEffect $ (Daemon.enroot _1 args.daemon) ref
+  toEffect $ args.daemon (stateRef # Refs.hoistReadWriteL liftEffect toEffect)
 
 

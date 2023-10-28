@@ -8,7 +8,7 @@ import Mation as M
 import Mation.Elems as E
 import Mation.Styles as S
 import Mation.Props as P
-import Mation.Core.Util.WRef as WRef
+import Mation.Core.Refs as Refs
 
 
 type Model =
@@ -20,15 +20,15 @@ type Model =
 initial :: Model
 initial = { hour: 0.0, minute: 0.0, second: 0.0 }
 
-daemon :: M.Daemon Effect Model
+daemon :: M.Daemon' Model
 daemon ref =
   watchTime \{ hour, minute, second } ->
-    ref # WRef.write { hour, minute, second }
+    ref # M.write { hour, minute, second }
 
 foreign import watchTime :: ({ hour :: Number, minute :: Number, second :: Number } -> Effect Unit) -> Effect Unit
 
 
-render :: Model -> E.Html' Model
+render :: Model -> E.Html' Unit
 render { hour, minute, second } =
 
   E.div
@@ -61,7 +61,7 @@ render { hour, minute, second } =
   showXX = show >>> padStart 2 "0"
 
 
-analog :: Model -> E.Html' Model
+analog :: Model -> E.Html' Unit
 analog { hour, minute, second } =
 
   E.div

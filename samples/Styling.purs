@@ -2,6 +2,7 @@ module Mation.Samples.Styling where
 
 import Mation.Core.Prelude
 
+import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
@@ -14,7 +15,7 @@ type Model = Unit
 initial :: Model
 initial = unit
 
-render :: forall m. Model -> E.Html m Model
+render :: forall m. Model -> E.Html m (M.Modify m Model)
 render _model =
   E.div
   [ P.addCss "display: flex; flex-direction: column; gap: 1em;"

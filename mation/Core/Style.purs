@@ -216,7 +216,7 @@ toProp = FM.float >>> toProp'
         -- Combine them
         # intercalate "\n"
 
-    in mkFixup \node -> Rev.mkRevertibleE do
+    in mkFixup \node _ -> Rev.mkRevertibleE do
       { restore: restoreCss } <- putCss { getCss, hash: styleHash }
       { restore: restoreClass } <- putClass node className
       pure $ liftEffect (restoreCss <> restoreClass)

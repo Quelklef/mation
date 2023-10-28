@@ -52,10 +52,12 @@ module Main where
 import Prelude
 import Effect (Effect)
 import Data.Foldable (fold)
+import Data.Functor.Contravariant (cmap)
 
 import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
+import Mation.Core.Refs as Refs
 
 -- Application state type
 type Model = Int
@@ -65,7 +67,7 @@ initial :: Model
 initial = 0
 
 -- Displays the application and defines its behaviour
-render :: Model -> E.Html' Model
+render :: Model -> E.Html' (M.Modify' Model)
 render num = fold
   [ E.p
     []
@@ -73,20 +75,18 @@ render num = fold
   , E.p
     []
     [ E.button
-      [ P.onClick        -- on click,
-          \_ ->          -- ignore the click event
-            \update ->   -- accept the state update function
-              update     -- update the application state
-                (_ + 1)  -- by incrementing the number
+      [ P.onClick             -- on click,
+          \_ ->               -- ignore the click event
+            M.modify (_ + 1)  -- increment the model
       ]
       [ E.text "Increment (x1)" ]
     , E.text " "
     , E.button
-      [ P.onClick \_event update -> do
+      [ P.onClick \_event modelRef -> do
             -- An event handler is just an Effect
             -- Within one, you can do whatever you want!
             repeatedly { nTimes: 12, delaySeconds: 0.125 } do
-              update (_ + 1)
+              modelRef # M.modify (_ + 1)
       ]
       [ E.text "Increment (x12)" ]
     ]
@@ -97,7 +97,12 @@ foreign import repeatedly ::
 
 -- Run the app, mounting within <body>
 main :: Effect Unit
-main = M.runApp { initial, render, root: M.underBody, daemon: mempty }
+main = M.runApp
+  { initial
+  , render: render >>> cmap Refs.downcast
+  , root: M.underBody
+  , daemon: mempty
+  }
 ```
 
 

@@ -24,9 +24,9 @@ import Data.Array as Array
 import Data.Maybe (fromJust)
 import Partial.Unsafe (unsafePartial)
 
+import Mation (Daemon)
+import Mation.Core.Refs as Refs
 import Mation.Core.Prelude
-import Mation.Core.Daemon (Daemon)
-import Mation.Core.Util.WRef as WRef
 import Mation.Core.Util.Assoc (Assoc)
 import Mation.Core.Util.Assoc as Assoc
 
@@ -270,7 +270,7 @@ writeRoute route (Router { toPathStr }) = writePathStr (toPathStr route)
 -- | Each change to the route will append to the browser history
 sync :: forall route. Router route -> Daemon Effect route
 sync (Router { fromPathStr, toPathStr }) wref = do
-  syncdWrite <- wref # WRef.sync (toPathStr >>> writePathStr)
+  syncdWrite <- wref # Refs.sync (toPathStr >>> writePathStr)
   readPathStr >>= (fromPathStr >>> pure) >>= syncdWrite
   onPathStrChange (fromPathStr >>> syncdWrite)
 

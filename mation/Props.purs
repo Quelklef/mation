@@ -20,7 +20,7 @@ module Mation.Props
   , rawListener
   ) where
 
-import Mation.Core.Prop (Prop, enroot, hoist) as X
+import Mation.Core.Prop (Prop, hoist) as X
 import Mation.Gen.Attributes hiding (style, class_, data_) as X
 import Mation.Gen.Events as X
 import Mation.Lenses (field)
@@ -30,7 +30,6 @@ import Data.Map as Map
 import Data.Array as Array
 
 import Mation.Core.Prelude
-import Mation.Core.Mation (Mation)
 import Mation.Core.Prop (Prop)
 import Mation.Core.Prop as Prop
 import Mation.Core.Dom (DomEvent, DomNode)
@@ -112,7 +111,7 @@ foreign import addDataset_f :: Assoc String String -> DomNode -> Effect { restor
 -- | Attach a listener to the `input` event.
 -- |
 -- | This is like `onInput` but retrieves the event value on your behalf
-onInputValue :: forall m s. (String -> Mation m s) -> Prop m s
+onInputValue :: forall m k. (String -> k -> m Unit) -> Prop m k
 onInputValue f = X.onInput (\ev -> f (getTargetValue ev))
 
 foreign import getTargetValue :: DomEvent -> String
@@ -158,7 +157,7 @@ foreign import showUpdates_f :: DomNode -> Effect { restore :: Effect Unit }
 
 
 -- | Fires when any node is clicked *except* for the target node (or a descendant of it)
-onClickElsewhere :: forall m s. MonadUnliftEffect m => (DomEvent -> Mation m s) -> Prop m s
+onClickElsewhere :: forall m k. MonadUnliftEffect m => (DomEvent -> k -> m Unit) -> Prop m k
 onClickElsewhere f =
   fixupM' \node step ->
     withRunInEffect \(toEffect :: m ~> Effect) -> do
@@ -178,6 +177,6 @@ rawAttribute = Prop.mkPair
 -- | Create a `Prop` directly from an event listener
 -- |
 -- | This should only rarely be necessary
-rawListener :: forall m s. String -> (DomEvent -> Mation m s) -> Prop m s
+rawListener :: forall m k. String -> (DomEvent -> k -> m Unit) -> Prop m k
 rawListener = Prop.mkListener
 

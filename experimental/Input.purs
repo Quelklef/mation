@@ -10,15 +10,19 @@ import Data.String.Common (split) as Str
 import Data.List (List (..))
 import Data.List as List
 
-import Mation (Html, Prop)
+import Mation (Html, Html', Prop, cmap)
+import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
 import Mation.Lenses (field)
 import Mation.Core.Util.UnsureEq (class UnsureEq)
+import Mation.Core.Refs as Refs
 import Mation.Experimental.Input.Reading (Reading)
 import Mation.Experimental.Input.Reading as R
 import Mation.Experimental.Opts (Opts, def)
+
+import Unsafe.Coerce (unsafeCoerce)
 
 
 -- | Represents an input specification. Type parameters:
@@ -60,7 +64,7 @@ newtype InputSpec model err t = InputSpec
       -- conditions, they will not be rendered. Parameterizing 'render' by 'Maybe err'
       -- fixes this, because it allows 'render' to be called by a third party (ie, not
       -- a spec itself) which uses the final spec to compute errors.
-  , render :: Maybe err -> model -> Html Effect model
+  , render :: Maybe err -> model -> Html' (M.Modify' model)
 
       -- | Empty input
   , empty :: model
@@ -71,7 +75,7 @@ newtype InputSpec model err t = InputSpec
 mkInputSpec :: forall model err t.
   { write :: t -> model
   , read :: model -> Either err t
-  , render :: Maybe err -> model -> Html Effect model
+  , render :: Maybe err -> model -> Html' (M.Modify' model)
   , empty :: model
   } -> InputSpec model err t
 mkInputSpec = InputSpec
@@ -80,7 +84,7 @@ mkInputSpec = InputSpec
 mkUnfailableInputSpec :: forall model err t.
   { write :: t -> model
   , read :: model -> Either err t
-  , render :: model -> Html Effect model
+  , render :: model -> Html' (M.Modify' model)
   , empty :: model
   } -> InputSpec model err t
 mkUnfailableInputSpec spec =
@@ -134,18 +138,18 @@ readAt lens (InputSpec spec) =
 
 
 -- | Render an input
-render :: forall m model err t. MonadEffect m => InputSpec model err t -> InputState model -> Html m (InputState model)
+render :: forall m model err t. MonadEffect m => InputSpec model err t -> InputState model -> Html m (M.Modify' (InputState model))
 render (InputSpec spec) (InputState { model, perturbed }) =
 
   E.span
-  [ P.onFocusout \_ step -> step (_Newtype <<< field @"perturbed" .~ true)
-  , P.onInput \_ step -> step (_Newtype <<< field @"perturbed" .~ true)
+  [ P.onFocusout \_ -> M.modify (_Newtype <<< field @"perturbed" .~ true)
+  , P.onInput \_ -> M.modify (_Newtype <<< field @"perturbed" .~ true)
   , P.addStyles
     [ S.display "contents"
     ]
   ]
   [ spec.render mErr model
-      # E.enroot (_Newtype <<< field @"model")
+      # cmap (M.focusWithLens (_Newtype <<< field @"model"))
   ]
 
   # E.hoist liftEffect
@@ -168,7 +172,7 @@ changeModel iso (InputSpec spec) = InputSpec
   { write: \t -> spec.write t ^. iso
   , read: \model' -> spec.read (model' ^. re iso)
   , empty: spec.empty ^. iso
-  , render: \mErr model' -> spec.render mErr (model' ^. re iso) # E.enroot (re iso)
+  , render: \mErr model' -> spec.render mErr (model' ^. re iso) # cmap (M.focusWithLens (re iso))
   }
 
 
@@ -306,9 +310,9 @@ stringInput fromDefaults =
     , render: \s ->
         E.input
         [ P.value s
-        , P.onInputValue \s' step -> step (const s')
+        , P.onInputValue M.write
         , fold opts.props
-          # P.enroot (re _Newtype :: Iso' String StringInputModel)
+          # cmap (M.focusWithLens (re _Newtype :: Iso' String StringInputModel))
         ]
     }
   # changeModel (re _Newtype :: Iso' _ StringInputModel)
