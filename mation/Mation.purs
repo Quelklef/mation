@@ -13,36 +13,27 @@ import Mation.Core.Dom (DomNode, DomEvent) as X
 import Mation.Core.Refs
   ( ReadWriteL
   , ReadWriteL'
-  , focusReadWriteL
-  , hoistReadWriteL
   , ReadWrite
   , ReadWrite'
-  , focusReadWrite
-  , hoistReadWrite
   , Modify
   , Modify'
-  , focusModify
-  , hoistModify
   , Write
   , Write'
-  , focusWrite
-  , hoistWrite
   , ReadL
   , ReadL'
-  , focusReadL
-  , hoistReadL
   , Read
   , Read'
-  , focusRead
-  , hoistRead
+  , class ReadRef
   , read
+  , class WriteRef
   , write
+  , class ModifyRef
   , modify
-  , class CanFocusWithLens
+  , class FocusRefWithLens
   , focusWithLens
-  , class CanFocusWithSetter
+  , class FocusRefWithSetter
   , focusWithSetter
-  , class CanFocusWithGetter
+  , class FocusRefWithGetter
   , focusWithGetter
   ) as X
 

@@ -191,7 +191,7 @@ runAppM args = withRunInEffect \(toEffect :: m ~> Effect) -> do
     (newVNode :: VNode m (ReadWrite m s)) <- renderTo1 newState
     let (newVNode' :: VNode Effect Unit) =
             newVNode
-            # fixVNode (stateRef # Refs.downcast # Refs.hoistReadWrite liftEffect)
+            # fixVNode (stateRef # Refs.downcast # Refs.hoist liftEffect)
             # Html.hoist1 toEffect
     mOldPruneMap <- pruneMapRef # Refs.read
     let patch = Patch.patchOnto
@@ -208,6 +208,6 @@ runAppM args = withRunInEffect \(toEffect :: m ~> Effect) -> do
   stateRef # Refs.modify identity
 
   -- Start the daemon
-  toEffect $ args.daemon (stateRef # Refs.hoistReadWriteL liftEffect toEffect)
+  toEffect $ args.daemon (stateRef # Refs.hoistWithIso liftEffect toEffect)
 
 

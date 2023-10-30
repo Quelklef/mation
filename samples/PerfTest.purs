@@ -20,7 +20,7 @@ import Data.Lens.Index (ix)
 import Data.Time.Duration (Milliseconds (..))
 
 import Mation as M
-import Mation (Html, Html')
+import Mation (Html')
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S

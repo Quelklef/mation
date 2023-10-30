@@ -157,34 +157,34 @@ render model =
         ]
         [ case model.page of
             Welcome      ->
-              cmap (M.focusModify $ field @"submodels" <<< field @"welcome") $
+              cmap (M.focusWithLens (field @"submodels" <<< field @"welcome")) $
                 E.prune "page-welcome" model.submodels.welcome Samples.Welcome.render
             Counter      ->
-              cmap (M.focusModify $ field @"submodels" <<< field @"counter") $
+              cmap (M.focusWithLens (field @"submodels" <<< field @"counter")) $
                 E.prune "page-counter" model.submodels.counter Samples.Counter.render
             Components   ->
-              cmap (M.focusModify $ field @"submodels" <<< field @"components") $
+              cmap (M.focusWithLens (field @"submodels" <<< field @"components")) $
                 E.prune "page-components" model.submodels.components Samples.Components.render
             AsyncApiCall ->
-              cmap (M.focusModify $ field @"submodels" <<< field @"asyncApiCall") $
+              cmap (M.focusWithLens (field @"submodels" <<< field @"asyncApiCall")) $
                 E.prune "page-asyncApiCall" model.submodels.asyncApiCall Samples.AsyncApiCall.render
             Styling      ->
-              cmap (M.focusModify $ field @"submodels" <<< field @"styling") $
+              cmap (M.focusWithLens (field @"submodels" <<< field @"styling")) $
                 E.prune "page-styling" model.submodels.styling Samples.Styling.render
             Clock        ->
               cmap (const unit) $
                 E.prune "page-clock" model.submodels.clock Samples.Clock.render
             Inputs       ->
-              cmap (M.focusModify $ field @"submodels" <<< field @"inputs") $
+              cmap (M.focusWithLens (field @"submodels" <<< field @"inputs")) $
                 E.prune "page-inputs" model.submodels.inputs Samples.Inputs.render
             TestingZone  ->
-              cmap (M.focusModify $ field @"submodels" <<< field @"testing") $
+              cmap (M.focusWithLens (field @"submodels" <<< field @"testing")) $
                 E.prune "page-testing" model.submodels.testing Samples.TestingZone.render
             PerfTest     ->
-              cmap (M.focusModify $ field @"submodels" <<< field @"perfTest") $
+              cmap (M.focusWithLens (field @"submodels" <<< field @"perfTest")) $
                 E.prune "page-perfTest" model.submodels.perfTest Samples.PerfTest.render
             Pruning      ->
-              cmap (M.focusModify $ field @"submodels" <<< field @"pruning") $
+              cmap (M.focusWithLens (field @"submodels" <<< field @"pruning")) $
                 E.prune "page-pruning" model.submodels.pruning Samples.Pruning.render
         ]
       ]
@@ -294,9 +294,9 @@ main = do
     , render: render >>> cmap Refs.downcast
     , root: M.onHtml
     , daemon: \ref -> do
-        Samples.Clock.daemon (ref # Refs.focusReadWriteL (field @"submodels" <<< field @"clock"))
-        Samples.TestingZone.daemon (ref # Refs.focusReadWriteL (field @"submodels" <<< field @"testing"))
-        (R.sync router) (ref # Refs.focusReadWriteL (field @"page"))
+        Samples.Clock.daemon (ref # Refs.focusWithLens (field @"submodels" <<< field @"clock"))
+        Samples.TestingZone.daemon (ref # Refs.focusWithLens (field @"submodels" <<< field @"testing"))
+        (R.sync router) (ref # Refs.focusWithLens (field @"page"))
     }
 
 

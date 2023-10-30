@@ -10,19 +10,16 @@ import Data.String.Common (split) as Str
 import Data.List (List (..))
 import Data.List as List
 
-import Mation (Html, Html', Prop, cmap)
+import Mation (Html, Html', Prop)
 import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
 import Mation.Lenses (field)
 import Mation.Core.Util.UnsureEq (class UnsureEq)
-import Mation.Core.Refs as Refs
 import Mation.Experimental.Input.Reading (Reading)
 import Mation.Experimental.Input.Reading as R
 import Mation.Experimental.Opts (Opts, def)
-
-import Unsafe.Coerce (unsafeCoerce)
 
 
 -- | Represents an input specification. Type parameters:

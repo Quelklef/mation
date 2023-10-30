@@ -35,7 +35,7 @@ initial =
   double x = x /\ x
 
 
-onDouble :: forall ref a. M.CanFocusWithLens ref => UnsureEq a =>
+onDouble :: forall ref a. M.FocusRefWithLens ref => UnsureEq a =>
   (a -> E.Html' (ref a)) -> (Double a -> E.Html' (ref (Double a)))
 onDouble renderOne model =
   E.div
