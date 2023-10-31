@@ -190,46 +190,23 @@ unPrune1 = case _ of
   VWithK withK -> VWithK (unPrune1 <$> withK)
   VPrune e ->
     e # runExists \(PruneE { params, render }) ->
-          withPruneWrapper [render params]
+          withWrapper [render params]
 
 
--- FIXME: We treat VPrune nodes as being a <span style="display: contents"> over
---        their children. This makes diffing easier but is fundamentally a hack.
+-- FIXME: VPrune and VWithK nodes get rendered as a <span style="display: contents">
+--        over their children. This (A) is necessary to account for the fact
+--        that Html is monoidal but VNode is not (try writing mkWithK without
+--        using withWrapper); and (B) makes diffing easier for VPrune nodes.
+--        But it's fundamentally a hack that needs fixing.
 --        Note that the diffing algorithm directly uses knowledge of this hack.
-withPruneWrapper :: forall m k. Array (VNode m k) -> VNode m k
-withPruneWrapper children = VTag
+withWrapper :: forall m k. Array (VNode m k) -> VNode m k
+withWrapper children = VTag
   { tag: "span"
   , attrs: Assoc.fromFoldable [ "style" /\ "display: contents" ]
   , listeners: Assoc.fromFoldable []
   , fixup: mempty
   , children
   }
-
-
-type CaseVNode = forall m k r.
-     VNode m k
-  -> (DomNode -> r)
-  -> (String -> r)
-  -> (String -> r)
-  -> ({ tag :: String
-      , attrs :: Assoc String String
-      , listeners :: Assoc String (DomEvent -> k -> m Unit)
-      , fixup :: DomNode -> k -> Revertible m
-      , children :: Array (VNode m k)
-      } -> r)
-  -> ((k -> VNode m k) -> r)
-  -> (Exists (PruneE m k) -> r)
-  -> r
-
-caseVNode :: CaseVNode
-caseVNode node vRawNode vRawHtml vText vTag vWithK vPrune =
-  case node of
-    VRawNode x -> vRawNode x
-    VRawHtml x -> vRawHtml x
-    VText x -> vText x
-    VTag x -> vTag x
-    VWithK x -> vWithK x
-    VPrune x -> vPrune x
 
 
 
@@ -282,6 +259,10 @@ mkTag info = Html [ VTag info' ]
   info' = info { children = FM.float info.children }
 
 -- | `Html` constructor
+mkWithK :: forall m k. (k -> Html m k) -> Html m k
+mkWithK withK = Html [VWithK \k -> case withK k of Html ar -> withWrapper ar]
+
+-- | `Html` constructor
 mkPrune :: forall m k p. UnsureEq p => String -> (p -> Html m k) -> p -> Html m k
 mkPrune key render params =
   FM.singleton $
@@ -290,7 +271,7 @@ mkPrune key render params =
         { keyPath: []
         , params
         , unsureEq
-        , render: render >>> FM.unwrap >>> withPruneWrapper
+        , render: render >>> FM.unwrap >>> withWrapper
         }
 
 -- | Remove pruning from all contained VNodes

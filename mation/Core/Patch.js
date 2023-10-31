@@ -6,12 +6,9 @@
 //   implementation.
 
 export const patch_f =
-({ unit
- , caseMaybe
+({ caseMaybe
  , caseUnsure
- , caseVNode
- , collapseRevertible
- , emptyRevertible
+ , casePatchVNode
  , mPruneMap
 }) => {
 
@@ -37,7 +34,7 @@ export const patch_f =
 
   // Create an empty VTag
   function mkEmptyVTag(tag){
-    return { tag, attrs: [], listeners: [], children: [], fixup: emptyRevertible };
+    return { tag, attrs: [], listeners: [], children: [], fixup: (_ => () => {}) };
   }
 
   // Mutatively patches the given root node (ie, target node to mount on)
@@ -55,7 +52,7 @@ export const patch_f =
 
     // Perform patch
     const mountedOn = (
-      caseVNode(newVNode)
+      casePatchVNode(newVNode)
         (domNode => {
           setNode(root, domNode);
           fixupConditionalRelease(root);
@@ -95,7 +92,6 @@ export const patch_f =
         (newVTag => {
           return tagCase(root, mOldVNode, newVTag)
         })
-        (vWithK => throwThis(Error('not yet implemented')))
         (vPrune => {
           return pruneCase(root, mOldVNode, vPrune)
         })
@@ -154,12 +150,11 @@ export const patch_f =
     // If root is not a tag of correct type, replace it
     const shouldReplace = (
       !mOldVNode ||
-      caseVNode(mOldVNode)
+      casePatchVNode(mOldVNode)
         (domNode => true)
         (html => true)
         (text => true)
         (oldVTag => oldVTag.tag !== newVTag.tag)
-        (vWithK => throwThis(Error('not yet implemented')))
         (vPrune => newVTag.tag !== 'span')
     );
     if (shouldReplace) {
@@ -173,19 +168,18 @@ export const patch_f =
     const empty = mkEmptyVTag(newVTag.tag);
     const oldVTag = (
       !mOldVNode ? empty :
-      caseVNode(mOldVNode)
+      casePatchVNode(mOldVNode)
         (domNode => empty)
         (html => empty)
         (text => empty)
         (oldVTag => oldVTag)
-        (vWithK => throwThis(Error('not yet implemented')))
         (vPrune => {
           // Since the prune was rendered last frame, it must be in the prune map
           // Also, we need not check the prune params
           const info = lookupPruneUnsafe(oldPruneMap, vPrune);
           console.assert(!!info, `[mation] prune missing from map (looking for keypath '${vPrune.keyPath.map(k => '→ ' + k).join(' ')}')`);
           // You and I have magic knowledge that all VPrune nodes render to VTag nodes
-          const vTag = caseVNode(info.vNode)(_ => null)(_ => null)(_ => null)(x => x)(_ => null)(_ => null);
+          const vTag = casePatchVNode(info.vNode)(_ => null)(_ => null)(_ => null)(x => x)(_ => null);
           return vTag;
         })
     );
@@ -195,7 +189,7 @@ export const patch_f =
     patchChildren(root, oldVTag.children, newVTag.children);
 
     // Perform fixup & store restoration function
-    const restore = collapseRevertible(newVTag.fixup(root)(unit))();
+    const restore = newVTag.fixup(root)();
     fixupAttachRestore(root, restore);
 
     return root;
@@ -305,7 +299,7 @@ export const patch_f =
     // Add new listeners
     root._listeners = {};
     for (const [name, f] of newListeners) {
-      const domHandler = ev => f(ev)(unit)();
+      const domHandler = ev => f(ev)();
       root.addEventListener(name, domHandler);
       root._listeners[name] = domHandler;
     }

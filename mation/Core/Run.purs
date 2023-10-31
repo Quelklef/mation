@@ -7,6 +7,7 @@ import Effect.Exception (throw)
 import Mation.Core.Html (Html (..), VNode, fixVNode)
 import Mation.Core.Html as Html
 import Mation.Core.Dom (DomNode)
+import Mation.Core.Patch (PatchVNode)
 import Mation.Core.Patch as Patch
 import Mation.Core.Refs as Refs
 import Mation.Core.Refs (ReadWriteL, ReadWrite)
@@ -182,17 +183,18 @@ runAppM args = withRunInEffect \(toEffect :: m ~> Effect) -> do
   (stateRef :: ReadWriteL Effect s) <- Refs.make args.initial
 
   -- Tracks Mation internal state
-  (vNodeRef :: ReadWrite Effect (Maybe (VNode Effect Unit))) <- Refs.make Nothing
+  (vNodeRef :: ReadWrite Effect (Maybe PatchVNode)) <- Refs.make Nothing
   (pruneMapRef :: ReadWrite Effect (Maybe _)) <- Refs.make Nothing
 
   -- On change to state, re-render application
   stateRef # Refs.onChange \newState -> do
     mOldVNode <- vNodeRef # Refs.read
     (newVNode :: VNode m (ReadWrite m s)) <- renderTo1 newState
-    let (newVNode' :: VNode Effect Unit) =
+    let (newVNode' :: PatchVNode) =
             newVNode
             # fixVNode (stateRef # Refs.downcast # Refs.hoist liftEffect)
             # Html.hoist1 toEffect
+            # Patch.vNodeToPatchable
     mOldPruneMap <- pruneMapRef # Refs.read
     let patch = Patch.patchOnto
                     { mOldVNode

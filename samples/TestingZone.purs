@@ -213,6 +213,34 @@ viewOnClickElsewhere { here, notHere } =
   [ E.text $ "clicks inside: " <> show here <> " / " <> "clicks outside: " <> show notHere
   ]
 
+--------------------------------------------------------------------------------
+
+type WithKTest =
+  { a :: Int
+  , b :: Int
+  }
+
+viewWithKTest :: WithKTest -> E.Html' (M.Modify' WithKTest)
+viewWithKTest { a, b } =
+  E.div
+  []
+  [ E.text "Test for "
+  , E.code [] [ E.text "withK" ]
+  , E.text ": "
+  , E.button
+    [ P.onClick \_ -> M.modify (field @"a" %~ (_ + 1))
+    ]
+    [ E.text ("a value: " <> show a)
+    ]
+  , E.text " "
+  , E.withK \ref ->
+    E.button
+    [ P.onClick \_ _ -> ref # M.modify (field @"b" %~ (_ + 1))
+    ]
+    [ E.text ("b value: " <> show b)
+    ]
+  ]
+
 
 {- -----------------------------------------------------------------------------
 
@@ -374,6 +402,7 @@ type Model =
   , checkbox :: Boolean
   , phoneNumber :: PhoneNumber
   , onClickElsewhere :: OnClickElsewhere
+  , withKTest :: WithKTest
   , selectFlicker :: SelectFlicker
   , comStuff :: ComStuff
   , rawNodes :: RawNodes
@@ -389,6 +418,7 @@ initialize = do
     , checkbox: false
     , phoneNumber: 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0 /\ 0
     , onClickElsewhere: { here: 0, notHere: 0 }
+    , withKTest: { a: 0, b: 0 }
     , selectFlicker: initialSelectFlicker
     , comStuff
     , rawNodes: Nothing
@@ -445,6 +475,8 @@ render model =
   , E.hr []
   , cmap (M.focusWithLens _onClickElsewhere) $ viewOnClickElsewhere model.onClickElsewhere
   , E.hr []
+  , cmap (M.focusWithLens _withKTest) $ viewWithKTest model.withKTest
+  , E.hr []
   , cmap (M.focusWithLens _selectFlicker) $ viewSelectFlicker model.selectFlicker
   , E.hr []
   , cmap (M.focusWithLens (_unit × _comStuff)) $ Com.viewC comComponent (unit /\ model.comStuff)
@@ -461,6 +493,7 @@ render model =
   _checkbox = field @"checkbox"
   _phoneNumber = field @"phoneNumber"
   _onClickElsewhere = field @"onClickElsewhere"
+  _withKTest = field @"withKTest"
   _selectFlicker = field @"selectFlicker"
   _comStuff = field @"comStuff"
 

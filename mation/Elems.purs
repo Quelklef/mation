@@ -30,6 +30,10 @@ rawNode = Html.mkRawNode
 rawHtml :: forall m s. String -> Html m s
 rawHtml = Html.mkRawHtml
 
+-- | Allows an `Html` to retrieve its capabilities outside of an event listner
+withK :: forall m k. (k -> Html m k) -> Html m k
+withK = Html.mkWithK
+
 -- | Construct an element directly from a tag name, props, and children.
 -- |
 -- | This should only rarely be necessary
