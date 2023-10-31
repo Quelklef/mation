@@ -2,12 +2,16 @@ module Mation.Core.Patch where
 
 import Mation.Core.Prelude
 
+import Data.Nullable (Nullable)
+import Data.Nullable as Nullable
+
 import Mation.Core.Html (VNode (..), PruneE (..))
 import Mation.Core.Dom (DomNode, DomEvent)
 import Mation.Core.Util.UnsureEq (Unsure (..))
 import Mation.Core.Util.Revertible as Rev
 import Mation.Core.Util.Assoc (Assoc)
 import Mation.Core.Util.Exists (Exists, mapExists)
+import Mation.Core.Util.UnsureEq (surely)
 
 
 -- | This type is morally the same as `VNode Effect Unit`, but is
@@ -28,7 +32,7 @@ data PatchVNode
 newtype PatchPruneE p = PatchPruneE
   { keyPath :: Array String
   , params :: p
-  , unsureEq :: p -> p -> Unsure Boolean
+  , surelyEqual :: p -> p -> Boolean
   , render :: p -> PatchVNode
   }
 
@@ -48,8 +52,9 @@ vNodeToPatchable = case _ of
   VPrune e -> VPPrune $
     e # mapExists \(PruneE { keyPath, params, unsureEq, render }) ->
           PatchPruneE
-            { keyPath, params, unsureEq
+            { keyPath, params
             , render: render >>> vNodeToPatchable
+            , surelyEqual: \a b -> unsureEq a b # surely
             }
 
   where
@@ -90,23 +95,18 @@ patchOnto ::
   -> DomNode -> Effect PruneMapRef
 patchOnto { mOldVNode, newVNode, mPruneMap } =
   patch_f
-    { caseMaybe
-    , caseUnsure
-    , casePatchVNode
-    , mPruneMap
+    { casePatchVNode
+    , mPruneMap: Nullable.toNullable mPruneMap
     }
-    { mOldVNode
+    { mOldVNode: Nullable.toNullable mOldVNode
     , newVNode
     }
 
-
 foreign import patch_f ::
-   { caseMaybe :: CaseMaybe
-   , caseUnsure :: CaseUnsure
-   , casePatchVNode :: CasePatchVNode
-   , mPruneMap :: Maybe PruneMapRef
+   { casePatchVNode :: CasePatchVNode
+   , mPruneMap :: Nullable PruneMapRef
    } ->
-   { mOldVNode :: Maybe PatchVNode
+   { mOldVNode :: Nullable PatchVNode
    , newVNode :: PatchVNode
    }
   -> (DomNode -> Effect PruneMapRef)
@@ -134,26 +134,4 @@ casePatchVNode node vRawNode vRawHtml vText vTag vPrune =
     VPText x -> vText x
     VPTag x -> vTag x
     VPPrune x -> vPrune x
-
-
-type CaseMaybe =
-  forall a r. Maybe a -> r -> (a -> r) -> r
-
--- | Case analysis on `Maybe`
-caseMaybe :: CaseMaybe
-caseMaybe maybe nothing just =
-  case maybe of
-    Nothing -> nothing
-    Just a -> just a
-
-
-type CaseUnsure =
-  forall a r. Unsure a -> (a -> r) -> r -> r
-
-caseUnsure :: CaseUnsure
-caseUnsure uc certainly uncertain =
-  case uc of
-    Surely x -> certainly x
-    Unsure -> uncertain
-
 

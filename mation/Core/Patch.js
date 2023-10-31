@@ -6,21 +6,16 @@
 //   implementation.
 
 export const patch_f =
-({ caseMaybe
- , caseUnsure
- , casePatchVNode
- , mPruneMap
-}) => {
+({ casePatchVNode, mPruneMap }) => {
 
-  const oldPruneMap = caseMaybe(mPruneMap)(Trie_new())(x => x);
+  const oldPruneMap = mPruneMap || Trie_new();
   const newPruneMap = Trie_new();
 
   const oldPruneMapNodes = new Set(mapIter(Trie_values(oldPruneMap), info => info.node));
 
   return ({ mOldVNode, newVNode }) => root => () => {
 
-    const mOldVNode_ = caseMaybe(mOldVNode)(undefined)(x => x);
-    patch(root, mOldVNode_, newVNode);
+    patch(root, mOldVNode, newVNode);
 
     // Fixup-release all nodes present in old prune map but not new one
     // Such nodes are detached from the DOM and are to be forgotten
@@ -130,8 +125,8 @@ export const patch_f =
   function lookupPrune(pruneMap, vPrune) {
     const info = Trie_get(pruneMap, vPrune.keyPath);
     if (!info) return null;
-    const unsureEq = vPrune.unsureEq;
-    const paramsEqual = caseUnsure(unsureEq(vPrune.params)(info.params))(x => x)(false);
+    const surelyEqual = vPrune.surelyEqual;
+    const paramsEqual = surelyEqual(vPrune.params)(info.params);
     return paramsEqual ? info : null;
   }
 
