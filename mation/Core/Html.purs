@@ -212,7 +212,21 @@ withWrapper children = VTag
 
 -- | Virtual DOM type
 -- |
--- | This is a `Monoid`, which has two important implications:
+-- | An `Html m k` is, roughly, a tree of HTML tags annotated with event
+-- | listeners of type `k -> m Unit`. That is, an event listener is
+-- | an action in `m` with access to a value of type `k`, called
+-- | its *capabilities*.
+-- |
+-- | In practice `k` is usually instantiated to something like
+-- |
+-- | ```purs
+-- | { appConfig :: Read AppConfig, componentState :: ReadWrite Int }
+-- | ```
+-- |
+-- | Indicating that the `Html` value's event listeners need readonly
+-- | access to the application config and read/write access to an integer.
+-- |
+-- | This type is a `Monoid`, which has two important implications:
 -- |
 -- | - Every `Html` value is actually a so-called "fragment", meaning
 -- |   that it can consist of more than one adjacent elements. For example,
