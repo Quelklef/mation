@@ -150,8 +150,13 @@ class ModifyRef m ref | ref -> m where
 -- | Listeners are removed after they are fired. To listen to every change of
 -- | a `ListenRef` ref, a callsite must repeatedly re-attach its listener
 -- | (or use `onChange`).
-class ListenRef :: forall k. (Type -> Type) -> (k -> Type) -> Constraint
-class ListenRef m ref | ref -> m where
+-- |
+-- | `ReadRef` is a superclass of `ListenRef`. This is "artificial" in the
+-- | sense that one cannot recover `read` from `onNextChange`. However, almost
+-- | always if one wants to know when a ref value changes, then they also
+-- | want to know what the value changes *to*; hence, it's appropriate to
+-- | couple the two classes.
+class ReadRef m ref <= ListenRef m ref | ref -> m where
   onNextChange :: forall a. m Unit -> ref a -> m Unit
 
 -- | Instances give a way to construct a reference type in some fixed monad `m`
@@ -159,8 +164,8 @@ class ListenRef m ref | ref -> m where
 -- This is the only way we allow a library user to create new references.
 -- In principle we could supply constructors like `mkRead :: m a -> Read m a`.
 -- But since we lack any laws for reference values, that could result
--- in the creation of some "bad" references like a `Write a` which does
--- not write to a mutable location but rather appends to a write-log.
+-- in the creation of "bad" references, such as a `Write a` which does
+-- not write to a mutable location (but instead eg emits an event).
 class MakeRef m ref where
 
   -- | Create a reference which can close over itself
@@ -170,7 +175,7 @@ class MakeRef m ref where
   -- actually use the ref, it can only place the reference somewhere.
   makeWithSelf :: forall a. (ref a -> a) -> m (ref a)
 
--- | MakeRef a new reference from an initial value
+-- | Make a new reference from an initial value
 make :: forall m ref a. MakeRef m ref => a -> m (ref a)
 make a = makeWithSelf (\_self -> a)
 
@@ -673,7 +678,7 @@ onChange' f ref = do
 -- | pass in a `listen :: a -> Effect Unit` (as you would to `onChange`)
 -- | and recieve a `tell :: a -> Effect Unit` (akin to `write`) and
 -- | when they are invoked they will avoid invoking the other.
-sync :: forall ref a. ReadRef Effect ref => WriteRef Effect ref => ListenRef Effect ref =>
+sync :: forall ref a. ListenRef Effect ref => WriteRef Effect ref =>
   (a -> Effect Unit) -> ref a -> Effect (a -> Effect Unit)
 sync onPush ref = do
   (rDont :: ReadWrite Effect _) <- make false
