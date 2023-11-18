@@ -34,7 +34,7 @@ initial =
   }
 
 
-render :: Model -> Html' (M.Modify' Model)
+render :: Model -> Html' (M.Modify Model)
 render model =
   E.form
   []

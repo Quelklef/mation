@@ -60,7 +60,7 @@ onDouble renderOne model =
     ]
 
 
-render :: Model -> E.Html' (M.Modify' Model)
+render :: Model -> E.Html' (M.Modify Model)
 render model =
 
   E.div
@@ -86,7 +86,7 @@ render model =
 
   pSty = P.addStyles [ S.maxWidth "600px" ]
 
-  mkCounter :: Int -> E.Html' (M.Modify' Int)
+  mkCounter :: Int -> E.Html' (M.Modify Int)
   mkCounter = \val ->
     E.span
     [ P.addStyles
@@ -118,7 +118,7 @@ render model =
     ]
 
 
-renderExample2 :: { depth :: Int, color :: String } -> E.Html' (M.Modify' { depth :: Int, color :: String })
+renderExample2 :: { depth :: Int, color :: String } -> E.Html' (M.Modify { depth :: Int, color :: String })
 renderExample2 = \{ depth, color } ->
 
   fold
@@ -189,7 +189,7 @@ foreign import parseInt :: String -> Int
 
 
 -- Tests cases where we cycle between different pruned VDOMs
-renderSumTest :: (Int /\ Int) -> E.Html' (M.Modify' (Int /\ Int))
+renderSumTest :: (Int /\ Int) -> E.Html' (M.Modify (Int /\ Int))
 renderSumTest (n /\ tab) =
   E.p
   []

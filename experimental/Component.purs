@@ -40,7 +40,7 @@ import Mation.Core.Refs as Refs
 newtype Component m sup model = Com
   { init :: Effect model
   , daemon :: Daemon Effect (sup /\ model)
-  , view :: sup /\ model -> Html m (M.Modify m (sup /\ model))
+  , view :: sup /\ model -> Html m (M.Modify (sup /\ model))
   }
 
 
@@ -52,7 +52,7 @@ mkComponent :: forall name m sup model. IsSymbol name =>
   { name :: Proxy name
   , init :: Effect model
   , daemon :: Daemon Effect (sup /\ model)
-  , view :: sup /\ model -> Html m (M.Modify m (sup /\ model))
+  , view :: sup /\ model -> Html m (M.Modify (sup /\ model))
   } -> Component m sup model
 
 mkComponent { name, init, daemon, view } = Com
@@ -74,7 +74,7 @@ initializeC (Com { init }) = init
 daemonC :: forall m sup model. Component m sup model -> Daemon' (sup /\ model)
 daemonC (Com { daemon }) = daemon
 
-viewC :: forall m sup model. Component m sup model -> (sup /\ model -> Html m (M.Modify m (sup /\ model)))
+viewC :: forall m sup model. Component m sup model -> (sup /\ model -> Html m (M.Modify (sup /\ model)))
 viewC (Com { view }) = view
 
 
@@ -93,7 +93,7 @@ mkParent1 :: forall
       -- | Initialize the parent
   , daemon :: Daemon Effect (sup /\ model)
       -- | Accepts as input the result of the child's view function
-  , view :: Html m (M.Modify m (sup /\ model)) -> (sup /\ model -> Html m (M.Modify m (sup /\ model)))
+  , view :: Html m (M.Modify (sup /\ model)) -> (sup /\ model -> Html m (M.Modify (sup /\ model)))
       -- | Child specification
   , child1 :: { component :: Component m sup1 model1, at :: BoxLens' (sup /\ model) (sup1 /\ model1) }
   } -> Component m sup model
@@ -109,7 +109,7 @@ mkParent1 { name, init, daemon, view, child1 } =
         daemon ref
     , view: \(sup /\ model) ->
         let
-          childViewed :: Html m (M.Modify m (sup1 /\ model1))
+          childViewed :: Html m (M.Modify (sup1 /\ model1))
           childViewed = viewC child1.component ((sup /\ model) ^. child1At)
         in view (cmap (M.focusWithLens child1At) childViewed) (sup /\ model)
     }

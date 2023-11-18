@@ -15,7 +15,7 @@ type Model = Unit
 initial :: Model
 initial = unit
 
-render :: forall m. Model -> E.Html m (M.Modify m Model)
+render :: forall m. Model -> E.Html m (M.Modify Model)
 render _model =
   E.div
   [ P.addCss "display: flex; flex-direction: column; gap: 1em;"

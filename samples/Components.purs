@@ -30,7 +30,7 @@ type ConcatModel = String /\ String
 initialConcat :: ConcatModel
 initialConcat = "unde" /\ "niably"
 
-renderConcat :: ConcatModel -> E.Html' (M.Modify' ConcatModel)
+renderConcat :: ConcatModel -> E.Html' (M.Modify ConcatModel)
 renderConcat (prefix /\ suffix) =
   fold
   [ E.input
@@ -59,7 +59,7 @@ type RepeatModel = String /\ Int
 initialRepeat :: RepeatModel
 initialRepeat = "<>"  /\ 4
 
-renderRepeat :: RepeatModel -> E.Html' (M.Modify' RepeatModel)
+renderRepeat :: RepeatModel -> E.Html' (M.Modify RepeatModel)
 renderRepeat (string /\ count) =
   fold
   [ E.input
@@ -92,7 +92,7 @@ initialBoth =
   , repeat: initialRepeat
   }
 
-renderBoth :: BothModel -> E.Html' (M.Modify' BothModel)
+renderBoth :: BothModel -> E.Html' (M.Modify BothModel)
 renderBoth { concat, repeat } =
   fold
   [ E.p [] [ cmap (M.focusWithLens _concat) (renderConcat concat) ]
@@ -127,7 +127,7 @@ initialSharing =
   , count: 4
   }
 
-renderSharing :: SharingModel -> E.Html' (M.Modify' SharingModel)
+renderSharing :: SharingModel -> E.Html' (M.Modify SharingModel)
 renderSharing model =
   fold
   [ E.p [] [ (cmap (M.focusWithLens _concat)) (renderConcat $ model ^. _concat) ]
@@ -155,7 +155,7 @@ type Model = BothModel /\ SharingModel
 initial :: Model
 initial = initialBoth /\ initialSharing
 
-render :: Model -> E.Html' (M.Modify' Model)
+render :: Model -> E.Html' (M.Modify Model)
 render (both /\ sharing) =
   E.div
   [ P.addCss "font-family: sans-serif; line-height: 1.5em"

@@ -7,7 +7,6 @@ import Data.Nullable as Nullable
 
 import Mation.Core.Html (VNode (..), PruneE (..))
 import Mation.Core.Dom (DomNode, DomEvent)
-import Mation.Core.Util.UnsureEq (Unsure (..))
 import Mation.Core.Util.Revertible as Rev
 import Mation.Core.Util.Assoc (Assoc)
 import Mation.Core.Util.Exists (Exists, mapExists)

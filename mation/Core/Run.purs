@@ -7,13 +7,13 @@ import Effect.Exception (throw)
 import Mation.Core.Html (Html (..), VNode, fixVNode)
 import Mation.Core.Html as Html
 import Mation.Core.Dom (DomNode)
-import Mation.Core.Patch (PatchVNode)
+import Mation.Core.Patch (PatchVNode, PruneMapRef)
 import Mation.Core.Patch as Patch
 import Mation.Core.Refs as Refs
 import Mation.Core.Refs (ReadWriteL, ReadWrite)
 
 
-type Daemon m s = ReadWriteL m s -> m Unit
+type Daemon m s = ReadWriteL s -> m Unit
 
 type Daemon' s = Daemon Effect s
 
@@ -163,7 +163,7 @@ type Daemon' s = Daemon Effect s
 -- FIXME: add runAppML variant where 'render' is given a ReadWriteL
 runAppM :: forall m s. MonadUnliftEffect m =>
   { initial :: s
-  , render :: s -> Html m (ReadWrite m s)
+  , render :: s -> Html m (ReadWrite s)
   , root :: Effect DomNode
   , daemon :: Daemon m s
   } -> m Unit
@@ -173,26 +173,26 @@ runAppM args = withRunInEffect \(toEffect :: m ~> Effect) -> do
   let
     -- Render to a single VNode (instead of an entire Html)
     -- This is unsafe, but during usual usage of the framework should never happen
-    renderTo1 :: s -> Effect (VNode m (ReadWrite m s))
+    renderTo1 :: s -> Effect (VNode m (ReadWrite s))
     renderTo1 = args.render >>> case _ of
       Html [x] -> pure x
       _ -> throw "[mation] Error: Top-level Html value contains either zero nodes or more than one node. Did you produce `mempty`, perhaps, or some result of `<>` or `fold`? Please wrap your application in a container node."
 
 
   -- Tracks user application state
-  (stateRef :: ReadWriteL Effect s) <- Refs.make args.initial
+  (stateRef :: ReadWriteL s) <- Refs.make args.initial
 
   -- Tracks Mation internal state
-  (vNodeRef :: ReadWrite Effect (Maybe PatchVNode)) <- Refs.make Nothing
-  (pruneMapRef :: ReadWrite Effect (Maybe _)) <- Refs.make Nothing
+  (vNodeRef :: ReadWrite (Maybe PatchVNode)) <- Refs.make Nothing
+  (pruneMapRef :: ReadWrite (Maybe PruneMapRef)) <- Refs.make Nothing
 
   -- On change to state, re-render application
   stateRef # Refs.onChange \newState -> do
     mOldVNode <- vNodeRef # Refs.read
-    (newVNode :: VNode m (ReadWrite m s)) <- renderTo1 newState
+    (newVNode :: VNode m (ReadWrite s)) <- renderTo1 newState
     let (newVNode' :: PatchVNode) =
             newVNode
-            # fixVNode (stateRef # Refs.downcast # Refs.hoist liftEffect)
+            # fixVNode (stateRef # Refs.downcast)
             # Html.hoist1 toEffect
             # Patch.vNodeToPatchable
     mOldPruneMap <- pruneMapRef # Refs.read
@@ -210,6 +210,6 @@ runAppM args = withRunInEffect \(toEffect :: m ~> Effect) -> do
   stateRef # Refs.modify identity
 
   -- Start the daemon
-  toEffect $ args.daemon (stateRef # Refs.hoistWithIso liftEffect toEffect)
+  toEffect $ args.daemon stateRef
 
 

@@ -130,7 +130,7 @@ type Model =
   }
 
 
-render :: Model -> E.Html' (M.Modify' Model)
+render :: Model -> E.Html' (M.Modify Model)
 render model =
   E.html
   []

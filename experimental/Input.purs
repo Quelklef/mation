@@ -61,7 +61,7 @@ newtype InputSpec model err t = InputSpec
       -- conditions, they will not be rendered. Parameterizing 'render' by 'Maybe err'
       -- fixes this, because it allows 'render' to be called by a third party (ie, not
       -- a spec itself) which uses the final spec to compute errors.
-  , render :: Maybe err -> model -> Html' (M.Modify' model)
+  , render :: Maybe err -> model -> Html' (M.Modify model)
 
       -- | Empty input
   , empty :: model
@@ -72,7 +72,7 @@ newtype InputSpec model err t = InputSpec
 mkInputSpec :: forall model err t.
   { write :: t -> model
   , read :: model -> Either err t
-  , render :: Maybe err -> model -> Html' (M.Modify' model)
+  , render :: Maybe err -> model -> Html' (M.Modify model)
   , empty :: model
   } -> InputSpec model err t
 mkInputSpec = InputSpec
@@ -81,7 +81,7 @@ mkInputSpec = InputSpec
 mkUnfailableInputSpec :: forall model err t.
   { write :: t -> model
   , read :: model -> Either err t
-  , render :: model -> Html' (M.Modify' model)
+  , render :: model -> Html' (M.Modify model)
   , empty :: model
   } -> InputSpec model err t
 mkUnfailableInputSpec spec =
@@ -135,7 +135,7 @@ readAt lens (InputSpec spec) =
 
 
 -- | Render an input
-render :: forall m model err t. MonadEffect m => InputSpec model err t -> InputState model -> Html m (M.Modify' (InputState model))
+render :: forall m model err t. MonadEffect m => InputSpec model err t -> InputState model -> Html m (M.Modify (InputState model))
 render (InputSpec spec) (InputState { model, perturbed }) =
 
   E.span

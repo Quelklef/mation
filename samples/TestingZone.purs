@@ -33,7 +33,7 @@ instance UnsureEq StreamState where
   unsureEq (Streaming c) (Streaming c') = viaPrim c c'
   unsureEq _ _ = Surely false
 
-renderCounter :: Counter -> E.Html' (M.Modify' Counter)
+renderCounter :: Counter -> E.Html' (M.Modify Counter)
 renderCounter model =
   E.div
   [ P.addStyles
@@ -121,7 +121,7 @@ foreign import everyNSeconds :: Number -> Effect Unit -> Effect { cancel :: Effe
 
 type Textbox = String
 
-renderTextbox :: Textbox -> E.Html' (M.Write' Textbox)
+renderTextbox :: Textbox -> E.Html' (M.Write Textbox)
 renderTextbox str =
   E.div
   []
@@ -143,7 +143,7 @@ renderTextbox str =
 
 type PhoneNumber = Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int /\ Int
 
-renderPhoneNumber :: PhoneNumber -> E.Html' (M.Modify' PhoneNumber)
+renderPhoneNumber :: PhoneNumber -> E.Html' (M.Modify PhoneNumber)
 renderPhoneNumber = \pn ->
   E.div
   [ P.addStyles
@@ -172,7 +172,7 @@ renderPhoneNumber = \pn ->
 
   dot = E.span [ ] [ E.rawHtml "&bull;" ]
 
-  digit :: Lens' PhoneNumber Int -> PhoneNumber -> E.Html' (M.Modify' PhoneNumber)
+  digit :: Lens' PhoneNumber Int -> PhoneNumber -> E.Html' (M.Modify PhoneNumber)
   digit len pn =
     E.select
     [ P.onInputValue \v -> M.modify (len .~ (parseInt v))
@@ -196,7 +196,7 @@ type OnClickElsewhere =
   , notHere :: Int
   }
 
-viewOnClickElsewhere :: OnClickElsewhere -> E.Html' (M.Modify' OnClickElsewhere)
+viewOnClickElsewhere :: OnClickElsewhere -> E.Html' (M.Modify OnClickElsewhere)
 viewOnClickElsewhere { here, notHere } =
   E.div
   [ P.onClick \_ -> M.modify (field @"here" %~ (_ + 1))
@@ -220,7 +220,7 @@ type WithKTest =
   , b :: Int
   }
 
-viewWithKTest :: WithKTest -> E.Html' (M.Modify' WithKTest)
+viewWithKTest :: WithKTest -> E.Html' (M.Modify WithKTest)
 viewWithKTest { a, b } =
   E.div
   []
@@ -280,7 +280,7 @@ daemonSelectFlicker ref = do
     ref # Refs.modify (field @"time" %~ (_ + 1))
   pure unit
 
-viewSelectFlicker :: SelectFlicker -> E.Html' (M.Modify' SelectFlicker)
+viewSelectFlicker :: SelectFlicker -> E.Html' (M.Modify SelectFlicker)
 viewSelectFlicker model =
   E.div
   [ P.addStyles
@@ -430,7 +430,7 @@ daemon ref = do
   daemonSelectFlicker (ref # Refs.focusWithLens (field @"selectFlicker"))
   (Com.daemonC comComponent) (ref # Refs.focusWithLens (_unit × field @"comStuff"))
 
-render :: Model -> E.Html' (M.Modify' Model)
+render :: Model -> E.Html' (M.Modify Model)
 render model =
   E.div
   []

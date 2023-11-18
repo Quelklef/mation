@@ -29,6 +29,13 @@
 -- | reified as a typeclass (eg `ReadRef`) which is instantiated by all
 -- | ref types which support that operation.
 -- |
+-- | Ref types are coupled to the `Effect` monad. In principle it's possible
+-- | possible to replace `Effect` by some type parameter `m` (and in earlier
+-- | versions of the library, this was the case). However, these ref types
+-- | exist in particular for use as Mation capabilities, in which case `m`
+-- | will always be instantiated to `Effect` (since the Mation runtime lives
+-- | in `Effect`)
+-- |
 -- | ***
 -- |
 -- | Now I will say a some mathy stuff.
@@ -69,19 +76,12 @@
 module Mation.Core.Refs
 
   ( ReadWriteL
-  , ReadWriteL'
   , ReadWrite
-  , ReadWrite'
   , Modify
-  , Modify'
   , Write
-  , Write'
   , ReadL
-  , ReadL'
   , Read
-  , Read'
   , Nil
-  , Nil'
   , nil
 
   , class ReadRef
@@ -108,11 +108,6 @@ module Mation.Core.Refs
   , class FocusRefWithOpFun
   , focusWithOpFun
 
-  , class HoistRef
-  , hoist
-  , class HoistRefWithIso
-  , hoistWithIso
-
   , class DowncastRef
   , downcast
   , downcastTo
@@ -129,17 +124,16 @@ import Data.Traversable (sequence_)
 
 
 -- | Instantiated by reference types which support reading
-class ReadRef :: forall k. (k -> Type) -> (k -> Type) -> Constraint
-class ReadRef m ref | ref -> m where
-  read :: forall a. ref a -> m a
+class ReadRef ref where
+  read :: forall m a. MonadEffect m => ref a -> m a
 
 -- | Instantiated by reference types which support writing
-class WriteRef m ref | ref -> m where
-  write :: forall a. a -> ref a -> m Unit
+class WriteRef ref where
+  write :: forall m a. MonadEffect m => a -> ref a -> m Unit
 
 -- | Instantiated by reference types which support the *modify* operation
-class ModifyRef m ref | ref -> m where
-  modify :: forall a. (a -> a) -> ref a -> m Unit
+class ModifyRef ref where
+  modify :: forall m a. MonadEffect m => (a -> a) -> ref a -> m Unit
 
 -- | Instantiated by reference types which support registering change
 -- | listeners.
@@ -156,8 +150,8 @@ class ModifyRef m ref | ref -> m where
 -- | always if one wants to know when a ref value changes, then they also
 -- | want to know what the value changes *to*; hence, it's appropriate to
 -- | couple the two classes.
-class ReadRef m ref <= ListenRef m ref | ref -> m where
-  onNextChange :: forall a. m Unit -> ref a -> m Unit
+class ReadRef ref <= ListenRef ref where
+  onNextChange :: forall m a. MonadUnliftEffect m => m Unit -> ref a -> m Unit
 
 -- | Instances give a way to construct a reference type in some fixed monad `m`
 --
@@ -166,17 +160,17 @@ class ReadRef m ref <= ListenRef m ref | ref -> m where
 -- But since we lack any laws for reference values, that could result
 -- in the creation of "bad" references, such as a `Write a` which does
 -- not write to a mutable location (but instead eg emits an event).
-class MakeRef m ref where
+class MakeRef ref where
 
   -- | Create a reference which can close over itself
   --
   -- This is safe because using a reference in any way is a monadic action,
   -- and `ref a -> a` is not monadic. Hence the `ref a -> a` function cannot
   -- actually use the ref, it can only place the reference somewhere.
-  makeWithSelf :: forall a. (ref a -> a) -> m (ref a)
+  makeWithSelf :: forall m a. MonadEffect m => (ref a -> a) -> m (ref a)
 
 -- | Make a new reference from an initial value
-make :: forall m ref a. MakeRef m ref => a -> m (ref a)
+make :: forall m ref a. MonadEffect m => MakeRef ref => a -> m (ref a)
 make a = makeWithSelf (\_self -> a)
 
 -- | Reference types who can `focus` with a `Lens'`
@@ -232,20 +226,6 @@ class FocusRefWithOpFun ref where
   focusWithOpFun :: forall s a. (a -> s) -> ref s -> ref a
 
 
--- | Reference types who can use a monad morphism `m ~> n` to change
--- | their underlying monad
-class HoistRef :: forall k1 k2. ((k1 -> Type) -> k2 -> Type) -> Constraint
-class HoistRef ref where
-  hoist :: forall m n. (m ~> n) -> (ref m ~> ref n)
-
--- | Reference types can use a monad isomorphism to hoist
--- |
--- | Some reference types need an entire isomorphism; they instantiate `HoistRefWithIso`
--- | but not `HoistRef`
-class HoistRefWithIso :: forall k1 k2. ((k1 -> Type) -> k2 -> Type) -> Constraint
-class HoistRefWithIso ref where
-  hoistWithIso :: forall m n. (m ~> n) -> (n ~> m) -> (ref m ~> ref n)
-
 
 -- | An instance of `DowncastRef r1 r2` gives a way to transform a reference
 -- | of type `r1` into a reference of type `r2`.
@@ -277,36 +257,36 @@ downcastTo = downcast
 
 
 -- | Reference type with read/write/modify/listen capabilities
-data ReadWriteL m a = ReadWriteL (m a) (a -> m Unit) (m Unit -> m Unit)
+data ReadWriteL a = ReadWriteL (Effect a) (a -> Effect Unit) (Effect Unit -> Effect Unit)
 
-type ReadWriteL' = ReadWriteL Effect
+instance ReadRef ReadWriteL where
+  read (ReadWriteL readIt _ _) = liftEffect readIt
 
-instance ReadRef m (ReadWriteL m) where
-  read (ReadWriteL readIt _ _) = readIt
+instance WriteRef ReadWriteL where
+  write a (ReadWriteL _ writeIt _) = liftEffect (writeIt a)
 
-instance WriteRef m (ReadWriteL m) where
-  write a (ReadWriteL _ writeIt _) = writeIt a
+instance ListenRef ReadWriteL where
+  onNextChange f (ReadWriteL _ _ onNextChangeIt) =
+    withRunInEffect \toEffect -> onNextChangeIt (toEffect f)
 
-instance ListenRef m (ReadWriteL m) where
-  onNextChange f (ReadWriteL _ _ onNextChangeIt) = onNextChangeIt f
-
-instance Bind m => ModifyRef m (ReadWriteL m) where
+instance ModifyRef ReadWriteL where
   modify f (ReadWriteL readIt writeIt _) =
-    readIt >>= (f >>> writeIt)
+    liftEffect $
+      readIt >>= (f >>> writeIt)
     -- This implementation is valid if we assume that at most one thread
     -- can have access to the ref at any given time.
     -- Because of Javascript's concurrency model, this should be a safe
     -- assumption to make.
 
-instance MakeRef Effect (ReadWriteL Effect) where
+instance MakeRef ReadWriteL where
 
-  makeWithSelf :: forall a. (ReadWriteL Effect a -> a) -> Effect (ReadWriteL Effect a)
-  makeWithSelf init = do
+  makeWithSelf :: forall m a. MonadEffect m => (ReadWriteL a -> a) -> m (ReadWriteL a)
+  makeWithSelf init = liftEffect do
 
     listenersRef <- ERef.new []
 
     let
-      upgrade :: ERef.Ref a -> ReadWriteL Effect a
+      upgrade :: ERef.Ref a -> ReadWriteL a
       upgrade valRef = let
         readIt = ERef.read valRef
         writeIt a = do
@@ -329,277 +309,222 @@ instance MakeRef Effect (ReadWriteL Effect) where
 -- |
 -- | This "subreference" shares state with the original reference.
 -- | When one is updated, both will see the change!
-instance Bind m => FocusRefWithLens (ReadWriteL m) where
+instance FocusRefWithLens ReadWriteL where
   focusWithLens len rwl =
     ReadWriteL
       (Lens.view len <$> read rwl)
       (\a -> rwl # modify (len .~ a))
       (\f -> rwl # onNextChange f)
 
--- | Lift a monad isomorphism to a mapping of `ReadWriteL`
--- |
--- | An entire isomorphism is required to hoist the ref listeners
-instance HoistRefWithIso ReadWriteL where
-  hoistWithIso toN fromN (ReadWriteL readIt writeIt onNextChangeIt) =
-      ReadWriteL (toN readIt) (toN <$> writeIt) (fromN >>> onNextChangeIt >>> toN)
-
-instance DowncastRef (ReadWriteL m) (ReadWriteL m) where
+instance DowncastRef ReadWriteL ReadWriteL where
   downcast = identity
 
 
 
 -- | Reference type with read/write/modify capabilities
-data ReadWrite m a = ReadWrite (m a) (a -> m Unit)
+data ReadWrite a = ReadWrite (Effect a) (a -> Effect Unit)
 
-type ReadWrite' = ReadWrite Effect
+instance ReadRef ReadWrite where
+  read (ReadWrite readIt _) = liftEffect readIt
 
-instance ReadRef m (ReadWrite m) where
-  read (ReadWrite readIt _) = readIt
+instance WriteRef ReadWrite where
+  write a (ReadWrite _ writeIt) = liftEffect (writeIt a)
 
-instance WriteRef m (ReadWrite m) where
-  write a (ReadWrite _ writeIt) = writeIt a
-
-instance Bind m => ModifyRef m (ReadWrite m) where
+instance ModifyRef ReadWrite where
   modify f (ReadWrite readIt writeIt) =
-    readIt >>= (f >>> writeIt)
+    liftEffect $
+      readIt >>= (f >>> writeIt)
 
-instance MakeRef Effect (ReadWrite Effect) where
+instance MakeRef ReadWrite where
+  makeWithSelf :: forall m a. MonadEffect m => (ReadWrite a -> a) -> m (ReadWrite a)
   makeWithSelf init =
-    downcast <$> makeWithSelf @_ @(ReadWriteL Effect) (init <<< downcast)
+    downcast <$> (makeWithSelf (init <<< downcast) :: m (ReadWriteL a))
 
 -- | Use a `Lens'` to construct a subreference
-instance Bind m => FocusRefWithLens (ReadWrite m) where
+instance FocusRefWithLens ReadWrite where
   focusWithLens len rw =
     ReadWrite
       ((_ ^. len) <$> read rw)
       (\a -> rw # modify (len .~ a))
 
--- | Lift a monad morphism to a mapping of `ReadWrite`
-instance HoistRef ReadWrite where
-  hoist toN (ReadWrite readIt writeIt) =
-      ReadWrite (toN readIt) (toN <$> writeIt)
-
-instance HoistRefWithIso ReadWrite where
-  hoistWithIso toN _fromN = hoist toN
-
-instance DowncastRef (ReadWrite m) (ReadWrite m) where
+instance DowncastRef ReadWrite ReadWrite where
   downcast = identity
 
-instance DowncastRef (ReadWriteL m) (ReadWrite m) where
+instance DowncastRef ReadWriteL ReadWrite where
   downcast (ReadWriteL readIt writeIt _) = ReadWrite readIt writeIt
 
 
 
 -- | Reference type with modify capabilities
-newtype Modify m a = Modify ((a -> a) -> m Unit)
+newtype Modify a = Modify ((a -> a) -> Effect Unit)
 
-type Modify' = Modify Effect
+instance WriteRef Modify where
+  write a (Modify modify) = liftEffect (modify (const a))
 
-instance WriteRef m (Modify m) where
-  write a (Modify modify) = modify (const a)
+instance ModifyRef Modify where
+  modify f (Modify modify) = liftEffect (modify f)
 
-instance ModifyRef m (Modify m) where
-  modify f (Modify modify) = modify f
-
-instance MakeRef Effect (Modify Effect) where
+instance MakeRef Modify where
+  makeWithSelf :: forall m a. MonadEffect m => (Modify a -> a) -> m (Modify a)
   makeWithSelf init =
-    downcast <$> makeWithSelf @_ @(ReadWriteL Effect) (init <<< downcast)
+    downcast <$> (makeWithSelf (init <<< downcast) :: m (ReadWriteL a))
 
 -- | Use a `Setter'` to construct a subreference
-instance FocusRefWithSetter (Modify m) where
+instance FocusRefWithSetter Modify where
   focusWithSetter len (Modify modifyIt) =
     Modify (\f -> modifyIt (len %~ f))
 
-instance FocusRefWithLens (Modify m) where
+instance FocusRefWithLens Modify where
   focusWithLens len = focusWithSetter len
 
--- | Lift a monad morphism to a mapping of `Modify`
-instance HoistRef Modify where
-  hoist toN (Modify modifyIt) = Modify (modifyIt >>> toN)
-
-instance HoistRefWithIso Modify where
-  hoistWithIso toN _fromN = hoist toN
-
-instance DowncastRef (Modify m) (Modify m) where
+instance DowncastRef Modify Modify where
   downcast = identity
 
-instance Bind m => DowncastRef (ReadWriteL m) (Modify m) where
+instance DowncastRef ReadWriteL Modify where
   downcast rwl = Modify (\f -> rwl # modify f)
 
-instance Bind m => DowncastRef (ReadWrite m) (Modify m) where
+instance DowncastRef ReadWrite Modify where
   downcast rw = Modify (\f -> rw # modify f)
 
 
 
 -- | Reference type with write capabilities
-newtype Write m a = Write (a -> m Unit)
+newtype Write a = Write (a -> Effect Unit)
 
-type Write' = Write Effect
+instance WriteRef Write where
+  write a (Write writeIt) = liftEffect (writeIt a)
 
-instance WriteRef m (Write m) where
-  write a (Write write) = write a
-
-instance MakeRef Effect (Write Effect) where
+instance MakeRef Write where
+  makeWithSelf :: forall m a. MonadEffect m => (Write a -> a) -> m (Write a)
   makeWithSelf init =
-    downcast <$> makeWithSelf @_ @(ReadWriteL Effect) (init <<< downcast)
+    downcast <$> (makeWithSelf (init <<< downcast) :: m (ReadWriteL a))
 
 -- | Use a function to construct a subreference
-instance FocusRefWithOpFun (Write m) where
+instance FocusRefWithOpFun Write where
   focusWithOpFun up (Write writeIt) =
     Write (\a -> writeIt (up a))
 
--- | Lift a monad morphism to a mapping of `Write`
-instance HoistRef Write where
-  hoist toN (Write writeIt) =
-    Write (writeIt >>> toN)
-
-instance DowncastRef (Write m) (Write m) where
+instance DowncastRef Write Write where
   downcast = identity
 
-instance DowncastRef (ReadWriteL m) (Write m) where
+instance DowncastRef ReadWriteL Write where
   downcast (ReadWriteL _ writeIt _) = Write writeIt
 
-instance DowncastRef (ReadWrite m) (Write m) where
+instance DowncastRef ReadWrite Write where
   downcast (ReadWrite _ writeIt) = Write writeIt
 
-instance DowncastRef (Modify m) (Write m) where
+instance DowncastRef Modify Write where
   downcast (Modify modifyIt) = Write (modifyIt <<< const)
 
 
 
 -- | Reference type with read/listen capabilities
-data ReadL m a = ReadL (m a) (m Unit -> m Unit)
+data ReadL a = ReadL (Effect a) (Effect Unit -> Effect Unit)
 
-type ReadL' = ReadL Effect
+instance ReadRef ReadL where
+  read (ReadL readIt _) = liftEffect readIt
 
-instance ReadRef m (ReadL m) where
-  read (ReadL readIt _) = readIt
+instance ListenRef ReadL where
+  onNextChange f (ReadL _ onNextChangeIt) =
+    withRunInEffect \toEffect -> onNextChangeIt (toEffect f)
 
-instance ListenRef m (ReadL m) where
-  onNextChange f (ReadL _ onNextChangeIt) = onNextChangeIt f
-
-instance MakeRef Effect (ReadL Effect) where
+instance MakeRef ReadL where
+  makeWithSelf :: forall m a. MonadEffect m => (ReadL a -> a) -> m (ReadL a)
   makeWithSelf init =
-    downcast <$> makeWithSelf @_ @(ReadWriteL Effect) (init <<< downcast)
+    downcast <$> (makeWithSelf (init <<< downcast) :: m (ReadWriteL a))
 
 -- | Use a `Getter'` to construct a subreference
-instance Functor m => FocusRefWithGetter (ReadL m) where
+instance FocusRefWithGetter ReadL where
   focusWithGetter len rl =
     ReadL
       (Lens.view len <$> read rl)
       (\f -> rl # onNextChange f)
 
-instance Functor m => FocusRefWithLens (ReadL m) where
+instance FocusRefWithLens ReadL where
   focusWithLens len = focusWithGetter len
 
--- | Lift a monad isomorphism to a mapping of `ReadL`
--- |
--- | An entire isomorphism is required to hoist the ref listeners
-instance HoistRefWithIso ReadL where
-  hoistWithIso toN fromN (ReadL readIt onNextChangeIt) =
-    ReadL (toN readIt) (fromN >>> onNextChangeIt >>> toN)
-
-instance DowncastRef (ReadL m) (ReadL m) where
+instance DowncastRef ReadL ReadL where
   downcast = identity
 
-instance DowncastRef (ReadWriteL m) (ReadL m) where
+instance DowncastRef ReadWriteL ReadL where
   downcast (ReadWriteL readIt _ onNextChangeIt) = ReadL readIt onNextChangeIt
 
 
 
 -- | Reference type with read capabilities
-newtype Read :: forall k. (k -> Type) -> k -> Type
-newtype Read m a = Read (m a)
+newtype Read a = Read (Effect a)
 
-type Read' = Read Effect
+instance ReadRef Read where
+  read (Read readIt) = liftEffect readIt
 
-instance ReadRef m (Read m) where
-  read (Read readIt) = readIt
-
-instance MakeRef Effect (Read Effect) where
+instance MakeRef Read where
+  makeWithSelf :: forall m a. MonadEffect m => (Read a -> a) -> m (Read a)
   makeWithSelf init =
-    downcast <$> makeWithSelf @_ @(ReadWriteL Effect) (init <<< downcast)
+    downcast <$> (makeWithSelf (init <<< downcast) :: m (ReadWriteL a))
 
 -- | Use a `Getter'` to construct a subreference
-instance Functor m => FocusRefWithGetter (Read m) where
+instance FocusRefWithGetter Read where
   focusWithGetter len (Read readIt) =
     Read (Lens.view len <$> readIt)
 
-instance Functor m => FocusRefWithLens (Read m) where
+instance FocusRefWithLens Read where
   focusWithLens len = focusWithGetter len
 
--- | Lift a monad morphism to a mapping of `Read`
-instance HoistRef Read where
-  hoist toN (Read readIt) =
-    Read (toN readIt)
-
-instance HoistRefWithIso Read where
-  hoistWithIso toN _fromN = hoist toN
-
-instance DowncastRef (Read m) (Read m) where
+instance DowncastRef Read Read where
   downcast = identity
 
-instance DowncastRef (ReadWriteL m) (Read m) where
+instance DowncastRef ReadWriteL Read where
   downcast (ReadWriteL readIt _ _) = Read readIt
 
-instance DowncastRef (ReadWrite m) (Read m) where
+instance DowncastRef ReadWrite Read where
   downcast (ReadWrite readIt _) = Read readIt
 
-instance DowncastRef (ReadL m) (Read m) where
+instance DowncastRef ReadL Read where
   downcast (ReadL readIt _) = Read readIt
 
 
 
 -- | Reference type with no capabilities
-data Nil :: forall k1 k2. k1 -> k2 -> Type
-data Nil m a = Nil
+data Nil :: forall k. k -> Type
+data Nil a = Nil
 
-type Nil' :: forall k. k -> Type
-type Nil' = Nil Effect
-
-nil :: forall m a. Nil m a
+nil :: forall a. Nil a
 nil = Nil
 
-instance Applicative m => MakeRef m (Nil m) where
+instance MakeRef Nil where
   makeWithSelf _ = pure Nil
 
-instance FocusRefWithLens (Nil m) where
+instance FocusRefWithLens Nil where
   focusWithLens _ _ = Nil
 
-instance FocusRefWithSetter (Nil m) where
+instance FocusRefWithSetter Nil where
   focusWithSetter _ _ = Nil
 
-instance FocusRefWithGetter (Nil m) where
+instance FocusRefWithGetter Nil where
   focusWithGetter _ _ = Nil
 
-instance FocusRefWithOpFun (Nil m) where
+instance FocusRefWithOpFun Nil where
   focusWithOpFun _ _ = Nil
 
-instance HoistRef Nil where
-  hoist _ _ = Nil
-
-instance HoistRefWithIso Nil where
-  hoistWithIso _ _ _ = Nil
-
-instance DowncastRef (Nil m) (Nil m) where
+instance DowncastRef Nil Nil where
   downcast _ = Nil
 
-instance DowncastRef (ReadWriteL m) (Nil m) where
+instance DowncastRef ReadWriteL Nil where
   downcast _ = Nil
 
-instance DowncastRef (ReadWrite m) (Nil m) where
+instance DowncastRef ReadWrite Nil where
   downcast _ = Nil
 
-instance DowncastRef (Modify m) (Nil m) where
+instance DowncastRef Modify Nil where
   downcast _ = Nil
 
-instance DowncastRef (Write m) (Nil m) where
+instance DowncastRef Write Nil where
   downcast _ = Nil
 
-instance DowncastRef (ReadL m) (Nil m) where
+instance DowncastRef ReadL Nil where
   downcast _ = Nil
 
-instance DowncastRef (Read m) (Nil m) where
+instance DowncastRef Read Nil where
   downcast _ = Nil
 
 
@@ -607,7 +532,7 @@ instance DowncastRef (Read m) (Nil m) where
 
 
 -- | Modify the value in a ref. Returns the new value
-modify' :: forall m ref a. Monad m => ReadRef m ref => WriteRef m ref =>
+modify' :: forall m ref a. MonadEffect m => ReadRef ref => WriteRef ref =>
   (a -> a) -> ref a -> m a
 modify' f ref = do
   val <- read ref
@@ -620,7 +545,7 @@ modify' f ref = do
 -- | This differs from `onNextChange` in two ways:
 -- | - `onChange` supplies the new ref value
 -- | - `onChange` keeps the listener attached to the ref. (`onNextChange` is one-shot)
-onChange :: forall m ref a. Bind m => ListenRef m ref => ReadRef m ref =>
+onChange :: forall m ref a. MonadUnliftEffect m => ListenRef ref => ReadRef ref =>
   (a -> m Unit) -> ref a -> m Unit
 onChange f ref =
   ref # onNextChange do
@@ -629,10 +554,10 @@ onChange f ref =
     onChange f ref
 
 -- | Like `onChange`, but provides both the old and new values
-onChange' :: forall m ref a. Bind m => ListenRef m ref => ReadRef m ref => WriteRef m ref => MakeRef m ref =>
+onChange' :: forall m ref a. MonadUnliftEffect m => ListenRef ref => WriteRef ref =>
   ({ old :: a, new :: a } -> m Unit) -> ref a -> m Unit
 onChange' f ref = do
-  oldValRef <- read ref >>= (make :: a -> m (ref a))
+  oldValRef <- read ref >>= (make :: a -> m (ReadWrite a))
   ref # onChange \newVal -> do
     oldVal <- read oldValRef
     oldValRef # write newVal
@@ -678,10 +603,10 @@ onChange' f ref = do
 -- | pass in a `listen :: a -> Effect Unit` (as you would to `onChange`)
 -- | and recieve a `tell :: a -> Effect Unit` (akin to `write`) and
 -- | when they are invoked they will avoid invoking the other.
-sync :: forall ref a. ListenRef Effect ref => WriteRef Effect ref =>
-  (a -> Effect Unit) -> ref a -> Effect (a -> Effect Unit)
+sync :: forall m ref a. MonadUnliftEffect m => ListenRef ref => WriteRef ref =>
+  (a -> m Unit) -> ref a -> m (a -> m Unit)
 sync onPush ref = do
-  (rDont :: ReadWrite Effect _) <- make false
+  (rDont :: ReadWrite _) <- make false
   ref # onChange \newVal -> sync'd rDont (onPush newVal)
   pure \val -> sync'd rDont (ref # write val)
 

@@ -12,17 +12,11 @@ import Mation.Run (runApp, Daemon, Daemon', onBody, underBody, onHtml) as X
 import Mation.Core.Dom (DomNode, DomEvent) as X
 import Mation.Core.Refs
   ( ReadWriteL
-  , ReadWriteL'
   , ReadWrite
-  , ReadWrite'
   , Modify
-  , Modify'
   , Write
-  , Write'
   , ReadL
-  , ReadL'
   , Read
-  , Read'
   , class ReadRef
   , read
   , class WriteRef

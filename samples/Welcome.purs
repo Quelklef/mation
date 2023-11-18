@@ -14,7 +14,7 @@ type Model = Unit
 initialize :: Effect Model
 initialize = pure unit
 
-render :: Model -> Html Effect (M.Modify' Model)
+render :: Model -> Html Effect (M.Modify Model)
 render _model =
   E.div
   [ P.addStyles

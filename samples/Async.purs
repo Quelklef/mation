@@ -48,7 +48,7 @@ initial =
   , spinnerTick: 0
   }
 
-render :: Model -> E.Html' (M.Modify' Model)
+render :: Model -> E.Html' (M.Modify Model)
 render model =
   E.div
   [ P.addStyles
@@ -60,7 +60,7 @@ render model =
   [ renderStringReverse model
   ]
 
-renderStringReverse :: Model -> E.Html' (M.Modify' Model)
+renderStringReverse :: Model -> E.Html' (M.Modify Model)
 renderStringReverse model =
   E.div
   [ P.addCss "flex: 1"
@@ -151,7 +151,7 @@ renderSpinner tick =
   ]
 
 
-doReverse :: String -> M.Modify' Model -> Effect Unit
+doReverse :: String -> M.Modify Model -> Effect Unit
 doReverse string ref = do
 
   let fps = 60.0

@@ -70,7 +70,7 @@ initial =
   , fast: false
   }
 
-render :: Model -> E.Html' (M.Modify' Model)
+render :: Model -> E.Html' (M.Modify Model)
 render model =
   E.div
   []
@@ -174,7 +174,7 @@ render model =
 
   where
 
-  theList :: Array String -> Html' (M.Modify' (Array String))
+  theList :: Array String -> Html' (M.Modify (Array String))
   theList items =
     E.div
     [ P.addStyles
@@ -188,7 +188,7 @@ render model =
           (cmap (M.focusWithSetter (ix idx))) (listItem idx str)
     ]
 
-  listItem :: Int -> String -> Html' (M.Modify' String)
+  listItem :: Int -> String -> Html' (M.Modify String)
   listItem = \idx str ->
     case model.fast of
       false -> impl idx str
@@ -260,7 +260,7 @@ resizeArray mkItem size arr =
     else Array.range lo (hi - 1)
 
 
-doBench :: Int -> M.Modify' Model -> Effect Unit
+doBench :: Int -> M.Modify Model -> Effect Unit
 doBench count ref = Aff.launchAff_ do
   liftEffect do ref # M.modify (_benchmarks .~ [])
   for_ (Array.range 1 count) \idx -> do

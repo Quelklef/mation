@@ -69,7 +69,7 @@ import Mation.Core.Refs (ReadWrite)
 -- | for reasons discussed in its documentation
 runApp :: forall s.
   { initial :: s
-  , render :: s -> Html Effect (ReadWrite Effect s)
+  , render :: s -> Html Effect (ReadWrite s)
   , root :: Effect DomNode
   , daemon :: Daemon Effect s
   } -> Effect Unit

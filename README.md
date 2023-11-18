@@ -67,7 +67,7 @@ initial :: Model
 initial = 0
 
 -- Displays the application and defines its behaviour
-render :: Model -> E.Html' (M.Modify' Model)
+render :: Model -> E.Html' (M.Modify Model)
 render num = fold
   [ E.p
     []
