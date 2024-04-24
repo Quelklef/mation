@@ -9,9 +9,8 @@ import Mation.Core.Util.FreeMonoid as FM
 
 
 -- | Marks a node for "pruning", meaning that its `Html` will only be re-computed
--- | when its actually changes. This can have an enormous impact on the performance
--- | of a mation application. (At the time of writing, the benchmarks show
--- | a 10x-20x speedup when using pruning!)
+-- | when it actually changes. This can have an enormous impact on the performance
+-- | of a mation application.
 -- |
 -- | The way that pruning works is somewhat subtle and is not difficult to get
 -- | wrong. However, there's a relatively easy pattern one can follow to perform
@@ -90,7 +89,7 @@ import Mation.Core.Util.FreeMonoid as FM
 -- |
 -- | One trouble is that position-based matching is intolerant to position changes.
 -- | If you were to move a position-pruned node around the VDOM, or add or remove
--- | a wrapper node around it, or add or remove a wraper node around an *ancestor*,
+-- | a wrapper node around it, or add or remove a wrapper node around *any ancestor*,
 -- | the node would unconditionally recompute, even if you haven't changed it.
 -- |
 -- | Another trouble is that position-based matching has to compare `render`
