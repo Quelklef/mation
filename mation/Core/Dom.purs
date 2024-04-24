@@ -12,7 +12,7 @@
 module Mation.Core.Dom where
   
 import Mation.Core.Prelude
-import Mation.Core.Util.UnsureEq (class UnsureEq, viaPrim)
+import Mation.Core.Util.UnsureEq (class UnsureEq, Unsure (Surely), primEq)
 
 
 -- | Signifies that a type should be used as a DOM Node type
@@ -34,9 +34,8 @@ newtype DomNode = DomNode Foreign
 derive instance Newtype DomNode _
 instance IsDomNode DomNode
 
--- | Instance given by `viaPrim`
 instance UnsureEq DomNode where
-  unsureEq = viaPrim
+  unsureEq a b = Surely (a `primEq` b)
 
 -- | Built-in concrete DOM Event type (this is just a newtype over Foreign)
 -- |
@@ -46,7 +45,6 @@ newtype DomEvent = DomEvent Foreign
 derive instance Newtype DomEvent _
 instance IsDomEvent DomEvent
 
--- | Instance given by `viaPrim`
 instance UnsureEq DomEvent where
-  unsureEq = viaPrim
+  unsureEq a b = Surely (a `primEq` b)
 

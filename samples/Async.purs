@@ -11,7 +11,7 @@ import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
-import Mation.Core.Util.UnsureEq (class UnsureEq, unsureEq, Unsure (..), viaPrim)
+import Mation.Core.Util.UnsureEq (class UnsureEq, unsureEq, Unsure (..))
 import Mation.Lenses (field)
 
 
@@ -29,7 +29,7 @@ data RequestStatus
 
 instance UnsureEq RequestStatus where
   unsureEq NotStarted NotStarted = Surely true
-  unsureEq (InProgress c) (InProgress c') = viaPrim c c'
+  unsureEq (InProgress c) (InProgress c') = unsureEq c c'
   unsureEq (Success a) (Success a') = unsureEq a a'
   unsureEq (Failure a) (Failure a') = unsureEq a a'
   unsureEq _ _ = Surely false

@@ -6,8 +6,6 @@ module Mation.Core.Util.UnsureEq
   , unsureEq
   , class UnsureEqFields
   , unsureEqFields
-  , viaEq
-  , viaPrim
   , primEq
   , class UnsureEqGeRep
   , gUnsureEq
@@ -122,13 +120,16 @@ class UnsureEq a where
   unsureEq :: a -> a -> Unsure Boolean
 
 instance UnsureEq Unit where unsureEq _ _ = Surely true
-instance UnsureEq Boolean where unsureEq = viaPrim
-instance UnsureEq Int where unsureEq = viaPrim
-instance UnsureEq Number where unsureEq = viaPrim
-instance UnsureEq Char where unsureEq = viaPrim
-instance UnsureEq String where unsureEq = viaPrim
+instance UnsureEq Boolean where unsureEq a b = Surely (a `primEq` b)
+instance UnsureEq Int where unsureEq a b = Surely (a `primEq` b)
+instance UnsureEq Number where unsureEq a b = Surely (a `primEq` b)
+instance UnsureEq Char where unsureEq a b = Surely (a `primEq` b)
+instance UnsureEq String where unsureEq a b = Surely (a `primEq` b)
 instance UnsureEq Void where unsureEq _ _ = Surely true
 instance UnsureEq (Proxy s) where unsureEq _ _ = Surely true
+
+instance UnsureEq (Effect a) where
+  unsureEq a b = if primEq a b then Surely true else Unsure
 
 instance (UnsureEq a, UnsureEq b) => UnsureEq (a /\ b) where
   -- Looks complex due to short-circuiting
@@ -223,21 +224,6 @@ instance UnsureEq a => UnsureEqGeRep (G.Argument a) where
   gUnsureEq = unsureEq `on` case _ of G.Argument a -> a
 
 
-
--- | Implementation for `unsureEq` via `eq`
-viaEq :: forall a. Eq a => (a -> a -> Unsure Boolean)
-viaEq a b = Surely (a == b)
-
--- | Implementation for `unsureEq` via primitive triple-equals equality
--- |
--- | If `===` produces `true` then `viaPrim` produces `Surely true`.
--- | If `===` produces `false` then `viaPrim` produces `Unsure`, since
--- | it could still be possible that the two value sare structurally
--- | equal.
-viaPrim :: forall a. (a -> a -> Unsure Boolean)
-viaPrim a b = case primEq a b of
-  true -> Surely true
-  false -> Unsure
-
+-- | Javascript `===`, for use in writing some `UnsureEq` instances
 foreign import primEq :: forall a b. a -> b -> Boolean
 

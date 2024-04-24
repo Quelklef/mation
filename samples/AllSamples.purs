@@ -6,7 +6,7 @@ import Mation as M
 import Mation.Elems as E
 import Mation.Styles as S
 import Mation.Props as P
-import Mation.Core.Util.UnsureEq (class UnsureEq, viaEq)
+import Mation.Core.Util.UnsureEq (class UnsureEq, Unsure (Surely))
 import Mation.Core.Refs as Refs
 import Mation.Additional.Router as R
 import Mation.Lenses (field)
@@ -67,7 +67,7 @@ derive instance Ord Page
 instance Show Page where show x = genericShow x
 
 instance UnsureEq Page where
-  unsureEq = viaEq
+  unsureEq a b = Surely (a == b)
 
 pretty :: Page -> String
 pretty = case _ of

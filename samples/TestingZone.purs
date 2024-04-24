@@ -16,7 +16,7 @@ import Mation.Selectors as Sel
 import Mation.Selectors ((#<>))
 import Mation.Core.Refs as Refs
 import Mation.Core.Dom (DomNode)
-import Mation.Core.Util.UnsureEq (class UnsureEq, Unsure (..), viaPrim)
+import Mation.Core.Util.UnsureEq (class UnsureEq, genericUnsureEq)
 import Mation.Experimental.Component as Com
 import Mation.Lenses (field, (×))
 
@@ -27,11 +27,10 @@ type Counter = { count :: Int, streamState :: StreamState }
 
 data StreamState = NotStreaming | Streaming { cancel :: Effect Unit }
 
--- FIXME: genericUnsureEq not working when the type contains a record?
+derive instance Generic StreamState _
+
 instance UnsureEq StreamState where
-  unsureEq NotStreaming NotStreaming = Surely true
-  unsureEq (Streaming c) (Streaming c') = viaPrim c c'
-  unsureEq _ _ = Surely false
+  unsureEq = genericUnsureEq
 
 renderCounter :: Counter -> E.Html' (M.Modify Counter)
 renderCounter model =
