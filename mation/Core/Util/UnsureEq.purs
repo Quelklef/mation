@@ -22,6 +22,10 @@ import Record.Unsafe (unsafeGet) as R
 import Prim.RowList as RL
 import Data.Generic.Rep as G
 import Data.HeytingAlgebra (tt, ff)
+import Data.Set (Set)
+import Data.Set as Set
+import Data.Map as Map
+import Data.List (List (..))
 
 
 -- FIXME: I think some of the UnsureEq instances in here
@@ -128,32 +132,42 @@ instance UnsureEq String where unsureEq a b = Surely (a `primEq` b)
 instance UnsureEq Void where unsureEq _ _ = Surely true
 instance UnsureEq (Proxy s) where unsureEq _ _ = Surely true
 
-instance UnsureEq (Effect a) where
-  unsureEq a b = if primEq a b then Surely true else Unsure
-
-instance (UnsureEq a, UnsureEq b) => UnsureEq (a /\ b) where
-  -- Looks complex due to short-circuiting
-  unsureEq ab xy =
-    if primEq ab xy then tt
-    else let a /\ b = ab
-             x /\ y = xy
-         in case unsureEq a x of
-              Surely false -> Surely false
-              other -> other && unsureEq b y
-
 instance UnsureEq a => UnsureEq (Maybe a) where
   unsureEq (Just a) (Just b) = unsureEq a b
   unsureEq (Just _) Nothing = Surely false
   unsureEq Nothing (Just _) = Surely false
   unsureEq Nothing Nothing = Surely true
 
-instance UnsureEq a => UnsureEq (Array a) where
-  unsureEq a b =
-    case primEq a b, Array.length a == Array.length b of
-      true, _ -> tt
-      _, false -> ff
-      _, _ -> unsureEqArrayImpl a b
+instance (UnsureEq a, UnsureEq b) => UnsureEq (a /\ b) where
+  unsureEq = primEqOr \(a /\ b) (x /\ y) ->
+    case unsureEq a x of
+      Surely false -> Surely false  -- short-circuit
+      other -> other && unsureEq b y
 
+instance UnsureEq a => UnsureEq (List a) where
+  unsureEq = case _, _ of
+    Nil, Nil -> tt
+    Cons x xs, Cons y ys -> unsureEq (x /\ xs) (y /\ ys)
+    _, _ -> ff
+
+instance UnsureEq a => UnsureEq (Set a) where
+  -- Defers to the List implementation
+  unsureEq = primEqOr (unsureEq `on` (Set.toUnfoldable :: _ -> List _))
+
+instance UnsureEq v => UnsureEq (Map k v) where
+  -- Defers to the List implementation
+  unsureEq = primEqOr (unsureEq `on` Map.values)
+
+instance UnsureEq (Effect a) where
+  unsureEq = primEqOr ff
+
+instance UnsureEq (a -> b) where
+  unsureEq = primEqOr ff
+
+instance UnsureEq a => UnsureEq (Array a) where
+  unsureEq = primEqOr \a b ->
+    if Array.length a /= Array.length b then ff  -- short-circuit
+    else unsureEqArrayImpl a b
 
 -- Short-circuiting implementation for Array
 unsureEqArrayImpl :: forall a. UnsureEq a => Array a -> Array a -> Unsure Boolean
@@ -227,3 +241,10 @@ instance UnsureEq a => UnsureEqGeRep (G.Argument a) where
 -- | Javascript `===`, for use in writing some `UnsureEq` instances
 foreign import primEq :: forall a b. a -> b -> Boolean
 
+-- | The call `primEqOr f a b` firsts tests if `a === b`, short-circuiting to
+-- | `Surely true` if they are equal, and otherwise defers to `f`.
+primEqOr :: forall a b. (a -> b -> Unsure Boolean) -> (a -> b -> Unsure Boolean)
+primEqOr f a b =
+  case primEq a b of
+    true -> tt
+    false -> f a b
