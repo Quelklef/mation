@@ -20,6 +20,10 @@ type Model =
   { vals :: Vals
   , example2 :: { depth :: Int, color :: String }
   , sumTest :: Int /\ Int
+  , magicPruneTest ::
+      { a :: Int
+      , b :: Int
+      }
   }
 
 initial :: Model
@@ -27,6 +31,7 @@ initial =
   { vals: double (double (double 0))
   , example2: { depth: 4, color: "teal" }
   , sumTest: 0 /\ 0
+  , magicPruneTest: { a: 0, b: 0 }
   }
 
   where
@@ -80,6 +85,11 @@ render model =
   , E.br []
   , E.hr []
   , cmap (M.focusWithLens (field @"sumTest")) $ E.prune "sum-test" model.sumTest renderSumTest
+  , E.br []
+  , E.br []
+  , E.hr []
+  , magicPruneTest model.magicPruneTest.a model.magicPruneTest.b
+    # cmap (M.focusWithLens (prop (Proxy :: Proxy "magicPruneTest")))
   ]
 
   where
@@ -191,9 +201,10 @@ foreign import parseInt :: String -> Int
 -- Tests cases where we cycle between different pruned VDOMs
 renderSumTest :: (Int /\ Int) -> E.Html' (M.Modify (Int /\ Int))
 renderSumTest (n /\ tab) =
-  E.p
+  E.div
   []
-  [ E.div
+  [ E.p [ P.addCss "font-weight: bold" ] [ E.text "Tab test" ]
+  , E.div
     [ P.addStyles
       [ S.border "1px solid black"
       , S.borderBottom "none !important"
@@ -251,3 +262,27 @@ renderSumTest (n /\ tab) =
     [ E.text label
     ]
 
+
+magicPruneTest :: Int -> Int -> E.Html' (M.Modify { a :: Int, b :: Int })
+magicPruneTest =
+  E.magicPrune "magic-prune-test"
+  \a b ->
+    E.div
+    []
+    [ E.span [ P.addCss "font-weight: bold" ] [ E.text "MagicPrune test: " ]
+    , E.text ("A=" <> show a)
+    , E.text "; "
+    , E.text ("B=" <> show b)
+    , E.text "; "
+    , E.button
+      [ P.onClick \_ ref -> ref # M.modify (prop (Proxy :: Proxy "a") %~ (_ + 1))
+      ]
+      [ E.text "+A"
+      ]
+    , E.text " "
+    , E.button
+      [ P.onClick \_ ref -> ref # M.modify (prop (Proxy :: Proxy "b") %~ (_ + 1))
+      ]
+      [ E.text "+B"
+      ]
+    ]

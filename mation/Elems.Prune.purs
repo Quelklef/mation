@@ -130,6 +130,40 @@ unPrune :: forall m s. Html m s -> Html m s
 unPrune = Html.unPrune
 
 -- | Attaches a pruning key to a node but does not actually perform pruning
-key :: forall m s. String -> Html m s -> Html m s
-key = FM.map <<< Html.addPruneKey
+addKey :: forall m s. String -> Html m s -> Html m s
+addKey = FM.map <<< Html.addPruneKey
 
+
+-- | Pruning a multi-argument function is annoying, because you have to
+-- | manually wrap and unwrap the multiple values into a tuple.
+-- |
+-- | For instance, to prune
+-- |
+-- | ```purescript
+-- | viewMyThing :: A -> B -> C -> Html m Z
+-- | viewMyThing a b c = stuff
+-- | ```
+-- |
+-- | We have to write
+-- |
+-- | ```purescript
+-- | viewMyThing a b c = prune "my-thing" (a /\ b /\ c) \(a /\ b /\ c) -> stuff
+-- | ```
+-- |
+-- | `MagicPrune` takes care of most of this work; the above simplifies to
+-- |
+-- | ```purescript
+-- | viewMyThing = magicPrune "my-thing" \a b c -> stuff
+-- | ```
+-- |
+-- | (This is most ergonomic when you are trying to prune a whole function,
+-- | ie, produce an output `a -> b -> c -> Html m z`, rather than pruning
+-- | an expression, ie, produce an output `Html m z`)
+class MagicPrune p a where
+  magicPrune :: String -> (p -> a) -> (p -> a)
+
+instance UnsureEq p => MagicPrune p (Html m s) where
+  magicPrune key fn p = Html.mkPrune key fn p
+
+instance MagicPrune (p0 /\ p1) a => MagicPrune p0 (p1 -> a) where
+  magicPrune key fn p0 p1 = magicPrune key (\(p0 /\ p1) -> fn p0 p1) (p0 /\ p1)
