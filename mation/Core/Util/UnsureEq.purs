@@ -28,13 +28,6 @@ import Data.Map as Map
 import Data.List (List (..))
 
 
--- FIXME: I think some of the UnsureEq instances in here
---   are not short-circuiting. Maybe use the HeytingAlgebra instance
---   for Data.Lazy (Lazy) to streamline creating short-circuiting
---   instances? Could possibly make existing short-circuiting instances
---   more readable as well. (or perhaps less readable!)
-
-
 -- | Intended to be used with `a ~ Boolean` to create
 -- | a three-valued logic
 data Unsure a = Unsure | Surely a
