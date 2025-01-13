@@ -18,6 +18,8 @@ import Data.Array as Array
 -- | arrays `[x, y]`. This is convenient for interfacing with foreign code.
 foreign import data Pair :: Type -> Type -> Type
 
+type role Pair representational representational
+
 -- | `Pair` constructor
 foreign import mkPair :: forall a b. a -> b -> Pair a b
 
