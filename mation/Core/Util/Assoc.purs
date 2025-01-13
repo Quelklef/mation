@@ -57,8 +57,12 @@ fromFoldable = Assoc <<< foldMap (\(k /\ v) -> [mkPair k v])
 
 -- | Look up a key
 -- |
--- | If it is present more than once, return the leftmost value.
--- | This makes the `Monoid` instance for `Assoc` in some sense "left-biased"
+-- | If the key is present more than once, `lookup` returns
+-- | the leftmost associated value.
+-- |
+-- | This makes the `Monoid` instance for `Assoc` "left-biased" in the
+-- | sense that if both `Assoc`s `a1`, `a2` contain the key `k`,
+-- | then `lookup k (a1 <> a2) == lookup k a1`
 lookup :: forall k v. Eq k => k -> Assoc k v -> Maybe v
 lookup k0 (Assoc arr) = arr # Array.findMap (usePair \k v -> if k == k0 then Just v else Nothing)
 
