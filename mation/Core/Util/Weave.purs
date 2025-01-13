@@ -1,6 +1,13 @@
-module Mation.Core.Util.Weave (module Mation.Core.Util.Weave, module X) where
+module Mation.Core.Util.Weave
+  ( Weave
+  , this
+  , that
+  , noop
+  , empty
+  , module ReExport
+  ) where
 
-import Mation.Core.Util.IsEndo ((.>>), (.<<), (.<>)) as X
+import Mation.Core.Util.IsEndo (runEndo, (.>>), (.<<), (.<>)) as ReExport
 
 import Mation.Core.Prelude hiding (compose)
 
@@ -17,7 +24,7 @@ import Mation.Core.Util.IsEndo (class IsEndo, concatEndo)
 -- |
 -- | for some `a1`, `a2`, `a3`, ...
 -- |
--- | Such a function `f` is represented specifically as the array
+-- | Such a function `f` is represented (approximately) as the array
 -- |
 -- | ```
 -- | [ Just a1, Nothing, Just a2, Nothing, ... ]
@@ -25,17 +32,11 @@ import Mation.Core.Util.IsEndo (class IsEndo, concatEndo)
 -- |
 -- | Where a `Just` gives a known value of type `a` and a `Nothing`
 -- | value represents the function parameter.
--- |
--- | ***
--- |
--- | Actually, we don't use `Maybe` but an isomorphic type
--- | called `Elem`, and we allow repeated `x` terms and adjacent `a_n`
--- | terms. But it's all equivalent.
 newtype Weave a = Weave (Array (Elem a))
 
--- | `Hole` represents the parameter of the represented function,
--- | and `Elem a` represents a fixed value `a :: a`
-data Elem a = Hole | Elem a
+-- | `That` represents the parameter of the represented function,
+-- | and `This a` represents some known vaue of type `a`
+data Elem a = That | This a
 
 derive instance Generic (Weave a) _
 derive instance Eq a => Eq (Weave a)
@@ -53,8 +54,8 @@ instance Show a => Show (Elem a) where show = genericShow
 
 instance Hashable a => Hashable (Elem a) where
   hash = case _ of
-    Hole -> hash $ 1
-    Elem x -> hash $ 2 /\ x
+    That -> hash $ 1
+    This x -> hash $ 2 /\ x
 
 instance Monoid a => IsEndo (Weave a) a where
 
@@ -63,49 +64,55 @@ instance Monoid a => IsEndo (Weave a) a where
   runEndo :: Weave a -> (a -> a)
   runEndo (Weave elems) =
     elems # foldMap case _ of
-      Hole -> identity
-      Elem a -> const a
+      That -> identity
+      This a -> const a
 
   -- | Compose two `Weave`s left-to-right as functions
   -- |
-  -- | Semantics: `runWeave (composeLTR f g) = runWeave f >>> runWeave g`
+  -- | Semantics: `runEndo (composeLTR f g) = runEndo f >>> runEndo g`
   composeEndoLTR :: Weave a -> Weave a -> Weave a
   composeEndoLTR (Weave xs) (Weave ys) = Weave $
     ys >>= case _ of
-      Hole -> xs
-      Elem y -> [ Elem y ]
+      That -> xs
+      This y -> [ This y ]
 
   -- | Concatenate two `Weave`s
   -- |
-  -- | Semantics: `runWeave (concat f g) = runWeave f <> runWeave g`
+  -- | Semantics: `runEndo (concat f g) = runEndo f <> runEndo g`
   concatEndo :: Weave a -> Weave a -> Weave a
   concatEndo (Weave xs) (Weave ys) = Weave (xs <> ys)
 
 
--- | Semigroup under pointwise concatenation
+-- | Semigroup under pointwise concatenation (`concatEndo`)
 instance Monoid a => Semigroup (Weave a) where
   append = concatEndo
 
 -- | Monoid under pointwise concatenation
 instance Monoid a => Monoid (Weave a) where
-  mempty = empty
+  mempty = Weave []
 
 
--- | Identity function
--- |
--- | Semantics: `runWeave noop = identity`
-noop :: forall a. Weave a
-noop = Weave [ Hole ]
-
--- | Semantics: `runWeave empty = const mempty`
-empty :: forall a. Monoid a => Weave a
-empty = Weave [ Elem mempty ]
-
--- | Represent a known value as a `Weave`
+-- | Represents a known value
 this :: forall a. a -> Weave a
-this a = Weave [ Elem a ]
+this a = Weave [ This a ]
 
--- | Represents a function parameter (aka `Weave` "hole")
+-- | Represents the function parameter
 that :: forall a. Weave a
-that = Weave [ Hole ]
+that = Weave [ That ]
+
+-- | Represents the identity function
+-- |
+-- | Semantics: `runEndo noop = identity`
+-- |
+-- | Equivalent to `that`
+noop :: forall a. Weave a
+noop = Weave [ That ]
+
+-- | Represents `const mempty`
+-- |
+-- | Semantics: `runEndo empty = const mempty`
+-- |
+-- | Equivalent to `this mempty`
+empty :: forall a. Monoid a => Weave a
+empty = Weave []
 

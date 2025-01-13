@@ -15,7 +15,7 @@ type Selector = String
 
 -- | `{sel} > {sel}`
 childrenWhere :: Selector -> ScopeModifier
-childrenWhere sel = SMAlts [ { selector: W.Weave [ W.Hole, W.Elem " > ", W.Elem sel ], block: W.noop } ]
+childrenWhere sel = SMAlts [ { selector: W.that <> W.this (" > " <> sel), block: W.noop } ]
 
 -- | `{sel} > *`
 children :: ScopeModifier
@@ -23,7 +23,7 @@ children = childrenWhere "*"
 
 -- | `{sel} {sel}`
 descendantsWhere :: Selector -> ScopeModifier
-descendantsWhere sel = SMAlts [ { selector: W.Weave [ W.Hole, W.Elem " ", W.Elem sel ], block: W.noop } ]
+descendantsWhere sel = SMAlts [ { selector: W.that <> W.this " " <> W.this sel, block: W.noop } ]
 
 -- | `{sel} *`
 descendants :: ScopeModifier
@@ -31,27 +31,27 @@ descendants = descendantsWhere "*"
 
 -- | `{sel}.{class}`
 class_ :: String -> ScopeModifier
-class_ cls = SMAlts [ { selector: W.Weave [ W.Hole, W.Elem $ "." <> cls ], block: W.noop } ]
+class_ cls = SMAlts [ { selector: W.that <> W.this ("." <> cls), block: W.noop } ]
 
 -- | `{sel}[{attribute}]`
 attribute :: String -> ScopeModifier
-attribute attr = SMAlts [ { selector: W.Weave [ W.Hole, W.Elem "[", W.Elem attr, W.Elem "]" ], block: W.noop } ]
+attribute attr = SMAlts [ { selector: W.that <> W.this ("[" <> attr <> "]"), block: W.noop } ]
 
 -- | `{sel} + {sel}`
 next :: Selector -> ScopeModifier
-next sel = SMAlts [ { selector: W.Weave [ W.Hole, W.Elem " + ", W.Elem sel ], block: W.noop } ]
+next sel = SMAlts [ { selector: W.that <> W.this (" + " <> sel), block: W.noop } ]
 
 -- | `{sel} ~ {sel}`
 following :: Selector -> ScopeModifier
-following sel = SMAlts [ { selector: W.Weave [ W.Hole, W.Elem " ~ ", W.Elem sel ], block: W.noop } ]
+following sel = SMAlts [ { selector: W.that <> W.this (" ~ " <> sel), block: W.noop } ]
 
 -- | `{sel}::before` pseudo-element
 before :: ScopeModifier
-before = SMAlts [ { selector: W.Weave [ W.Hole, W.Elem "::before" ], block: W.noop } ]
+before = SMAlts [ { selector: W.that <> W.this "::before", block: W.noop } ]
 
 -- | `{sel}::after` pseudo-element
 after :: ScopeModifier
-after = SMAlts [ { selector: W.Weave [ W.Hole, W.Elem "::after" ], block: W.noop } ]
+after = SMAlts [ { selector: W.that <> W.this "::after", block: W.noop } ]
 
 -- | CSS `@media` at-rule
 -- |
@@ -60,19 +60,19 @@ after = SMAlts [ { selector: W.Weave [ W.Hole, W.Elem "::after" ], block: W.noop
 -- | writing `media "max-width: 500px"`. This is because not all
 -- | valid `@media` conditions have enclosing parentheses.
 media :: String -> ScopeModifier
-media s = SMAlts [ { block: W.Weave [ W.Elem "@media ", W.Elem s, W.Elem " { ", W.Hole, W.Elem " } " ], selector: W.noop } ]
+media s = SMAlts [ { block: W.this ("@media " <> s <> " { ") <> W.that <> W.this " } ", selector: W.noop } ]
 
 -- | CSS `@supports` at-rule
 -- |
 -- | Any necessary parentheses need to be passed in by you. (see `media`)
 supports :: String -> ScopeModifier
-supports s = SMAlts [ { block: W.Weave [ W.Elem "@supports ", W.Elem s, W.Elem " { ", W.Hole, W.Elem " } " ], selector: W.noop } ]
+supports s = SMAlts [ { block: W.this ("@supports " <> s <> " { ") <> W.that <> W.this " } ", selector: W.noop } ]
 
 -- | CSS `@document` at-rule
 -- |
 -- | Any necessary parentheses need to be passed in by you. (see `media`)
 document :: String -> ScopeModifier
-document s = SMAlts [ { block: W.Weave [ W.Elem "@document ", W.Elem s, W.Elem " { ", W.Hole, W.Elem " } " ], selector: W.noop } ]
+document s = SMAlts [ { block: W.this ("@document " <> s <> " { ") <> W.that <> W.this " } ", selector: W.noop } ]
 
 -- | Selects whatever is currently selected. That is, "does nothing"
 -- |
@@ -84,7 +84,7 @@ document s = SMAlts [ { block: W.Weave [ W.Elem "@document ", W.Elem s, W.Elem "
 -- |
 -- | To attach some style to both the targeted node and its children
 this :: ScopeModifier
-this = SMAlts [ { block: W.Weave [ W.Hole ], selector: W.noop } ]
+this = SMAlts [ { block: W.that, selector: W.noop } ]
 
 -- | Create a block modifier directly from a `Weave`
 -- |
@@ -101,7 +101,7 @@ rawBlockModifier w = SMAlts [ { block: w, selector: W.noop } ]
 -- |
 -- | Example:
 -- | ```
--- | onChildren = rawSelectorModifier (Weave [ Hole, Elem " > *" ])
+-- | onChildren = rawSelectorModifier (Weave.that <> Weave.this " > *")
 -- | ```
 -- |
 -- | This should only rarely be necessary

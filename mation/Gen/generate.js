@@ -159,7 +159,7 @@ function * pseudoClasses() {
 
     yield `-- | [CSS :${pcls.name} pseudo-class](https://developer.mozilla.org/en-US/docs/Web/CSS/:${pcls.name}). This is generated code.`;
     yield `${ident} :: ${argTypes}ScopeModifier`
-    yield `${ident} ${args}= SMAlts [ { selector: W.Weave [ W.Hole, W.Elem $ ":${pcls.name}${argsCall}" ], block: W.noop } ]`;
+    yield `${ident} ${args}= SMAlts [ { selector: W.that <> W.this (":${pcls.name}${argsCall}"), block: W.noop } ]`;
     yield '';
   }
 }
