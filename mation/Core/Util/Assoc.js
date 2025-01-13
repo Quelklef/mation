@@ -4,7 +4,7 @@ a => b => {
   return [a, b];
 };
 
-export const usePair =
+export const unPair =
 f => ([a, b]) => {
   return f(a)(b);
 };

@@ -1,7 +1,7 @@
 module Mation.Core.Util.Assoc
   ( Pair
   , mkPair
-  , usePair
+  , unPair
   , Assoc
   , toArray
   , fromArray
@@ -22,7 +22,7 @@ foreign import data Pair :: Type -> Type -> Type
 foreign import mkPair :: forall a b. a -> b -> Pair a b
 
 -- | `Pair` destructor
-foreign import usePair :: forall a b r. (a -> b -> r) -> Pair a b -> r
+foreign import unPair :: forall a b r. (a -> b -> r) -> Pair a b -> r
 
 -- | Association array
 -- |
@@ -32,7 +32,7 @@ newtype Assoc k v = Assoc (Array (Pair k v))
 
 -- | Transform the values of an `Assoc`
 instance Functor (Assoc k) where
-  map f (Assoc arr) = Assoc $ arr # map (usePair \a b -> mkPair a (f b))
+  map f (Assoc arr) = Assoc $ arr # map (unPair \a b -> mkPair a (f b))
 
 -- | Combine two `Assoc`s
 -- |
@@ -45,7 +45,7 @@ instance Monoid (Assoc k v) where
 
 
 toArray :: forall k v. Assoc k v -> Array (k /\ v)
-toArray (Assoc arr) = arr # map (usePair (\k v -> k /\ v))
+toArray (Assoc arr) = arr # map (unPair (\k v -> k /\ v))
 
 fromArray :: forall k v. Array (k /\ v) -> Assoc k v
 fromArray = Assoc <<< map (\(k /\ v) -> mkPair k v)
@@ -58,5 +58,5 @@ fromFoldable = Assoc <<< foldMap (\(k /\ v) -> [mkPair k v])
 -- | If it is present more than once, return the leftmost value.
 -- | This makes the `Monoid` instance for `Assoc` in some sense "left-biased"
 lookup :: forall k v. Eq k => k -> Assoc k v -> Maybe v
-lookup k0 (Assoc arr) = arr # Array.findMap (usePair \k v -> if k == k0 then Just v else Nothing)
+lookup k0 (Assoc arr) = arr # Array.findMap (unPair \k v -> if k == k0 then Just v else Nothing)
 
