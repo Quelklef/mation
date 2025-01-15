@@ -131,6 +131,11 @@ instance UnsureEq a => UnsureEq (Maybe a) where
   unsureEq Nothing (Just _) = Surely false
   unsureEq Nothing Nothing = Surely true
 
+instance (UnsureEq a, UnsureEq b) => UnsureEq (Either a b) where
+  unsureEq (Left a) (Left b) = unsureEq a b
+  unsureEq (Right a) (Right b) = unsureEq a b
+  unsureEq _ _ = Surely false
+
 instance (UnsureEq a, UnsureEq b) => UnsureEq (a /\ b) where
   unsureEq = primEqOr \(a /\ b) (x /\ y) ->
     case unsureEq a x of
