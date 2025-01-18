@@ -5,7 +5,7 @@ module Mation.Elems (module X, module Mation.Elems) where
 
 import Mation.Gen.Tags as X
 import Mation.Core.Html (Html (..), hoist) as X
-import Mation.Elems.Prune (prune, magicPrune) as X
+import Mation.Elems.Prune (pruneN, pruneEq, pruneTeq, pruneUeq) as X
 
 import Mation.Core.Prelude
 

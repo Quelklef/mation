@@ -49,11 +49,11 @@ vNodeToPatchable = case _ of
       }
   VWithK withK -> vNodeToPatchable (giveUnit withK)
   VPrune e -> VPPrune $
-    e # mapExists \(PruneE { keyPath, params, unsureEq, render }) ->
+    e # mapExists \(PruneE { keyPath, params, compare, render }) ->
           PatchPruneE
             { keyPath, params
             , render: render >>> vNodeToPatchable
-            , surelyEqual: \a b -> unsureEq a b # surely
+            , surelyEqual: \a b -> compare a b # surely
             }
 
   where
