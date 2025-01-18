@@ -192,7 +192,7 @@ render model =
   listItem = \idx str ->
     case model.fast of
       false -> impl idx str
-      true -> E.prune ("listitem-" <> show idx) (idx /\ str) \(idx /\ str) -> impl idx str
+      true -> (idx /\ str) # E.pruneEq ("listitem-" <> show idx) \(idx /\ str) -> impl idx str
 
     where
     impl idx str =

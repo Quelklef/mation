@@ -158,34 +158,34 @@ render model =
         [ case model.page of
             Welcome      ->
               cmap (M.focusWithLens (field @"submodels" <<< field @"welcome")) $
-                E.prune "page-welcome" model.submodels.welcome Samples.Welcome.render
+                E.pruneEq "page-welcome" Samples.Welcome.render model.submodels.welcome
             Counter      ->
               cmap (M.focusWithLens (field @"submodels" <<< field @"counter")) $
-                E.prune "page-counter" model.submodels.counter Samples.Counter.render
+                E.pruneEq "page-counter" Samples.Counter.render model.submodels.counter
             Components   ->
               cmap (M.focusWithLens (field @"submodels" <<< field @"components")) $
-                E.prune "page-components" model.submodels.components Samples.Components.render
+                E.pruneEq "page-components" Samples.Components.render model.submodels.components
             AsyncApiCall ->
               cmap (M.focusWithLens (field @"submodels" <<< field @"asyncApiCall")) $
-                E.prune "page-asyncApiCall" model.submodels.asyncApiCall Samples.AsyncApiCall.render
+                E.pruneUeq "page-asyncApiCall" Samples.AsyncApiCall.render model.submodels.asyncApiCall
             Styling      ->
               cmap (M.focusWithLens (field @"submodels" <<< field @"styling")) $
-                E.prune "page-styling" model.submodels.styling Samples.Styling.render
+                E.pruneEq "page-styling" Samples.Styling.render model.submodels.styling
             Clock        ->
               cmap (const unit) $
-                E.prune "page-clock" model.submodels.clock Samples.Clock.render
+                E.pruneEq "page-clock" Samples.Clock.render model.submodels.clock
             Inputs       ->
               cmap (M.focusWithLens (field @"submodels" <<< field @"inputs")) $
-                E.prune "page-inputs" model.submodels.inputs Samples.Inputs.render
+                E.pruneUeq "page-inputs" Samples.Inputs.render model.submodels.inputs
             TestingZone  ->
               cmap (M.focusWithLens (field @"submodels" <<< field @"testing")) $
-                E.prune "page-testing" model.submodels.testing Samples.TestingZone.render
+                E.pruneUeq "page-testing" Samples.TestingZone.render model.submodels.testing
             PerfTest     ->
               cmap (M.focusWithLens (field @"submodels" <<< field @"perfTest")) $
-                E.prune "page-perfTest" model.submodels.perfTest Samples.PerfTest.render
+                E.pruneEq "page-perfTest" Samples.PerfTest.render model.submodels.perfTest
             Pruning      ->
               cmap (M.focusWithLens (field @"submodels" <<< field @"pruning")) $
-                E.prune "page-pruning" model.submodels.pruning Samples.Pruning.render
+                E.pruneEq "page-pruning" Samples.Pruning.render model.submodels.pruning
         ]
       ]
     ]
@@ -199,7 +199,7 @@ render model =
     --        different <options>
     --        Possibly an FF issue. See "select flickering" section
     --        of TestingZone.
-    E.prune "nav" model.page \currentPage ->
+    model.page # E.pruneEq "nav" \currentPage ->
     E.div
     [ P.addStyles
       [ S.display "flex"

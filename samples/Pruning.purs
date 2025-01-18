@@ -8,7 +8,6 @@ import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
-import Mation.Core.Util.UnsureEq (class UnsureEq)
 import Mation.Lenses (field)
 
 
@@ -20,7 +19,7 @@ type Model =
   { vals :: Vals
   , example2 :: { depth :: Int, color :: String }
   , sumTest :: Int /\ Int
-  , magicPruneTest ::
+  , multiArgTest ::
       { a :: Int
       , b :: Int
       }
@@ -31,7 +30,7 @@ initial =
   { vals: double (double (double 0))
   , example2: { depth: 4, color: "teal" }
   , sumTest: 0 /\ 0
-  , magicPruneTest: { a: 0, b: 0 }
+  , multiArgTest: { a: 0, b: 0 }
   }
 
   where
@@ -40,13 +39,13 @@ initial =
   double x = x /\ x
 
 
-onDouble :: forall ref a. M.FocusRefWithLens ref => UnsureEq a =>
+onDouble :: forall ref a. M.FocusRefWithLens ref => Eq a =>
   (a -> E.Html' (ref a)) -> (Double a -> E.Html' (ref (Double a)))
 onDouble renderOne model =
   E.div
   []
-  [ E.prune "1" (model ^. _1) (\n -> box $ cmap (M.focusWithLens _1) $ renderOne n)
-  , E.prune "2" (model ^. _2) (\n -> box $ cmap (M.focusWithLens _2) $ renderOne n)
+  [ (model ^. _1) # E.pruneEq "1" (\n -> box $ cmap (M.focusWithLens _1) $ renderOne n)
+  , (model ^. _2) # E.pruneEq "2" (\n -> box $ cmap (M.focusWithLens _2) $ renderOne n)
   ]
 
   where
@@ -75,21 +74,21 @@ render model =
   , E.div
     [ P.addCss "font-size: 0.75em"
     ]
-    [ E.prune "example-1" model.vals (\vals -> cmap (M.focusWithLens (field @"vals")) $ onDouble (onDouble (onDouble mkCounter)) vals)
+    [ model.vals # E.pruneEq "example-1" (\vals -> cmap (M.focusWithLens (field @"vals")) $ onDouble (onDouble (onDouble mkCounter)) vals)
     ]
   , E.br []
   , E.hr []
   , E.p [ pSty ] [ E.text "Pruning works even when the node moves around the application. Try modifying the number of wrapper <divs> below. Again, updates are shown in red." ]
-  , E.prune "example-2" model.example2 (\ex2 -> cmap (M.focusWithLens (field @"example2")) $ renderExample2 ex2)
+  , model.example2 # E.pruneEq "example-2" (\ex2 -> cmap (M.focusWithLens (field @"example2")) $ renderExample2 ex2)
   , E.br []
   , E.br []
   , E.hr []
-  , cmap (M.focusWithLens (field @"sumTest")) $ E.prune "sum-test" model.sumTest renderSumTest
+  , cmap (M.focusWithLens (field @"sumTest")) $ model.sumTest # E.pruneEq "sum-test" renderSumTest
   , E.br []
   , E.br []
   , E.hr []
-  , magicPruneTest model.magicPruneTest.a model.magicPruneTest.b
-    # cmap (M.focusWithLens (prop (Proxy :: Proxy "magicPruneTest")))
+  , multiArgTest model.multiArgTest.a model.multiArgTest.b
+    # cmap (M.focusWithLens (prop (Proxy :: Proxy "multiArgTest")))
   ]
 
   where
@@ -169,7 +168,7 @@ renderExample2 = \{ depth, color } ->
         , S.padding "1em"
         ]
       ]
-      [ E.prune "the boxes" color \color ->  (_ `power` 60) $
+      [ color # E.pruneEq "the boxes" \color ->  (_ `power` 60) $
         E.div
         [ P.addStyles
           [ S.display "inline-block"
@@ -237,9 +236,9 @@ renderSumTest (n /\ tab) =
       ]
     ]
     [ case tab `mod` 3 of
-        0 -> E.prune "0" n (\n -> E.span [ P.addCss "border: 1px solid blue" ] [ E.text (show n <> " ") ])
-        1 -> E.prune "1" n (\n -> range 1 n # foldMap \k -> E.text (show k <> " .. "))
-        _ -> E.prune "_" n (\_ -> E.span [ P.addCss "background-color: red; color: white" ] [ E.text "three" ])
+        0 -> n # E.pruneEq "0" (\n -> E.span [ P.addCss "border: 1px solid blue" ] [ E.text (show n <> " ") ])
+        1 -> n # E.pruneEq "1" (\n -> range 1 n # foldMap \k -> E.text (show k <> " .. "))
+        _ -> n # E.pruneEq "_" (\_ -> E.span [ P.addCss "background-color: red; color: white" ] [ E.text "three" ])
     ]
   ]
 
@@ -263,13 +262,13 @@ renderSumTest (n /\ tab) =
     ]
 
 
-magicPruneTest :: Int -> Int -> E.Html' (M.Modify { a :: Int, b :: Int })
-magicPruneTest =
-  E.magicPrune "magic-prune-test"
+multiArgTest :: Int -> Int -> E.Html' (M.Modify { a :: Int, b :: Int })
+multiArgTest =
+  E.pruneEq "multi-arg-test"
   \a b ->
     E.div
     []
-    [ E.span [ P.addCss "font-weight: bold" ] [ E.text "MagicPrune test: " ]
+    [ E.span [ P.addCss "font-weight: bold" ] [ E.text "Multi-arg test: " ]
     , E.text ("A=" <> show a)
     , E.text "; "
     , E.text ("B=" <> show b)

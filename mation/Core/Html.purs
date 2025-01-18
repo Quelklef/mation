@@ -2,7 +2,7 @@
 -- | Mation virtual dom
 
 module Mation.Core.Html where
-  
+
 import Mation.Core.Prelude
 
 import Mation.Lenses (field)
@@ -13,7 +13,7 @@ import Mation.Core.Util.Revertible as Rev
 import Mation.Core.Dom (DomNode, DomEvent)
 import Mation.Core.Util.FreeMonoid (class FreeMonoid)
 import Mation.Core.Util.FreeMonoid as FM
-import Mation.Core.Util.UnsureEq (class UnsureEq, unsureEq, Unsure)
+import Mation.Core.Util.UnsureEq (Unsure)
 import Mation.Core.Util.Exists (Exists, mkExists, mapExists, runExists)
 
 
@@ -100,7 +100,7 @@ data VNode m k
 newtype PruneE m k p = PruneE
   { keyPath :: Array String
   , params :: p
-  , unsureEq :: p -> p -> Unsure Boolean
+  , compare :: p -> p -> Unsure Boolean
       -- ^ Typeclass instance. Manually managed because Purescript doesn't have
       --   native support for existentials (not to mention constrained existentials)
   , render :: p -> VNode m k
@@ -120,8 +120,8 @@ instance Contravariant (VNode m) where
            , children: children # map (cmap f)
            }
     VWithK withK -> VWithK (f >>> withK >>> cmap f)
-    VPrune e -> VPrune $ e # mapExists \(PruneE { keyPath, params, unsureEq, render }) ->
-      PruneE { keyPath, params, unsureEq, render: render >>> cmap f }
+    VPrune e -> VPrune $ e # mapExists \(PruneE { keyPath, params, compare, render }) ->
+      PruneE { keyPath, params, compare, render: render >>> cmap f }
 
 
 -- | Change the underlying monad of a virtual node
@@ -137,8 +137,8 @@ hoist1 f = case _ of
          , children: children # map (hoist1 f)
          }
   VWithK withK -> VWithK (hoist1 f <$> withK)
-  VPrune e -> VPrune $ e # mapExists \(PruneE { keyPath, params, unsureEq, render }) ->
-    PruneE { keyPath, params, unsureEq, render: render >>> hoist1 f }
+  VPrune e -> VPrune $ e # mapExists \(PruneE { keyPath, params, compare, render }) ->
+    PruneE { keyPath, params, compare, render: render >>> hoist1 f }
 
   where _restore = field @"restore"
 
@@ -167,8 +167,8 @@ addPruneKey key = case _ of
          , children: children # map (addPruneKey key)
          }
   VWithK withK -> VWithK (addPruneKey key <$> withK)
-  VPrune e -> VPrune $ e # mapExists \(PruneE { keyPath, params, unsureEq, render }) ->
-    PruneE { params, unsureEq
+  VPrune e -> VPrune $ e # mapExists \(PruneE { keyPath, params, compare, render }) ->
+    PruneE { params, compare
            , keyPath: [key] <> keyPath
            , render: render >>> addPruneKey key
            }
@@ -277,14 +277,14 @@ mkWithK :: forall m k. (k -> Html m k) -> Html m k
 mkWithK withK = Html [VWithK \k -> case withK k of Html ar -> withWrapper ar]
 
 -- | `Html` constructor
-mkPrune :: forall m k p. UnsureEq p => String -> (p -> Html m k) -> p -> Html m k
-mkPrune key render params =
+mkPrune :: forall p m k. (p -> p -> Unsure Boolean) -> String -> (p -> Html m k) -> (p -> Html m k)
+mkPrune compare key render params =
   FM.singleton $
     addPruneKey key $  -- Append key to key path of this node and all descendants
       VPrune $ mkExists $ PruneE
         { keyPath: []
         , params
-        , unsureEq
+        , compare
         , render: render >>> FM.unwrap >>> withWrapper
         }
 
