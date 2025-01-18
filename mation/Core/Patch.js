@@ -14,21 +14,13 @@ export const patch_f =
   const oldPruneMapNodes = new Set(mapIter(Trie_values(oldPruneMap), info => info.node));
 
   return ({ mOldVNode, newVNode }) => root => () => {
-
     patch(root, mOldVNode, newVNode);
-
-    // Fixup-release all nodes present in old prune map but not new one
-    // Such nodes are detached from the DOM and are to be forgotten
-    const newPruneMapNodes = new Set(mapIter(Trie_values(newPruneMap), info => info.node));
-    for (const node of oldPruneMapNodes)
-      if (!newPruneMapNodes.has(node))
-        fixupRelease(node);
-
+    fixupReleaseFinalize();
     return newPruneMap;
   };
 
   // Create an empty VTag
-  function mkEmptyVTag(tag){
+  function mkEmptyVTag(tag) {
     return { tag, attrs: [], listeners: [], children: [], fixup: (_ => () => {}) };
   }
 
@@ -351,11 +343,12 @@ export const patch_f =
   // ensure all of its descendants complete their fixup lifecycle.
   //
   // Exception: if the node appears in the oldPruneMap, then it will not
-  // be fixup-released. This is because a node which is removed from the DOM but
-  // present in the oldPruneMap might still be re-added to the DOM (in the same
-  // frame) later on by a VPrune node, so it is not safe to eagerly fixup-release.
-  // At the end of the patching algorithm we fixup-restore the appropriate subset
-  // of these dubious nodes by comparing oldPruneMap with the final newPruneMap.
+  // be fixup-released. This is because it might get added back to the DOM later
+  // on (in the same frame) by a VPrune node.
+  //
+  // At the end of the patching algorithm we call fixupFinalize(),
+  // which fixup-resores  the appropriate subset of these dubious nodes by
+  // comparing the oldPruneMap with the final newPruneMap.
   function fixupConditionalRelease(node) {
     if (!oldPruneMapNodes.has(node))
       fixupRelease(node);
@@ -366,6 +359,15 @@ export const patch_f =
     if (node.children)
       for (const ch of node.children)
         fixupConditionalRelease(ch);
+  }
+
+  // Fixup-release all nodes present in old prune map but not new one
+  // Such nodes are detached from the DOM and are to be forgotten
+  function fixupReleaseFinalize() {
+    const newPruneMapNodes = new Set(mapIter(Trie_values(newPruneMap), info => info.node));
+    for (const node of oldPruneMapNodes)
+      if (!newPruneMapNodes.has(node))
+        fixupRelease(node);
   }
 
 };
