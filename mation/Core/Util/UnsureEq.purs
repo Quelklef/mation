@@ -159,10 +159,10 @@ instance UnsureEq v => UnsureEq (Map k v) where
   unsureEq = primEqOr (unsureEq `on` Map.values)
 
 instance UnsureEq (Effect a) where
-  unsureEq = primEqOr ff
+  unsureEq = primEqOr (\_ _ -> Unsure)
 
 instance UnsureEq (a -> b) where
-  unsureEq = primEqOr ff
+  unsureEq = primEqOr (\_ _ -> Unsure)
 
 instance UnsureEq a => UnsureEq (Array a) where
   unsureEq = primEqOr \a b ->
