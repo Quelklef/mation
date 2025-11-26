@@ -397,7 +397,7 @@ function setNode(target, replacement) {
   } else if (target.parentNode) {
     target.parentNode.replaceChild(replacement, target);
   } else {
-    throw Error("Your DOM consists of a single node which isn't an Element?");
+    throw Error("Your DOM consists of a single node which isn't an instance of Element?");
   }
 }
 
