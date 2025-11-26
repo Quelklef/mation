@@ -123,7 +123,7 @@ instance UnsureEq Int where unsureEq a b = Surely (a `primEq` b)
 instance UnsureEq Number where unsureEq a b = Surely (a `primEq` b)
 instance UnsureEq Char where unsureEq a b = Surely (a `primEq` b)
 instance UnsureEq String where unsureEq a b = Surely (a `primEq` b)
-instance UnsureEq Void where unsureEq _ _ = Surely true
+instance UnsureEq Void where unsureEq a _ = absurd a
 instance UnsureEq (Proxy s) where unsureEq _ _ = Surely true
 instance UnsureEq (Ref a) where unsureEq a b = Surely (a `primEq` b)
 
