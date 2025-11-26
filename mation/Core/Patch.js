@@ -388,8 +388,9 @@ function* mapIter(it, f) {
 }
 
 function setNode(target, replacement) {
-  if (replacement === target)
-    return;  // Seems replacement causes a reflow, which is slow; skip if possible
+  if (replacement === target) {
+    return;  // Avoid a reflow
+  }
 
   if (target instanceof Element) {
     target.replaceWith(replacement);
