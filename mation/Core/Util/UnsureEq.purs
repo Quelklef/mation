@@ -14,6 +14,7 @@ module Mation.Core.Util.UnsureEq
 
 import Mation.Core.Prelude
 
+import Effect.Ref (Ref)
 import Data.Array as Array
 import Data.Function (on)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -124,6 +125,7 @@ instance UnsureEq Char where unsureEq a b = Surely (a `primEq` b)
 instance UnsureEq String where unsureEq a b = Surely (a `primEq` b)
 instance UnsureEq Void where unsureEq _ _ = Surely true
 instance UnsureEq (Proxy s) where unsureEq _ _ = Surely true
+instance UnsureEq (Ref a) where unsureEq a b = Surely (a `primEq` b)
 
 instance UnsureEq a => UnsureEq (Maybe a) where
   unsureEq (Just a) (Just b) = unsureEq a b
