@@ -22,7 +22,8 @@ module Mation.Lenses
 
 -- FIXME tests for this module would be good
 
-import Prelude
+import Prelude  -- Use Prelude instead of Mation.Core.Prelude to make this module easy
+                -- to migrate into its own package if ever appropriate
 
 import Record as Rec
 import Prim.Row (class Union, class Nub, class Cons)
