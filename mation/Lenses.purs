@@ -6,6 +6,8 @@ module Mation.Lenses
   , (×)
   , product'
   , (⊗)
+  , atprod
+  , atprod'
   , field
   , field'
   , subrecord
@@ -30,12 +32,15 @@ import Prim.Row (class Union, class Nub, class Cons)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
 import Type.Proxy (Proxy (..))
+import Data.Maybe (fromMaybe)
+import Data.Either (Either (..))
 import Data.Tuple.Nested (type (/\), (/\))
 import Data.Array as Array
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Lens (Lens, Lens', view, lens, set)
+import Data.Lens (Lens, Lens', view, lens, set, preview)
 import Data.Lens.Iso (Iso, iso)
 import Data.Lens.Record (prop)
+import Data.Lens.AffineTraversal (AffineTraversal', affineTraversal)
 
 
 -- | Product of disjoint lenses
@@ -57,7 +62,7 @@ infixr 4 product as %%
 infixr 4 product as ×
 
 
--- | Combine two record lenses.
+-- | Product of lenses over singleton records
 -- |
 -- | The records must be disjoint (ie, share no fields), or you will
 -- | get a compiler error. (`Nub` will fail to be satisfied)
@@ -79,6 +84,44 @@ product' la lb = lens
 
 infixr 4 product' as @@
 infixr 4 product' as ⊗
+
+
+-- | Product of affine traversals
+-- |
+-- | The supplied traverals MUST be disjoint, or the resultant optic
+-- | will violate the following weakened set-get law:
+-- |
+-- | ```
+-- | preview l (set l a s) = Just a
+-- | ```
+atprod :: forall s a b.
+     AffineTraversal' s a
+  -> AffineTraversal' s b
+  -> AffineTraversal' s (a /\ b)
+atprod la lb =
+  affineTraversal
+    (\s (a /\ b) -> s # set la a # set lb b)
+    (\s -> fromMaybe (Left s) do
+             a <- preview la s
+             b <- preview lb s
+             pure $ Right (a /\ b))
+
+
+-- | Product of affine traverals over singleton records
+-- |
+-- | This is to `atprod` as `product'` is to `product`
+atprod' ::
+  forall s (a :: Row Type) (b :: Row Type) ab.
+  Union a b ab => Nub ab ab => Keys a => Keys b =>
+  AffineTraversal' s (Record a) -> AffineTraversal' s (Record b) -> AffineTraversal' s (Record ab)
+atprod' la lb =
+  affineTraversal
+    (\s rec -> let a /\ b = split @a @b rec
+               in s # set la a # set lb b)
+    (\s -> fromMaybe (Left s) do
+             a <- preview la s
+             b <- preview lb s
+             pure $ Right (Rec.merge a b))
 
 
 -- | Construct a lens targeting a field of a record
