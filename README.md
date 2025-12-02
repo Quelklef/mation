@@ -31,16 +31,16 @@ is, in short, a web frontend framework
 
   Mation is fast and has a flexible caching mechanism. However, its core loop is "update and globally rerender", meaning it's likely to fall behind in performance as compared to something with a tighter loop like Svelte. <small>(At the time of writing Mation has not been benchmarked against other frameworks)</small>
 
-- You dislike lenses
+- You dislike optics
 
-  Mation uses lenses to compose components; this provides an extremeley flexible API. However, some people consider lenses a difficult or enigmatic topic, and error messages produced by lenses are generally hard to understand.
+  Mation uses optics to compose components; this provides an extremeley flexible API. However, some people consider optics a difficult or enigmatic topic, and error messages produced by optics are generally hard to understand.
 
 - You want something post-1.0 :P
 
 
 ## A Code Sample
 
-Firs,t the result:
+First, the result:
 
 ![](./readme/counter.gif)
 
@@ -48,7 +48,7 @@ Now the source:
 
 ```purescript
 module Main where
-    
+
 import Prelude
 import Effect (Effect)
 import Data.Foldable (fold)
@@ -75,18 +75,19 @@ render num = fold
   , E.p
     []
     [ E.button
-      [ P.onClick             -- on click,
-          \_ ->               -- ignore the click event
-            M.modify (_ + 1)  -- increment the model
+      [ P.onClick      -- on click,
+          \_ ->        -- ignore the click event
+            M.modify   -- update the model
+              (_ + 1)  -- by adding one
       ]
       [ E.text "Increment (x1)" ]
     , E.text " "
     , E.button
       [ P.onClick \_event modelRef -> do
-            -- An event handler is just an Effect
-            -- Within one, you can do whatever you want!
-            repeatedly { nTimes: 12, delaySeconds: 0.125 } do
-              modelRef # M.modify (_ + 1)
+          -- An event handler is just an Effect
+          -- Within one, you can do whatever you want!
+          repeatedly { nTimes: 12, delaySeconds: 0.125 } do
+            modelRef # M.modify (_ + 1)
       ]
       [ E.text "Increment (x12)" ]
     ]
@@ -113,7 +114,7 @@ See `samples/`!
 
 ## Acknowledgements
 
-Mation draws a lot of inspiration from Platonic.Systems' [`shpadoinkle`](https://shpadoinkle.org/)<sup>([capture](https://web.archive.org/web/20230607012013/https://shpadoinkle.org/))</sup> and from Mason Mackaman's [`purescript-elmish`](https://github.com/ursi/purescript-elmish)<sup>([capture](https://web.archive.org/web/20230607012734/https://github.com/ursi/purescript-elmish))</sup>. Both of these draw from [Elm](https://elm-lang.org/)<sup>([capture](https://web.archive.org/web/20230607013116/https://elm-lang.org/)).</sup>
+Mation draws a lot of inspiration from Platonic.Systems' [`shpadoinkle`](https://shpadoinkle.org/)<sup>([capture](https://web.archive.org/web/20230607012013/https://shpadoinkle.org/))</sup> and from Mason Mackaman's [`purescript-elmish`](https://github.com/ursi/purescript-elmish)<sup>([capture](https://web.archive.org/web/20230607012734/https://github.com/ursi/purescript-elmish))</sup>. Both of these draw from [Elm](https://elm-lang.org/)<sup>([capture](https://web.archive.org/web/20230607013116/https://elm-lang.org/))</sup>.
 
 
 ## Generated Docs

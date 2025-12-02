@@ -1,6 +1,6 @@
 {- SAMPLE_BEGIN -}
 module Mation.Samples.Counter where
-    
+
 import Prelude
 import Effect (Effect)
 import Data.Foldable (fold)
@@ -27,18 +27,19 @@ render num = fold
   , E.p
     []
     [ E.button
-      [ P.onClick             -- on click,
-          \_ ->               -- ignore the click event
-            M.modify (_ + 1)  -- increment the model
+      [ P.onClick      -- on click,
+          \_ ->        -- ignore the click event
+            M.modify   -- update the model
+              (_ + 1)  -- by adding one
       ]
       [ E.text "Increment (x1)" ]
     , E.text " "
     , E.button
       [ P.onClick \_event modelRef -> do
-            -- An event handler is just an Effect
-            -- Within one, you can do whatever you want!
-            repeatedly { nTimes: 12, delaySeconds: 0.125 } do
-              modelRef # M.modify (_ + 1)
+          -- An event handler is just an Effect
+          -- Within one, you can do whatever you want!
+          repeatedly { nTimes: 12, delaySeconds: 0.125 } do
+            modelRef # M.modify (_ + 1)
       ]
       [ E.text "Increment (x12)" ]
     ]
