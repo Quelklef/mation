@@ -27,6 +27,7 @@ data Sample
   = Welcome
   | Counter
   | AsyncApiCall
+  | Ticker
   | Clock
   | Styling
   | Components
@@ -83,7 +84,7 @@ foreign import getUrlHash :: Effect String
 sampleGroups :: Array (String /\ Array Sample)
 sampleGroups =
   [ "Welcome" /\ [ Welcome ]
-  , "Basic"   /\ [ Counter, AsyncApiCall, Clock, Components, Styling ]
+  , "Basic"   /\ [ Counter, AsyncApiCall, Ticker, Clock, Components, Styling ]
   , "Advanced" /\ [ Pruning ]
   ]
 
