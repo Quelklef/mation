@@ -158,7 +158,10 @@ outputs = { self, ... }@inputs: let
           {
             echo "<!doctype html>"
             echo "<html>"
-            echo "<head><script defer src='$sample_name.js'></script></head>"
+            echo "<head>"
+            echo "  <meta charset='utf-8'>"
+            echo "  <script defer src='$sample_name.js'></script>"
+            echo "</head>"
             echo "<body></body>"
             echo "</html>"
           } > out/app/"$sample_name".html
@@ -201,7 +204,10 @@ outputs = { self, ... }@inputs: let
           {
             echo "<!doctype html>"
             echo "<html>"
-            echo "<head><script defer src='$test_name.js'></script></head>"
+            echo "<head>"
+            echo "  <meta charset='utf-8'>"
+            echo "  <script defer src='$test_name.js'></script>"
+            echo "</head>"
             echo "<body></body>"
             echo "</html>"
           } > out/app/"$test_name".html
