@@ -134,7 +134,6 @@ export const patch_f =
     // Perform fixup-restore from last frame
     fixupRestore(root);
 
-    // If root is not a tag of correct type, replace it
     const shouldReplace = (
       !mOldVNode ||
       casePatchVNode(mOldVNode)
@@ -142,7 +141,7 @@ export const patch_f =
         (html => true)
         (text => true)
         (oldVTag => oldVTag.tag !== newVTag.tag)
-        (vPrune => newVTag.tag !== 'span')
+        (vPrune => true)  // Don't diff against a pruned node! Another part of the diff may retrieve it (or may have already)
     );
     if (shouldReplace) {
       const newRoot = document.createElement(newVTag.tag);
