@@ -3,7 +3,6 @@ module Mation.Samples.Counter where
 
 import Prelude
 import Effect (Effect)
-import Data.Foldable (fold)
 import Data.Functor.Contravariant (cmap)
 
 import Mation as M
@@ -20,7 +19,9 @@ initial = 0
 
 -- Displays the application and defines its behaviour
 render :: Model -> E.Html' (M.Modify Model)
-render num = fold
+render num =
+  E.div
+  []
   [ E.p
     []
     [ E.text $ "The current counter value is: " <> show num ]

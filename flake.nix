@@ -120,7 +120,7 @@ outputs = { self, ... }@inputs: let
 
       function mation.compile {(
         cd "$root" &&
-        mkdir -p out/app &&
+
         node ./mation/Gen/generate.js &&
 
         # Compile the application. Use 'psa' for sophisticated warning/error handling
@@ -134,34 +134,56 @@ outputs = { self, ... }@inputs: let
         node ./readme/gen-README.js
       )}
 
-      function mation.bundle {(
+      function mation.bundle-samples {(
         cd "$root" &&
-        mation.compile &&
-        cp samples/index.html out/app/index.html &&
 
-        # Bundle the application
-        echo 'import { main } from "./out/purs-cache/${main-module}/index.js"; main()' \
-          | esbuild \
-              --bundle \
-              --format='${esbuild-format}' \
-              --log-level=warning \
-              --outfile=out/app/main.js
+        mation.compile &&
+
+        mkdir -p out/app &&
+
+        # For each sample, compile+emit
+        for fpath in $( ls ./samples/*.purs ); do
+          sample_name=$( basename "$fpath" | cut -d. -f1 )
+          module_name=Mation.Samples."$sample_name"
+
+          echo "Bundling sample $sample_name ($module_name) ..."
+
+          # Bundle+emit sample JS
+          echo "import { main } from './out/purs-cache/$module_name/index.js'; main()" \
+            | esbuild \
+                --bundle \
+                --format='${esbuild-format}' \
+                --log-level=warning \
+                --outfile=out/app/"$sample_name".js
+
+          # Generate+emit sample html
+          {
+            echo "<!doctype html>"
+            echo "<html>"
+            echo "<head><script defer src='$sample_name.js'></script></head>"
+            echo "<body></body>"
+            echo "</html>"
+          } > out/app/"$sample_name".html
+        done
+
+        # Emit index.html
+        mv out/app/Main.html out/app/index.html
       )}
 
-      function mation.devt {(
+      function mation.devt.samples {(
         cd "$root" &&
-        mkdir -p out/app &&
-        python3 -m http.server --directory out/app & trap "kill $!" EXIT
-        export -f mation.compile mation.bundle
+        python3 -m http.server --directory out/app & trap "kill $!" EXIT &&
+
+        export root; export -f mation.compile mation.bundle-samples
         { find . \( -name '*.purs' -o -name '*.js' -o -name '*.html' -o -name '*.md' \) \
                  -a ! -path './out/*'
-        } | entr -cs "mation.bundle && echo 'You may need to reload your browser'"
+        } | entr -cs "mation.bundle-samples && echo 'You may need to reload your browser'"
       )}
 
       function mation.devt.docs {(
         cd "$root" &&
-        mkdir -p out/docs &&
-        python3 -m http.server --directory out/docs & trap "kill $!" EXIT
+        python3 -m http.server --directory out/docs & trap "kill $!" EXIT &&
+
         { find ./mation -name '*.purs' -o -name '*.js' -o -name '*.html'
         } | entr -cs "
               node ./mation/Gen/generate.js &&

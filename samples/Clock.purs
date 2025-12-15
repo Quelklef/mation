@@ -105,7 +105,16 @@ analog { hour, minute, second } =
       ]
       []
     ]
-   
 
 
 foreign import padStart :: Int -> String -> String -> String
+
+main :: Effect Unit
+main = do
+  M.runApp
+    { initial
+    , render: render >>> cmap (\_ -> unit)
+    , root: M.underBody
+    , daemon
+    }
+

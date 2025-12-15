@@ -6,12 +6,14 @@ import Effect (Effect)
 import Effect.Ref as Ref
 import Data.Foldable (fold)
 import Data.Lens.Setter ((%~), (.~))
+import Data.Functor.Contravariant (cmap)
 
 import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Styles as S
 import Mation.Core.Util.UnsureEq (class UnsureEq, unsureEq, Unsure (..))
+import Mation.Core.Refs as Refs
 import Mation.Lenses (field)
 
 
@@ -201,3 +203,14 @@ foreign import everyNSeconds :: Number -> Effect Unit -> Effect { cancel :: Effe
 foreign import afterNSeconds :: Number -> Effect Unit -> Effect Unit
 foreign import randNum :: Effect Number
 foreign import strReverse :: String -> String
+
+
+main :: Effect Unit
+main = do
+  M.runApp
+    { initial
+    , render: render >>> cmap Refs.downcast
+    , root: M.underBody
+    , daemon: mempty
+    }
+

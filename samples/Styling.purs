@@ -8,6 +8,7 @@ import Mation.Props as P
 import Mation.Styles as S
 import Mation.Selectors as Sel
 import Mation.Selectors ((#>>), (#<>))
+import Mation.Core.Refs as Refs
 
 
 type Model = Unit
@@ -54,7 +55,7 @@ render _model =
 
   , mkPreludeExample mempty
   , mkPreludeExample (S.fontWeight "bold")
-      
+
   ]
 
   where
@@ -100,4 +101,14 @@ render _model =
     ]
     [ E.text "I have an animation!"
     ]
+
+
+main :: Effect Unit
+main = do
+  M.runApp
+    { initial
+    , render: render >>> cmap Refs.downcast
+    , root: M.underBody
+    , daemon: mempty
+    }
 
