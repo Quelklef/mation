@@ -7,6 +7,7 @@ module Mation.Tests.PrunedListItems where
   "desc": "Tests lists where every item is pruned (akin to keyed nodes in other frameworks)",
   "specs": [
     "Moving items should work properly",
+    "In particular, moving a single item multiple times in the same direction should work correctly",
     "When pruning is enabled, neither moving nor deleting items should cause any items to update"
   ]
 }
@@ -17,7 +18,6 @@ import Mation.Core.Prelude
 
 import Data.Array (range)
 import Data.Array as Array
-import Data.FoldableWithIndex (foldMapWithIndex)
 
 import Mation as M
 import Mation.Elems as E

@@ -83,9 +83,11 @@ foreign import getUrlHash :: Effect String
 
 sampleGroups :: Array (String /\ Array Sample)
 sampleGroups =
-  [ "Welcome" /\ [ Welcome ]
-  , "Basic"   /\ [ Counter, AsyncApiCall, Ticker, Clock, Components, Styling ]
-  , "Advanced" /\ [ Pruning ]
+  [ "Welcome"      /\ [ Welcome ]
+  , "Components"   /\ [ Components ]
+  , "Styling"      /\ [ Styling ]
+  , "Async"        /\ [ Counter, AsyncApiCall, Clock, Ticker ]
+  , "Advanced"     /\ [ Pruning ]
   ]
 
 render :: Model -> E.Html' (M.Modify Model)

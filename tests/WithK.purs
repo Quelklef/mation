@@ -30,20 +30,23 @@ viewWithKTest :: WithKTest -> E.Html' (M.Modify WithKTest)
 viewWithKTest { a, b } =
   E.div
   []
-  [ E.text "Test for "
-  , E.code [] [ E.text "withK" ]
-  , E.text ": "
-  , E.button
-    [ P.onClick \_ -> M.modify (field @"a" %~ (_ + 1))
-    ]
-    [ E.text ("a value: " <> show a)
+  [ E.p
+    []
+    [ E.button
+      [ P.onClick \_ -> M.modify (field @"a" %~ (_ + 1))
+      ]
+      [ E.text ("A: " <> show a)
+      ]
     ]
   , E.text " "
   , E.withK \ref ->
-    E.button
-    [ P.onClick \_ _ -> ref # M.modify (field @"b" %~ (_ + 1))
-    ]
-    [ E.text ("b value: " <> show b)
+    E.p
+    []
+    [ E.button
+      [ P.onClick \_ _ -> ref # M.modify (field @"b" %~ (_ + 1))
+      ]
+      [ E.text ("B: " <> show b)
+      ]
     ]
   ]
 

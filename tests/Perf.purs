@@ -23,12 +23,13 @@ METADATA END -}
 
 import Mation.Core.Prelude
 
+import Effect.Aff as Aff
+import Effect.Console as Console
 import Data.Array as Array
 import Data.Int as Int
-import Effect.Console as Console
-import Effect.Aff as Aff
 import Data.Lens.Index (ix)
 import Data.Time.Duration (Milliseconds (..))
+import Control.Lazy (fix)
 
 import Mation as M
 import Mation (Html')
@@ -38,6 +39,7 @@ import Mation.Styles as S
 import Mation.Selectors as Sel
 import Mation.Lenses (field)
 import Mation.Core.Refs as Refs
+import Mation.Core.Refs (ReadWrite)
 
 
 foreign import toFixed :: Int -> Number -> String
@@ -52,24 +54,12 @@ foreign import calcStats :: Array Number ->
 
 
 type Model =
-  { items :: Array String
+  { listItems :: Array String
   , exp :: Int
-  , benchmarks :: Array Number
-  , fast :: Boolean
+  , trials :: Array Number
+  , doPruning :: Boolean
+  , cancelCurrentBenchmark :: Maybe (Effect Unit)
   }
-
-
-_items :: Lens' Model (Array String)
-_items = field @"items"
-
-_exp :: Lens' Model Int
-_exp = field @"exp"
-
-_benchmarks :: Lens' Model (Array Number)
-_benchmarks = field @"benchmarks"
-
-_fast :: Lens' Model Boolean
-_fast = field @"fast"
 
 
 
@@ -77,9 +67,10 @@ _fast = field @"fast"
 initial :: Model
 initial =
   { exp: 1
-  , items: resizeArray' 2 []
-  , benchmarks: []
-  , fast: false
+  , listItems: resizeArray' 2 []
+  , trials: []
+  , doPruning: false
+  , cancelCurrentBenchmark: Nothing
   }
 
 render :: Model -> E.Html' (M.Modify Model)
@@ -100,24 +91,24 @@ render model =
         , P.onInputValue \val ref ->
               case Int.fromString val of
                 Nothing -> pure unit
-                Just n -> ref # M.modify ((_exp .~ n) >>> (_items %~ resizeArray' (Int.pow 2 n)))
+                Just n -> ref # M.modify ((field @"exp" .~ n) >>> (field @"listItems" %~ resizeArray' (Int.pow 2 n)))
         , P.value (show model.exp)
         , P.addStyles [ S.width "6ch" ]
         ]
-      , E.text $ " = " <> show (Array.length model.items) <> " nodes"
+      , E.text $ " = " <> show (Array.length model.listItems) <> " nodes"
       ]
     , E.text "|"
     , E.div
       []
       [ E.input
         [ P.type_ "checkbox"
-        , P.checked model.fast
-        , P.onInputValue \_ -> M.modify (_fast %~ not)
-        , P.id "use-fast"
+        , P.checked model.doPruning
+        , P.onInputValue \_ -> M.modify (field @"doPruning" %~ not)
+        , P.id "doPruning"
         ]
       , E.text " "
       , E.label
-        [ P.for "use-fast" ]
+        [ P.for "doPruning" ]
         [ E.text "do pruning"
         ]
       ]
@@ -129,42 +120,52 @@ render model =
       []
       [ E.text "Benchmark: "
       , E.button
-        [ P.onClick \_ -> doBench 1
-        ]
-        [ E.text "one"
-        ]
+        [ P.onClick \_ -> doBench 1 ]
+        [ E.text "x1" ]
       , E.text " "
       , E.button
-        [ P.onClick \_ -> doBench 10
-        ]
-        [ E.text "ten"
-        ]
+        [ P.onClick \_ -> doBench 10 ]
+        [ E.text "x10" ]
       , E.text " "
       , E.button
-        [ P.onClick \_ -> doBench 150
-        ]
-        [ E.text "one hundred and fifty"
+        [ P.onClick \_ -> doBench 150 ]
+        [ E.text "x150" ]
+      , E.text " "
+      , E.button
+        [ P.onClick \_ -> doBench 1000 ]
+        [ E.text "x1000" ]
+      , E.text " "
+      , E.button
+        [ P.onClick \_ -> doBench 5000 ]
+        [ E.text "x5000" ]
+      , model.cancelCurrentBenchmark # foldMap \cancel ->
+        fold
+        [ E.text " - "
+        , E.button
+          [ P.onClick \_ _ -> cancel ]
+          [ E.text "CANCEL" ]
         ]
       ]
-    , guard (Array.length model.benchmarks > 0) $ fold
+    , guard (Array.length model.trials > 0) $ fold
       [ E.br []
       , E.div
         [ P.addStyles
           [ S.fontFamily "monospace"
           ]
         ]
-        [ let stats = calcStats model.benchmarks in
+        [ let stats = calcStats model.trials in
           E.div
           []
           [ E.text $ fold
             [ "Overall: "
-            , "mean=" <> toFixed 2 stats.mean <> "ms"
-            , " & median=" <> toFixed 2 stats.median <> "ms"
-            , " & stdev=" <> toFixed 2 stats.stdev <> "ms"
+            , "n=" <> show (Array.length model.trials)
+            , "; mean=" <> toFixed 2 stats.mean <> "ms"
+            , "; median=" <> toFixed 2 stats.median <> "ms"
+            , "; stdev=" <> toFixed 2 stats.stdev <> "ms"
             ]
           ]
         , E.br []
-        , flip foldMap model.benchmarks \ms ->
+        , model.trials # Array.last # foldMap \ms ->
           E.div
           []
           [ E.text $ fold
@@ -180,14 +181,14 @@ render model =
     ]
   , E.br []
   , E.br []
-  , cmap (M.focusWithLens _items) $
-      theList model.items
+  , cmap (M.focusWithLens (field @"listItems")) $
+      theList model.listItems
   ]
 
   where
 
   theList :: Array String -> Html' (M.Modify (Array String))
-  theList items =
+  theList listItems =
     E.div
     [ P.addStyles
       [ S.display "flex"
@@ -195,14 +196,14 @@ render model =
       , S.gap ".5em"
       ]
     ]
-    [ items
+    [ listItems
       # foldMapWithIndex \idx str ->
           (cmap (M.focusWithSetter (ix idx))) (listItem idx str)
     ]
 
   listItem :: Int -> String -> Html' (M.Modify String)
   listItem = \idx str ->
-    case model.fast of
+    case model.doPruning of
       false -> impl idx str
       true -> (idx /\ str) # E.pruneEq ("listitem-" <> show idx) \(idx /\ str) -> impl idx str
 
@@ -274,14 +275,26 @@ resizeArray mkItem size arr =
 
 doBench :: Int -> M.Modify Model -> Effect Unit
 doBench count ref = Aff.launchAff_ do
-  liftEffect do ref # M.modify (_benchmarks .~ [])
-  for_ (Array.range 1 count) \idx -> do
-    t0 <- liftEffect getNow
-    liftEffect do ref # M.modify (_items <<< ix 0 .~ ("frame #" <> show idx))
-      -- ^ Need to actually modify the DOM or we get wacky results
-    tf <- liftEffect getNow
-    waitTick
-    liftEffect do ref # M.modify (_benchmarks %~ (_ <> [tf - t0]))
+  (isCancelledRef :: ReadWrite _) <- Refs.make false
+  liftEffect do ref # M.modify (
+    (field @"trials" .~ [])
+    >>> (field @"cancelCurrentBenchmark" .~ Just (isCancelledRef # Refs.write true))
+  )
+
+  0 # fix \next idx -> do
+    isCancelled <- Refs.read isCancelledRef
+    if isCancelled then pure unit
+    else if idx >= count then pure mempty
+    else do
+      t0 <- liftEffect getNow
+      liftEffect do ref # M.modify (field @"listItems" <<< ix 0 .~ ("frame #" <> show idx))
+        -- ^ Need to actually modify the DOM or we get wacky results
+      tf <- liftEffect getNow
+      waitTick
+      liftEffect do ref # M.modify (field @"trials" %~ (\arr -> Array.snoc arr (tf - t0)))
+      next (idx + 1)
+
+  liftEffect do ref # M.modify (field @"cancelCurrentBenchmark" .~ Nothing)
 
   where
   waitTick = Aff.delay (Milliseconds 0.0)

@@ -39,30 +39,39 @@ render model =
 
 renderImpl :: Int -> Int -> Int -> E.Html' (M.Modify Model)
 renderImpl a b c =
-  E.div
+  E.table
   [ P.showUpdates
   ]
-  [ E.text $ "A=" <> show a
-  , E.text "; "
-  , E.text $ "B=" <> show b
-  , E.text "; "
-  , E.text $ "C=" <> show c
-  , E.text "; "
-  , E.button
-    [ P.onClick \_ ref -> ref # M.modify (field @"a" %~ (_ + 1)) ]
-    [ E.text "A++" ]
-  , E.text " "
-  , E.button
-    [ P.onClick \_ ref -> ref # M.modify (field @"b" %~ (_ + 1)) ]
-    [ E.text "B++" ]
-  , E.text " "
-  , E.button
-    [ P.onClick \_ ref -> ref # M.modify (field @"c" %~ (_ + 1)) ]
-    [ E.text "C++" ]
-  , E.text " "
-  , E.button
-    [ P.onClick \_ ref -> ref # M.modify identity ]
-    [ E.text "Noop" ]
+  [ E.tr
+    []
+    [ E.td [] [ E.text $ "A=" <> show a ]
+    , E.td [] [ E.text $ "B=" <> show b ]
+    , E.td [] [ E.text $ "C=" <> show c ]
+    ]
+  , E.tr
+    []
+    [ E.td []
+      [ E.button
+        [ P.onClick \_ ref -> ref # M.modify (field @"a" %~ (_ + 1)) ]
+        [ E.text "A++" ]
+      ]
+    , E.td []
+      [ E.button
+        [ P.onClick \_ ref -> ref # M.modify (field @"b" %~ (_ + 1)) ]
+        [ E.text "B++" ]
+      ]
+    , E.td []
+      [ E.button
+        [ P.onClick \_ ref -> ref # M.modify (field @"c" %~ (_ + 1)) ]
+        [ E.text "C++" ]
+      ]
+    , E.td
+      []
+      [ E.button
+        [ P.onClick \_ ref -> ref # M.modify identity ]
+        [ E.text "Noop" ]
+      ]
+    ]
   ]
 
 

@@ -6,8 +6,8 @@ module Mation.Tests.Counters where
   "name": "Counters",
   "desc": "Basic test of rendering, styles, IO, async, and components",
   "specs": [
-    "+ and - should increment/decrement their respective counter",
-    "++ and -- should begin a streaming increment of their respective counter",
+    "+ and - should increment/decrement their respective counters",
+    "++ and -- should begin a streaming increment/decrement of their respective counters",
     "🛑 should stop its respective in-progress stream"
   ]
 }
@@ -93,7 +93,7 @@ renderCounter model =
         , E.text " "
         , E.button
           [ P.onClick \_ ref -> do
-              { cancel } <- everyNSeconds 0.05 (ref # M.modify (_count %~ ((_ - 1) >>> max 0)))
+              { cancel } <- everyNSeconds 0.05 (ref # M.modify (_count %~ (_ - 1)))
               ref # M.modify (_streamState .~ Streaming { cancel })
           , buttonStyle
           ]

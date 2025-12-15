@@ -6,8 +6,7 @@ module Mation.Tests.OnClickElsewhere where
   "name": "onClickElsewhere",
   "desc": "Tests Mation.Props.onClickElsewhere",
   "specs": [
-    "Clicking within the box should increment the \"clicks inside\" counter",
-    "Clicking outside the box should increment the \"clicks outside\" counter"
+    "Clicking inside or outside the box should increment the appropriate counter"
   ]
 }
 
@@ -36,13 +35,12 @@ viewOnClickElsewhere { here, elsewhere } =
   , P.addStyles
     [ S.fontFamily "sans-serif"
     , S.padding "1em"
-    , S.border "1px solid black"
+    , S.background "rgb(230, 230, 230)"
     , S.display "inline-block"
-    , S.margin "1em 0 1em 25px"
     , S.userSelect "none"
     ]
   ]
-  [ E.text $ "clicks inside: " <> show here <> " / " <> "clicks outside: " <> show elsewhere
+  [ E.text $ "clicks inside: " <> show here <> " • " <> "clicks outside: " <> show elsewhere
   ]
 
 main :: Effect Unit

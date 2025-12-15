@@ -4,8 +4,6 @@ export const mkTextRawNode =
 
   const $node = document.createElement('div');
   $node.style.margin = '1em 0';
-  $node.style.padding = '1em';
-  $node.style.border = '1px dashed green';
 
   $node.append('upper(')
 
@@ -30,8 +28,6 @@ export const mkIframeRawNode =
 
   const $node = document.createElement('div');
   $node.style.margin = '1em 0';
-  $node.style.padding = '1em';
-  $node.style.border = '1px dashed green';
 
   $node.append('iframe(')
 
@@ -48,7 +44,7 @@ export const mkIframeRawNode =
   $node.append($output);
 
   $input.addEventListener('input', () => {
-    $output.src = $input.value.toUpperCase();
+    $output.src = $input.value;
   });
 
   return $node;

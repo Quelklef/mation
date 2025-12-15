@@ -20,56 +20,57 @@ import Data.Array (range)
 import Mation as M
 import Mation.Elems as E
 import Mation.Props as P
-import Mation.Styles as S
 import Mation.Core.Refs as Refs
+import Mation.Lenses (field)
 
 
-type Model = Int /\ Int
+type Model =
+  { number :: Int  -- Always ≥1
+  , tabIdx :: Int
+  }
 
 initial :: Model
-initial = 0 /\ 0
+initial =
+  { number: 1
+  , tabIdx: 0
+  }
 
--- Tests cases where we cycle between different pruned VDOMs
-render :: Model -> E.Html' (M.Modify (Int /\ Int))
-render (n /\ tab) =
+render :: Model -> E.Html' (M.Modify Model)
+render model =
   E.div
-  []
-  [ E.div
-    [ P.addStyles
-      [ S.border "1px solid black"
-      , S.borderBottom "none !important"
-      , S.padding "1em 2em"
-      ]
-    ]
-    [ E.text "Number: "
-    , E.button
-      [ P.onClick \_ -> M.modify (_1 %~ (_ + 1))
-      , P.addStyles
-        [ S.padding "0 1.5em"
-        , S.lineHeight "2em"
-        , S.cursor "pointer"
-        ]
-      ]
-      [ E.text (show n)
-      ]
-    , E.text "; "
-    , E.text "Tab: "
+  [ P.addCss "font-family: sans-serif"
+  ]
+  [ E.p
+    []
+    [ E.text "Tab: "
     , mkTab 0 "one"
     , E.text " "
     , mkTab 1 "two"
     , E.text " "
     , mkTab 2 "three"
     ]
-  , E.div
-    [ P.addStyles
-      [ S.border "1px solid black"
-      , S.padding "1em 2em"
+  , E.p
+    []
+    [ E.text $ "Number: " <> show model.number
+    , E.text " "
+    , E.button
+      [ P.onClick \_ -> M.modify (field @"number" %~ add one)
+      , P.addCss "cursor: pointer; font-family: monospace"
       ]
+      [ E.text "++" ]
+    , E.text " "
+    , E.button
+      [ P.onClick \_ -> M.modify (field @"number" %~ (add (-1) >>> max one))
+      , P.addCss "cursor: pointer; font-family: monospace"
+      ]
+      [ E.text "--" ]
     ]
-    [ case tab `mod` 3 of
-        0 -> n # E.pruneEq "0" (\n -> E.span [ P.addCss "border: 1px solid blue" ] [ E.text (show n <> " ") ])
-        1 -> n # E.pruneEq "1" (\n -> range 1 n # foldMap \k -> E.text (show k <> " .. "))
-        _ -> n # E.pruneEq "_" (\_ -> E.span [ P.addCss "background-color: red; color: white" ] [ E.text "three" ])
+  , E.p
+    []
+    [ case model.tabIdx `mod` 3 of
+      0 -> model.number # E.pruneEq "0" (\n -> E.div [] [ E.text (show n <> " ") ])
+      1 -> model.number # E.pruneEq "1" (\n -> range 1 n # foldMap \k -> E.text (show k <> "... "))
+      _ -> model.number # E.pruneEq "_" (\_ -> E.div [] [ E.text "meow" ])
     ]
   ]
 
@@ -77,20 +78,11 @@ render (n /\ tab) =
 
   mkTab idx label =
     E.span
-    [ P.onClick \_ -> M.modify (_2 .~ idx)
-    , P.addStyles
-      [ S.cursor "pointer"
-      , S.padding ".35em 1em"
-      , S.display "inline-block"
-      , S.border "1px solid black"
-      ]
-    , guard (tab == idx) $
-        P.addStyles
-          [ S.textDecoration "underline"
-          ]
+    [ P.onClick \_ -> M.modify (field @"tabIdx" .~ idx)
+    , P.addCss "cursor: pointer; display: inline-block; padding: 0.25em 0.5em"
+    , guard (model.tabIdx == idx) $ P.addCss "font-weight: bold"
     ]
-    [ E.text label
-    ]
+    [ E.text $ "[" <> label <> "]" ]
 
 
 main :: Effect Unit

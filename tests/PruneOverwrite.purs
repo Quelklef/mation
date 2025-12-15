@@ -6,7 +6,7 @@ module Mation.Tests.PruneOverwrite where
   "name": "Prune Overwrite",
   "desc": "Tests a diffing bug",
   "specs": [
-    "Clicking the button should cycle between (A) both \"non-pruned\" and \"pruned\" being shown, and (B) only \"pruned\" being shown"
+    "Clicking the button should cycle between (A) showing \"non-pruned\" and \"pruned\", and (B) showing only \"pruned\""
   ]
 }
 
