@@ -1,0 +1,177 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Mation Tests</title>
+    <meta charset="utf-8">
+  </head>
+  <body>
+
+<table id="table"></table>
+
+<style>
+
+body {
+  margin: 0;
+  padding: 25px;
+  min-height: 100vh;
+
+  font-family: "sans-serif";
+  font-size: 0.8em;
+
+  padding-bottom: 50vh;
+}
+
+iframe {
+  width: 100%;
+  border: none;
+}
+
+#table {
+  &, tr, td.test {
+    width: 100%;
+  }
+
+  th, td {
+    vertical-align: top;
+    padding: 20px;
+    &.test { padding: 10px 20px; }
+  }
+
+  /* Borders */
+  th, td { border: 2px solid lightgrey; }
+  border-collapse: collapse;
+
+  /* Metadata cell styles */
+  td.metadata {
+    min-width: 250px;
+    p {
+      font-style: italic;
+    }
+    ul {
+      padding-left: 2ch;
+    }
+  }
+
+  /* Heading styles */
+  h2, h3 {
+    font-size: 1.5em;
+    margin: 0;
+  }
+
+  /* Sticky headings */
+  th h2 {
+    position: sticky;
+    top: 20px;
+    background: white;
+  }
+}
+
+</style>
+
+<script>
+
+  const testGroups =
+    [ [ "Basic Functionality", [ "Counters", "Textbox", "CheckerBox", "PhoneNumber", "WithK", "RawNodes" ] ]
+    , [ "Pruning", [ "PrunedTabs", "PrunedMultiArgs" ] ]
+    , [ "Styles", [ "StyleSelectors", "StylePreludes" ] ]
+    , [ "Performance", [ "Perf" ] ]
+    , [ "Extra Features", [ "OnClickElsewhere" ] ]
+    , [ "Experimental Features", [ "InputsApi", "ComponentsApi" ] ]
+    , [ "Regression Tests", [ "SelectFlicker" ] ]
+    ];
+
+  const $table = document.getElementById('table');
+
+  // Build table
+  for (const [groupName, testNames] of testGroups)
+  testNames.forEach((testName, testIdx) => {
+
+    const $tr = document.createElement('tr');
+    $table.append($tr);
+
+    const testHref = `${testName}.html`;
+
+    // Emit title cell, if appropriate
+    if (testIdx === 0) {
+      const $th = document.createElement('th');
+      $tr.append($th);
+      $th.setAttribute('rowspan', testNames.length);
+
+      const $title = document.createElement('h2');
+      $th.append($title);
+      $title.innerText = groupName;
+    }
+
+    // Emit metadata cell
+    {
+      const $td = document.createElement('td');
+      $tr.append($td);
+      $td.classList.add('metadata');
+      void (async () => {
+        try {
+          $td.append(await renderTestMetadata(testName, testHref));
+        } catch (e) {
+          $td.append('ERROR: ' + e);
+        }
+      })();
+    }
+
+    // Emit iframe cell
+    {
+      const $td = document.createElement('td');
+      $tr.append($td);
+      $td.classList.add('test');
+      const $iframe = document.createElement('iframe');
+      $td.append($iframe);
+      $iframe.src = testHref;
+    }
+  });
+
+  async function renderTestMetadata(testName, testHref) {
+    const metadataResp = await fetch(`${testName}.json`);
+    const metadata = await metadataResp.json();
+    const { name, desc, specs } = metadata;
+
+    const $metadata = document.createElement('div');
+
+    const $name = document.createElement('h3');
+    $metadata.append($name);
+    $name.innerText = name;
+
+    const $link = document.createElement('a');
+    $name.append(' ', $link);
+    $link.innerText = '↗';
+    $link.href = testHref;
+    $link.target = '_blank';
+    $link.title = 'Open test in new tab'
+
+    const $desc = document.createElement('p');
+    $metadata.append($desc);
+    $desc.innerText = desc;
+
+    const $specs = document.createElement('ul');
+    $metadata.append($specs);
+
+    for (const spec of specs) {
+      const $spec = document.createElement('li');
+      $specs.append($spec);
+      $spec.innerText = spec;
+    }
+
+    return $metadata;
+  }
+
+
+  setInterval(resizeIframes, 50);
+  function resizeIframes() {
+    document.querySelectorAll('iframe').forEach($iframe => {
+      const height = $iframe.contentWindow.document.documentElement.scrollHeight;
+      const heightPx = height + 'px';
+      if ($iframe.height !== heightPx) $iframe.height = heightPx;
+    });
+  }
+
+</script>
+
+  </body>
+</html>

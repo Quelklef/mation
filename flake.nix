@@ -49,7 +49,7 @@ outputs = { self, ... }@inputs: let
   # the lack of other options
   purs-nix-command =
     my-purs-nix.command {
-      srcs = [ "$PWD/mation" "$PWD/additional" "$PWD/samples" "$PWD/experimental" ];
+      srcs = [ "$PWD/mation" "$PWD/additional" "$PWD/samples" "$PWD/tests" "$PWD/experimental" ];
       test = "/dev/null";  # using nix 'null' value breaks?
     };
 
@@ -106,7 +106,7 @@ outputs = { self, ... }@inputs: let
         # For serving the result
         pkgs.python3
 
-        # For running generate.js
+        # For running generate.js and other scripts
         pkgs.nodejs
 
         # For file watching
@@ -136,9 +136,7 @@ outputs = { self, ... }@inputs: let
 
       function mation.bundle-samples {(
         cd "$root" &&
-
         mation.compile &&
-
         mkdir -p out/app &&
 
         # For each sample, compile+emit
@@ -168,6 +166,59 @@ outputs = { self, ... }@inputs: let
 
         # Emit index.html
         mv out/app/Main.html out/app/index.html
+      )}
+
+      function mation.bundle-tests {(
+        cd "$root" &&
+        mation.compile &&
+        mkdir -p out/app &&
+
+        # For each test, compile+emit
+        for fpath in $( ls ./tests/*.purs ); do
+          test_name=$( basename "$fpath" | cut -d. -f1 )
+          module_name=Mation.Tests."$test_name"
+
+          echo "Bundling test $test_name ($module_name) ..."
+
+          # Bundle+emit test JS
+          echo "import { main } from './out/purs-cache/$module_name/index.js'; main()" \
+            | esbuild \
+                --bundle \
+                --format='${esbuild-format}' \
+                --log-level=warning \
+                --outfile=out/app/"$test_name".js
+
+          # Extract+emit test metadata
+          cat "$fpath" | node -e '
+            const lines = require("fs").readFileSync(0).toString().split("\n");
+            const sentinel = "METADATA";
+            const start = lines.findIndex(line => line.includes(sentinel));
+            const end = lines.findIndex((line, i) => i > start && line.includes(sentinel));
+            console.log(lines.slice(start + 1, end).join("\n"));
+          ' > out/app/"$test_name".json
+
+          # Generate+emit test html
+          {
+            echo "<!doctype html>"
+            echo "<html>"
+            echo "<head><script defer src='$test_name.js'></script></head>"
+            echo "<body></body>"
+            echo "</html>"
+          } > out/app/"$test_name".html
+        done
+
+        # Emit index.html
+        cp ./tests/index.html out/app/index.html
+      )}
+
+      function mation.devt {(
+        cd "$root" &&
+        python3 -m http.server --directory out/app & trap "kill $!" EXIT &&
+
+        export root; export -f mation.compile mation.bundle-tests
+        { find . \( -name '*.purs' -o -name '*.js' -o -name '*.html' -o -name '*.md' \) \
+                 -a ! -path './out/*'
+        } | entr -cs "mation.bundle-tests && echo 'You may need to reload your browser'"
       )}
 
       function mation.devt.samples {(

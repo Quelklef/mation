@@ -29,6 +29,8 @@ data Sample
   | AsyncApiCall
   | Clock
   | Styling
+  | Components
+  | Pruning
 
 derive instance Generic Sample _
 derive instance Eq Sample
@@ -81,7 +83,8 @@ foreign import getUrlHash :: Effect String
 sampleGroups :: Array (String /\ Array Sample)
 sampleGroups =
   [ "Welcome" /\ [ Welcome ]
-  , "Basic"   /\ [ Counter, AsyncApiCall, Clock, Styling ]
+  , "Basic"   /\ [ Counter, AsyncApiCall, Clock, Components, Styling ]
+  , "Advanced" /\ [ Pruning ]
   ]
 
 render :: Model -> E.Html' (M.Modify Model)
@@ -161,6 +164,8 @@ render model =
       , S.width "100%"
       , S.height "100%"
       , S.border "none"
+      , S.padding "50px 100px"
+      , S.boxSizing "border-box"
       ]
     , P.src $ getHref model.selectedSample
     ]
