@@ -96,35 +96,51 @@ export const patch_f =
 
 
   function pruneCase(root, mOldVNode, vPrune) {
-    const info = lookupPrune(oldPruneMap, vPrune);
-    if (info) {
-      setNode(root, info.node);
-      fixupConditionalRelease(root);
-      Trie_mergeAt(newPruneMap, oldPruneMap, vPrune.keyPath);
-        // ^ Add the prune children, which won't otherwise be seen in this diff
-        // FIXME: I think this can be replaced with a shallow merge?
-      return info.node;
-    } else {
-      const newVNode = vPrune.render(vPrune.params);
-      const mountedOn = patch(root, mOldVNode, newVNode);
-      Trie_set(newPruneMap, vPrune.keyPath, { params: vPrune.params, node: mountedOn, vNode: newVNode });
-      return mountedOn;
+
+    // If the node was rendered in the previous frame with matching parameters, then
+    // re-use the result from that render
+    const oldInfo = Trie_get(oldPruneMap, vPrune.keyPath);
+    if (oldInfo) {
+      const surelyEqual = vPrune.surelyEqual;
+      const paramsEqual = surelyEqual(oldInfo.params)(vPrune.params);
+      if (paramsEqual) {
+        setNode(root, oldInfo.node);
+        fixupConditionalRelease(root);
+        Trie_mergeAt(newPruneMap, oldPruneMap, vPrune.keyPath);
+          // ^ Add the prune children, which won't otherwise be seen in this diff
+          // FIXME: I think this can be replaced with a shallow merge?
+        return oldInfo.node;
+      }
     }
-  }
 
-  // Lookup a vPrune node in the prune map
-  // Returns null on absence
-  function lookupPrune(pruneMap, vPrune) {
-    const info = Trie_get(pruneMap, vPrune.keyPath);
-    if (!info) return null;
-    const surelyEqual = vPrune.surelyEqual;
-    const paramsEqual = surelyEqual(vPrune.params)(info.params);
-    return paramsEqual ? info : null;
-  }
+    // If the old VNode is a matching VPrune (same keypath), fetch it
+    let matchingVPrune = (
+      mOldVNode &&
+      casePatchVNode(mOldVNode)
+        (oldDomNode => null)
+        (oldHtml => null)
+        (oldText => null)
+        (oldVTag => null)
+        (oldVPrune => arrayEq(oldVPrune.keyPath, vPrune.keyPath) ? oldVPrune : null)
+    );
 
-  // Like lookupPrune but skips checking the prune params
-  function lookupPruneUnsafe(pruneMap, vPrune) {
-    return Trie_get(pruneMap, vPrune.keyPath);
+    // Render the new prune
+    const newVNode = vPrune.render(vPrune.params);
+
+    // Patch it
+    const patchAgainst = (
+      matchingVPrune
+      ? Trie_get(oldPruneMap, matchingVPrune.keyPath).vNode
+        // ^ The matching VPrune was rendered last frame, so it must be in the old map
+      : mOldVNode
+    );
+    const mountedOn = patch(root, patchAgainst, newVNode);
+
+    // Save the render results in the prune map
+    Trie_set(newPruneMap, vPrune.keyPath, { params: vPrune.params, node: mountedOn, vNode: newVNode });
+
+    return mountedOn;
+
   }
 
 
@@ -134,45 +150,33 @@ export const patch_f =
     // Perform fixup-restore from last frame
     fixupRestore(root);
 
-    const shouldReplace = (
-      !mOldVNode ||
+    // If the old VNode is a matching VTag (same tag name), fetch it
+    const matchingVTag = (
+      mOldVNode &&
       casePatchVNode(mOldVNode)
-        (domNode => true)
-        (html => true)
-        (text => true)
-        (oldVTag => oldVTag.tag !== newVTag.tag)
-        (vPrune => true)  // Don't diff against a pruned node! Another part of the diff may retrieve it (or may have already)
+        (oldDomNode => null)
+        (oldHtml => null)
+        (oldText => null)
+        (oldVTag => oldVTag.tag === newVTag.tag ? oldVTag : null)
+        (oldVPrune => null)
     );
-    if (shouldReplace) {
+
+    let patchAgainst;
+    if (matchingVTag) {
+      // If the old VNode is a matching VTag, patch against it
+      patchAgainst = matchingVTag;
+    } else {
+      // Otherwise, patch against a new element with the correct tag name
       const newRoot = document.createElement(newVTag.tag);
       setNode(root, newRoot);
       fixupConditionalRelease(root);
       root = newRoot;
-      mOldVNode = null;  // Need to diff afresh
+      patchAgainst = mkEmptyVTag(newVTag.tag);
     }
 
-    const empty = mkEmptyVTag(newVTag.tag);
-    const oldVTag = (
-      !mOldVNode ? empty :
-      casePatchVNode(mOldVNode)
-        (domNode => empty)
-        (html => empty)
-        (text => empty)
-        (oldVTag => oldVTag)
-        (vPrune => {
-          // Since the prune was rendered last frame, it must be in the prune map
-          // Also, we need not check the prune params
-          const info = lookupPruneUnsafe(oldPruneMap, vPrune);
-          console.assert(!!info, `[mation] prune missing from map (looking for keypath '${vPrune.keyPath.map(k => '→ ' + k).join(' ')}')`);
-          // You and I have magic knowledge that all VPrune nodes render to VTag nodes
-          const vTag = casePatchVNode(info.vNode)(_ => null)(_ => null)(_ => null)(x => x)(_ => null);
-          return vTag;
-        })
-    );
-
-    patchAttrs(root, oldVTag.attrs, newVTag.attrs);
-    patchListeners(root, oldVTag.listeners, newVTag.listeners);
-    patchChildren(root, oldVTag.children, newVTag.children);
+    patchAttrs(root, patchAgainst.attrs, newVTag.attrs);
+    patchListeners(root, patchAgainst.listeners, newVTag.listeners);
+    patchChildren(root, patchAgainst.children, newVTag.children);
 
     // Perform fixup & store restoration function
     const restore = newVTag.fixup(root)();
@@ -384,6 +388,13 @@ function iife(f) {
 function* mapIter(it, f) {
   for (const x of it)
     yield f(x);
+}
+
+function arrayEq(as, bs) {
+  return (
+    as.length === bs.length
+    && as.every((a, i) => bs[i] === a)
+  )
 }
 
 function setNode(target, replacement) {
