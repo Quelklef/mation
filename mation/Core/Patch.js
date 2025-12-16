@@ -37,7 +37,6 @@ export const patch_f =
   // This behaviour also improves performance! (in most cases)
   function patch(root, mOldVNode, newVNode) {
 
-    // Perform patch
     const mountedOn = (
       casePatchVNode(newVNode)
         (domNode => {
@@ -76,18 +75,16 @@ export const patch_f =
             return node;
           }
         })
-        (newVTag => {
-          return tagCase(root, mOldVNode, newVTag)
+        (vTag => {
+          return tagCase(root, mOldVNode, vTag)
         })
         (vPrune => {
           return pruneCase(root, mOldVNode, vPrune)
         })
     );
 
-
-    // Let node know that we've visited it
-    // This is undocumented and only exists for use in one of the test cases
-    // This should otherwise never be used
+    // Let node know that we visited it
+    // This is undocumented and only exists for internal use
     mountedOn._touch?.();
 
     return mountedOn;
@@ -145,8 +142,6 @@ export const patch_f =
 
 
   function tagCase(root, mOldVNode, newVTag) {
-    // mOldVNode may be nully
-
     // Perform fixup-restore from last frame
     fixupRestore(root);
 
@@ -350,7 +345,7 @@ export const patch_f =
   // on (in the same frame) by a VPrune node.
   //
   // At the end of the patching algorithm we call fixupFinalize(),
-  // which fixup-resores  the appropriate subset of these dubious nodes by
+  // which fixup-resores the appropriate subset of these dubious nodes by
   // comparing the oldPruneMap with the final newPruneMap.
   function fixupConditionalRelease(node) {
     if (!oldPruneMapNodes.has(node))
