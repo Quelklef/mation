@@ -15,6 +15,7 @@ module Mation.Core.Util.UnsureEq
 import Mation.Core.Prelude
 
 import Effect.Ref (Ref)
+import Effect.Aff (Aff)
 import Data.Array as Array
 import Data.Function (on)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -159,6 +160,9 @@ instance UnsureEq v => UnsureEq (Map k v) where
   unsureEq = primEqOr (unsureEq `on` Map.values)
 
 instance UnsureEq (Effect a) where
+  unsureEq = primEqOr (\_ _ -> Unsure)
+
+instance UnsureEq (Aff a) where
   unsureEq = primEqOr (\_ _ -> Unsure)
 
 instance UnsureEq (a -> b) where
