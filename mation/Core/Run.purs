@@ -2,7 +2,7 @@ module Mation.Core.Run where
 
 import Mation.Core.Prelude
 
-import Effect.Exception (throw)
+import Effect.Exception.Unsafe (unsafeThrow)
 
 import Mation.Core.Html (Html (..), VNode, fixVNode)
 import Mation.Core.Html as Html
@@ -170,15 +170,6 @@ runAppM :: forall m s. MonadUnliftEffect m =>
 
 runAppM args = withRunInEffect \(toEffect :: m ~> Effect) -> do
 
-  let
-    -- Render to a single VNode (instead of an entire Html)
-    -- This is unsafe, but during usual usage of the framework should never happen
-    renderTo1 :: s -> Effect (VNode m (ReadWrite s))
-    renderTo1 = args.render >>> case _ of
-      Html [x] -> pure x
-      _ -> throw "[mation] Error: Top-level Html value contains either zero nodes or more than one node. Did you produce `mempty`, perhaps, or some result of `<>` or `fold`? Please wrap your application in a container node."
-
-
   -- Tracks user application state
   (stateRef :: ReadWriteL s) <- Refs.make args.initial
 
@@ -189,7 +180,7 @@ runAppM args = withRunInEffect \(toEffect :: m ~> Effect) -> do
   -- On change to state, re-render application
   stateRef # Refs.onChange \newState -> do
     oldVNode <- vNodeRef # Refs.read
-    (newVNode :: VNode m (ReadWrite s)) <- renderTo1 newState
+    let (newVNode :: VNode m (ReadWrite s)) = args.render newState # getSingletonUnsafe
     let (newVNode' :: PatchVNode) =
             newVNode
             # fixVNode (stateRef # Refs.downcast)
@@ -212,4 +203,13 @@ runAppM args = withRunInEffect \(toEffect :: m ~> Effect) -> do
   -- Start the daemon
   toEffect $ args.daemon stateRef
 
+
+  where
+
+  -- Fetch the sigle VNode from an Html, if there is exactly one
+  -- Otherwise, throws
+  getSingletonUnsafe :: forall m k. Html m k -> VNode m k
+  getSingletonUnsafe = case _ of
+    Html [x] -> x
+    _ -> unsafeThrow "[mation] Error: Top-level Html value contains either zero nodes or more than one node. Did you produce `mempty`, perhaps, or some result of `<>` or `fold`? Please wrap your application in a container node."
 
