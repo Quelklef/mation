@@ -545,7 +545,7 @@ modify' f ref = do
 -- | This differs from `onNextChange` in two ways:
 -- | - `onChange` supplies the new ref value
 -- | - `onChange` keeps the listener attached to the ref. (`onNextChange` is one-shot)
-onChange :: forall m ref a. MonadUnliftEffect m => ListenRef ref => ReadRef ref =>
+onChange :: forall m ref a. MonadUnliftEffect m => ListenRef ref =>
   (a -> m Unit) -> ref a -> m Unit
 onChange f ref =
   ref # onNextChange do
@@ -554,7 +554,7 @@ onChange f ref =
     onChange f ref
 
 -- | Like `onChange`, but provides both the old and new values
-onChange' :: forall m ref a. MonadUnliftEffect m => ListenRef ref => WriteRef ref =>
+onChange' :: forall m ref a. MonadUnliftEffect m => ListenRef ref =>
   ({ old :: a, new :: a } -> m Unit) -> ref a -> m Unit
 onChange' f ref = do
   oldValRef <- read ref >>= (make :: a -> m (ReadWrite a))
