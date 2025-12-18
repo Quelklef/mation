@@ -5,16 +5,19 @@
 //   rather subtle, and I'm not 100% confident in the current
 //   implementation.
 
-export const patch_f =
-({ casePatchVNode, mPruneMap }) => {
+export function mkEmptyPruneMap() {
+  return Trie_new();
+}
 
-  const oldPruneMap = mPruneMap || Trie_new();
+export const patch_f =
+({ casePatchVNode, oldPruneMap }) => {
+
   const newPruneMap = Trie_new();
 
   const oldPruneMapNodes = new Set(mapIter(Trie_values(oldPruneMap), info => info.node));
 
-  return ({ mOldVNode, newVNode }) => root => () => {
-    patch(root, mOldVNode, newVNode);
+  return ({ oldVNode, newVNode }) => root => () => {
+    patch(root, oldVNode, newVNode);
     fixupReleaseFinalize();
     return newPruneMap;
   };

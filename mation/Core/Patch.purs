@@ -66,6 +66,8 @@ vNodeToPatchable = case _ of
 -- | correctly handle `VPrune` nodes
 foreign import data PruneMapRef :: Type
 
+foreign import mkEmptyPruneMap :: Effect PruneMapRef
+
 
 -- | Patch a VDOM onto a DOM Node
 -- |
@@ -87,25 +89,21 @@ foreign import data PruneMapRef :: Type
 -- | if some DOM node attribute is accidentally deleted by external javascript,
 -- | for instance, re-rendering the model will not replace it.
 patchOnto ::
-  { mOldVNode :: Maybe PatchVNode
+  { oldVNode :: PatchVNode
   , newVNode :: PatchVNode
-  , mPruneMap :: Maybe PruneMapRef
+  , oldPruneMap :: PruneMapRef
   }
   -> DomNode -> Effect PruneMapRef
-patchOnto { mOldVNode, newVNode, mPruneMap } =
+patchOnto { oldVNode, newVNode, oldPruneMap } =
   patch_f
-    { casePatchVNode
-    , mPruneMap: Nullable.toNullable mPruneMap
-    }
-    { mOldVNode: Nullable.toNullable mOldVNode
-    , newVNode
-    }
+    { casePatchVNode, oldPruneMap }
+    { oldVNode, newVNode }
 
 foreign import patch_f ::
    { casePatchVNode :: CasePatchVNode
-   , mPruneMap :: Nullable PruneMapRef
+   , oldPruneMap :: PruneMapRef
    } ->
-   { mOldVNode :: Nullable PatchVNode
+   { oldVNode :: PatchVNode
    , newVNode :: PatchVNode
    }
   -> (DomNode -> Effect PruneMapRef)

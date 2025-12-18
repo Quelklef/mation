@@ -7,7 +7,7 @@ import Effect.Exception (throw)
 import Mation.Core.Html (Html (..), VNode, fixVNode)
 import Mation.Core.Html as Html
 import Mation.Core.Dom (DomNode)
-import Mation.Core.Patch (PatchVNode, PruneMapRef)
+import Mation.Core.Patch (PatchVNode (..), PruneMapRef, mkEmptyPruneMap)
 import Mation.Core.Patch as Patch
 import Mation.Core.Refs as Refs
 import Mation.Core.Refs (ReadWriteL, ReadWrite)
@@ -183,27 +183,27 @@ runAppM args = withRunInEffect \(toEffect :: m ~> Effect) -> do
   (stateRef :: ReadWriteL s) <- Refs.make args.initial
 
   -- Tracks Mation internal state
-  (vNodeRef :: ReadWrite (Maybe PatchVNode)) <- Refs.make Nothing
-  (pruneMapRef :: ReadWrite (Maybe PruneMapRef)) <- Refs.make Nothing
+  (vNodeRef :: ReadWrite PatchVNode) <- Refs.make (VPRawHtml "")
+  (pruneMapRef :: ReadWrite PruneMapRef) <- Refs.make =<< mkEmptyPruneMap
 
   -- On change to state, re-render application
   stateRef # Refs.onChange \newState -> do
-    mOldVNode <- vNodeRef # Refs.read
+    oldVNode <- vNodeRef # Refs.read
     (newVNode :: VNode m (ReadWrite s)) <- renderTo1 newState
     let (newVNode' :: PatchVNode) =
             newVNode
             # fixVNode (stateRef # Refs.downcast)
             # Html.hoist1 toEffect
             # Patch.vNodeToPatchable
-    mOldPruneMap <- pruneMapRef # Refs.read
+    oldPruneMap <- pruneMapRef # Refs.read
     let patch = Patch.patchOnto
-                    { mOldVNode
+                    { oldVNode
                     , newVNode: newVNode'
-                    , mPruneMap: mOldPruneMap
+                    , oldPruneMap
                     }
     newPruneMap <- args.root >>= patch
-    vNodeRef # Refs.write (Just newVNode')
-    pruneMapRef # Refs.write (Just newPruneMap)
+    vNodeRef # Refs.write newVNode'
+    pruneMapRef # Refs.write newPruneMap
     pure unit
 
   -- Induce initial render
