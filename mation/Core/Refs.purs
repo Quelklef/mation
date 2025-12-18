@@ -218,7 +218,7 @@ class FocusRefWithSetter ref where
   focusWithSetter :: forall s a. Setter' s a -> ref s -> ref a
 
 -- | Reference types who can `focus` with a `Getter'`
-class FocusRefWithGetter ref where
+class Functor ref <= FocusRefWithGetter ref where
   focusWithGetter :: forall s a. Getter' s a -> ref s -> ref a
 
 -- | Reference types who can `focus` with a function `a -> s`
@@ -440,6 +440,9 @@ instance FocusRefWithGetter ReadL where
       (Lens.view len <$> read rl)
       (\f -> rl # onNextChange f)
 
+instance Functor ReadL where
+  map f = focusWithGetter (Lens.to f)
+
 instance FocusRefWithLens ReadL where
   focusWithLens len = focusWithGetter len
 
@@ -466,6 +469,9 @@ instance MakeRef Read where
 instance FocusRefWithGetter Read where
   focusWithGetter len (Read readIt) =
     Read (Lens.view len <$> readIt)
+
+instance Functor Read where
+  map f = focusWithGetter (Lens.to f)
 
 instance FocusRefWithLens Read where
   focusWithLens len = focusWithGetter len
@@ -502,6 +508,9 @@ instance FocusRefWithSetter Nil where
 
 instance FocusRefWithGetter Nil where
   focusWithGetter _ _ = Nil
+
+instance Functor Nil where
+  map _ _ = Nil
 
 instance FocusRefWithOpFun Nil where
   focusWithOpFun _ _ = Nil
