@@ -173,6 +173,23 @@ addPruneKey key = case _ of
            , render: render >>> addPruneKey key
            }
 
+-- | Removes all event listeners. O(n)
+-- |
+-- | Does not remove fixups, so listeners may sill be present if they're
+-- | added via fixups.
+censor1 :: forall m k. VNode m k -> VNode m k
+censor1 = case _ of
+  VRawNode x -> VRawNode x
+  VRawHtml x -> VRawHtml x
+  VText x -> VText x
+  VTag { tag, attrs, listeners, fixup, children } ->
+    VTag { tag, attrs, listeners: mempty, fixup, children }
+  VWithK withK -> VWithK (withK >>> censor1)
+  VPrune e -> VPrune $ e # mapExists \(PruneE { keyPath, params, compare, render }) ->
+    PruneE { params, compare, keyPath
+           , render: render >>> censor1
+           }
+
 -- | Remove all contained `VPrune` nodes, collapsing their deferred
 -- | computation.
 -- |
@@ -291,6 +308,10 @@ mkPrune compare key render params =
 -- | Remove pruning from all contained VNodes
 unPrune :: forall m k. Html m k -> Html m k
 unPrune = FM.map unPrune1
+
+-- | Remove event listeners
+censor :: forall m k. Html m k -> Html m k
+censor = FM.map censor1
 
 -- | Transform the underlying monad of an `Html`
 -- |
