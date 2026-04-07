@@ -125,10 +125,11 @@ type CasePatchVNode = forall r.
 
 casePatchVNode :: CasePatchVNode
 casePatchVNode node vRawNode vRawHtml vText vTag vPrune =
+  -- Micro-optimization: order cases from most to least common
   case node of
-    VPRawNode x -> vRawNode x
-    VPRawHtml x -> vRawHtml x
-    VPText x -> vText x
-    VPTag x -> vTag x
-    VPPrune x -> vPrune x
+  VPTag x -> vTag x
+  VPText x -> vText x
+  VPPrune x -> vPrune x
+  VPRawHtml x -> vRawHtml x
+  VPRawNode x -> vRawNode x
 
