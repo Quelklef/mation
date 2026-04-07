@@ -278,20 +278,40 @@ export const patch_f =
   function patchListeners(root, oldListeners, newListeners) {
     // Can't diff functions, so just remove and re-add all listeners
 
+    root._listeners ??= {};
+
     // Remove old listeners
-    for (const [name, _] of oldListeners) {
-      const map = root._listeners ?? {};
-      root.removeEventListener(name, map[name]);
+    const newEventNames = new Set(newListeners.map(kv => kv[0]));
+    for (const [eventName, _] of oldListeners) {
+      if (newEventNames.has(eventName)) {
+        // Keep composite but reset underlying listeners
+        root._listeners[eventName].array.length = 0;
+      }
+      else {
+        // Disattach+delete composite and underlying listeners
+        root.removeEventListener(eventName, root._listeners[eventName].composite);
+        delete root._listeners[eventName];
+      }
     }
 
     // Add new listeners
-    root._listeners = {};
-    for (const [name, f] of newListeners) {
-      const domHandler = ev => f(ev)();
-      root.addEventListener(name, domHandler);
-      root._listeners[name] = domHandler;
+    for (const [eventName, func] of newListeners) {
+      root._listeners[eventName] ??= addCompositeListener(eventName, root);
+      root._listeners[eventName].array.push(func);
     }
+
   }
+
+  function addCompositeListener(eventName, node) {
+    const array = [];
+    const composite = function(ev) {
+      const listenersAtTimeOfEvent = Array.from(array);
+      for (const func of listenersAtTimeOfEvent) func(ev)();
+    }
+    node.addEventListener(eventName, composite);
+    return { array, composite };
+  }
+
 
   function patchChildren(root, oldChildren, newChildren) {
     // Patch child list
