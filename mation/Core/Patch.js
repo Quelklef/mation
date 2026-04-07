@@ -250,26 +250,34 @@ export const patch_f =
 
     case 'value': {
       const alreadyGood = node.value === '';
-      if (!alreadyGood)
+      if (!alreadyGood) {
         node.value = '';
+      }
+      return;
     }
 
     case 'checked': {
       const alreadyGood = !node.checked;
-      if (!alreadyGood)
+      if (!alreadyGood) {
         node.checked = false;
+      }
+      return;
     }
 
     case 'selected': {
       const alreadyGood = !node.selected;
-      if (!alreadyGood)
+      if (!alreadyGood) {
         node.selected = false;
+      }
+      return;
     }
 
     default: {
       const alreadyGood = !node.hasAttribute(name);
-      if (!alreadyGood)
+      if (!alreadyGood) {
         node.removeAttribute(name);
+      }
+      return;
     }
 
     }
