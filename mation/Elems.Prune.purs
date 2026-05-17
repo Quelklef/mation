@@ -199,8 +199,8 @@ instance PruneEq (p0 /\ p1) a => PruneEq p0 (p1 -> a) where
   pruneEq key fn p0 p1 = pruneEq key (\(p0 /\ p1) -> fn p0 p1) (p0 /\ p1)
 
 
--- | Like `pruneEq`, but changes to input values are detected using
--- | the inputs' `UnsureEq` instance
+-- | Like `pruneEq`, but changes to input values are detected
+-- | using JavaScript `===` comparison
 class PruneTeq p a where
   pruneTeq :: String -> (p -> a) -> (p -> a)
 
@@ -211,7 +211,7 @@ instance PruneTeq (p0 /\ p1) a => PruneTeq p0 (p1 -> a) where
   pruneTeq key fn p0 p1 = pruneTeq key (\(p0 /\ p1) -> fn p0 p1) (p0 /\ p1)
 
 
--- | Like `pruneeq`, but changes to input values are detected using
+-- | Like `pruneEq`, but changes to input values are detected using
 -- | the inputs' `UnsureEq` instance
 class PruneUeq p a where
   pruneUeq :: String -> (p -> a) -> (p -> a)

@@ -235,7 +235,7 @@ class FocusRefWithOpFun ref where
 -- |
 -- | Every reference type can be downcast to itself.
 -- |
--- | DowncastRefing forms a poset / thin category. In particular, this one:
+-- | Downcasting forms a poset; namely,
 -- |
 -- | ```
 -- | ReadWriteL ──────────────> ReadWrite ────> Modify ────> Write
