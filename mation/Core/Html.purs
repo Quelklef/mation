@@ -182,13 +182,10 @@ censor1 = case _ of
   VRawNode x -> VRawNode x
   VRawHtml x -> VRawHtml x
   VText x -> VText x
-  VTag { tag, attrs, listeners, fixup, children } ->
-    VTag { tag, attrs, listeners: mempty, fixup, children }
+  VTag tagData -> VTag $ tagData { listeners = mempty }
   VWithK withK -> VWithK (withK >>> censor1)
-  VPrune e -> VPrune $ e # mapExists \(PruneE { keyPath, params, compare, render }) ->
-    PruneE { params, compare, keyPath
-           , render: render >>> censor1
-           }
+  VPrune e -> VPrune $ e # mapExists \(PruneE pruneData@{ render }) ->
+    PruneE $ pruneData { render = render >>> censor1 }
 
 -- | Remove all contained `VPrune` nodes, collapsing their deferred
 -- | computation.
@@ -200,10 +197,8 @@ unPrune1 = case _ of
   VRawNode x -> VRawNode x
   VRawHtml x -> VRawHtml x
   VText x -> VText x
-  VTag { tag, attrs, listeners, fixup, children } ->
-    VTag { tag, attrs, listeners, fixup
-         , children: children # map unPrune1
-         }
+  VTag tagData@{ children } ->
+    VTag $ tagData { children = children # map unPrune1 }
   VWithK withK -> VWithK (unPrune1 <$> withK)
   VPrune e ->
     e # runExists \(PruneE { params, render }) ->

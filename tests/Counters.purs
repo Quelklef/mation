@@ -60,7 +60,7 @@ renderCounter model =
       , S.minWidth "10ch"
       ]
     , P.addDataset $
-        if model.count < 1 then mempty
+        if model.count < 1 then Map.empty
         else range 1 (min model.count 50) # foldMap (\n -> [show n /\ show n]) # Map.fromFoldable
     ]
     [ E.text (show model.count)

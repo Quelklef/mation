@@ -2,9 +2,6 @@ module Mation.Core.Patch where
 
 import Mation.Core.Prelude
 
-import Data.Nullable (Nullable)
-import Data.Nullable as Nullable
-
 import Mation.Core.Html (VNode (..), PruneE (..))
 import Mation.Core.Dom (DomNode, DomEvent)
 import Mation.Core.Util.Revertible as Rev

@@ -16,7 +16,6 @@ import Mation.Core.Prelude
 
 import Mation as M
 import Mation.Lenses (field)
-import Mation (Daemon', DomNode)
 import Mation.Elems as E
 import Mation.Props as P
 import Mation.Core.Refs as Refs

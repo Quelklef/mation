@@ -38,13 +38,16 @@ newtype Weave a = Weave (Array (Elem a))
 -- | and `This a` represents some known vaue of type `a`
 data Elem a = That | This a
 
-derive instance Generic (Weave a) _
-derive instance Eq a => Eq (Weave a)
+derive newtype instance Eq a => Eq (Weave a)
   -- ^ Technically this instance is invalid because it doesn't normalize,
   --   so for instance it considers `Weave []` distinct from `Weave [mempty]`.
   --   This isn't a problem for our use-sites though.
-instance Ord a => Ord (Weave a) where compare = genericCompare
-instance Show a => Show (Weave a) where show = genericShow
+
+derive newtype instance Ord a => Ord (Weave a)
+
+instance Show a => Show (Weave a) where
+  show (Weave arr) = "(Weave " <> show arr <> ")"
+
 derive newtype instance Hashable a => Hashable (Weave a)
 
 derive instance Generic (Elem a) _

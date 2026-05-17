@@ -208,7 +208,7 @@ runAppM args = withRunInEffect \(toEffect :: m ~> Effect) -> do
 
   -- Fetch the sigle VNode from an Html, if there is exactly one
   -- Otherwise, throws
-  getSingletonUnsafe :: forall m k. Html m k -> VNode m k
+  getSingletonUnsafe :: forall m' k. Html m' k -> VNode m' k
   getSingletonUnsafe = case _ of
     Html [x] -> x
     _ -> unsafeThrow "[mation] Error: Top-level Html value contains either zero nodes or more than one node. Did you produce `mempty`, perhaps, or some result of `<>` or `fold`? Please wrap your application in a container node."
